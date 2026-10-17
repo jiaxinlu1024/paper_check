@@ -224,10 +224,13 @@ def _absorb(keep, other, note: str) -> None:
         "check_id": other.check_id, "title": other.title, "severity": other.severity, "status": other.status,
         "producer": other.producer.get("name"), "source": list(_source(other)), "problem": other.problem,
         "note": note})
-    if STATUS_RANK.get(other.status, 9) < STATUS_RANK.get(keep.status, 9):
-        keep.status = other.status
-    if CONF_RANK.get(other.confidence, 9) < CONF_RANK.get(keep.confidence, 9):
-        keep.confidence = other.confidence
+    # A less severe finding cannot confirm a more severe claim: a confirmed Major "the DOI belongs to
+    # another paper" does not confirm a likely Critical "the work does not exist".
+    if SEVERITY_RANK.get(other.severity, 9) <= SEVERITY_RANK.get(keep.severity, 9):
+        if STATUS_RANK.get(other.status, 9) < STATUS_RANK.get(keep.status, 9):
+            keep.status = other.status
+        if CONF_RANK.get(other.confidence, 9) < CONF_RANK.get(keep.confidence, 9):
+            keep.confidence = other.confidence
 
 
 def _sentence_of(pm, block_id: str, pos: int):
