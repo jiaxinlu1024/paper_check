@@ -49,6 +49,6 @@ Open network access is not enough for every service. A test on 2026-10-17, with 
 | arXiv, NBER, RePEc | Work | Nothing |
 | Most publisher sites | Answer 403 because of bot protection | Nothing to fix. The skill uses open-access copies and the user's folder of PDFs instead |
 
-The skill will read keys and the contact email from `paper-check.yaml`, never from the paper or the repository.
+The skill will read keys and the contact email from `~/.paper-check/config.yaml`, a user-level file outside any repository and outside the paper's folder.
 
 Official documentation: https://code.claude.com/docs/en/cloud-environments#network-access

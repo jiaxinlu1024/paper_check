@@ -11,6 +11,7 @@ Status: design stage. No skill code yet.
 | `docs/DESIGN.md` | The design: pipeline, full checklist, report format, modes, guardrails and open questions |
 | `docs/case-studies/` | Real problems the skill must catch, starting with citations that do not support their claims |
 | `docs/network-setup.md` | How to give cloud sessions the internet access the lookups need |
+| `evals/README.md` | The test sets and metrics that come before any tuning |
 | `reports/Existing paper check tools.md` | Survey of existing tools and projects, and what to reuse from them |
 | `research_notes/` | Raw notes behind the survey |
 | `config/allowed-domains.txt` | Domain list to paste into a cloud environment's custom network settings |

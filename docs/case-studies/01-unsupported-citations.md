@@ -27,11 +27,15 @@ Each citation gets one verdict:
 
 - **Supported.** A quoted passage states the specific claim.
 - **Partly supported.** The report names the part of the claim the source does not cover.
-- **Not supported.** The failure code says which kind. S1 means the topic is absent from the source, and S4 means the claim belongs to another work.
+- **Not supported: topic absent.** The source never addresses the topic, failure code S1.
+- **Not supported: misattributed.** The claim belongs to another work, failure codes S4 and S5.
+- **Not supported: misdescribed.** The source found or did something different, failure codes S2 and S6.
 - **Contradicted.** The source says the opposite.
 - **Cannot verify.** The full text was not available. The report asks for the PDF.
 
 ## How the skill will check it
+
+The authoritative version of this pipeline, including the proof each verdict needs, is section 7 of `docs/DESIGN.md`.
 
 1. **Find every citing sentence.** Extract each sentence that carries a citation, plus the sentence before it for context. Split compound sentences so that each claim is paired with the citations meant to support it. Tag the claim type: topic, finding, direction of effect, method, number, definition, or origin of a concept.
 2. **Get the cited work's text, best source first.**
@@ -52,7 +56,7 @@ Each citation gets one verdict:
 This example is fictional. It shows the format only.
 
 ```markdown
-### F-031 · Major · CIT-06 Citation supports the claim · S1 Off-topic
+### F-031 · Major · CIT-06 Citation supports the claim · Not supported: topic absent (S1)
 Status: confirmed · Confidence: high
 Where: Section 2.1, paragraph 3, sentence 2 (lit_review.tex:48)
 
