@@ -103,7 +103,7 @@ _SERIES_WORDS = re.compile(r"\b(?:papers?|series|reports?|briefs?|cent(?:er|re)|
 def cited_is_article(cited: dict) -> bool:
     """The entry cites a journal article: it names a journal with a volume, issue or pages, or its type
     says article and its venue does not look like a paper series. (Reference managers often type a
-    working paper as a journal article: "Kilts Center ... Data Center Paper", no volume.)"""
+    working paper as a journal article: "Example Research Center Paper", with no volume.)"""
     container = str(cited.get("container") or "")
     details = bool(cited.get("volume") or cited.get("issue") or cited.get("pages"))
     series = bool(_WP_SERIES.search(container) or _SERIES_WORDS.search(container))
