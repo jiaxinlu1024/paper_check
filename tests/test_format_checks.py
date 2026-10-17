@@ -390,8 +390,17 @@ def test_fmt12_assistant_phrases(tmp_path):
             "We thank [insert names] for comments.")
     pm, _ = ingest_tex(tmp_path, body)
     found, _ = run(pm, "FMT-12")
-    assert len(found) == 2 and all(f.severity == "critical" for f in found)
+    assert len(found) == 1 and found[0].severity == "critical"  # the chat-assistant reply
     assert_well_formed(pm, found)
+    leftovers, _ = run(pm, "FMT-11")  # "[insert names]" is a draft placeholder, not assistant text
+    assert any("[insert names]" in (f.quote or "") for f in leftovers)
+
+
+def test_placement_markers_are_not_flagged(tmp_path):
+    body = "\\section{Results}\nTable 1 reports the estimates.\n\n[Insert Table 1 here]\n\n[Insert Figure 2 about here]\n"
+    pm, _ = ingest_tex(tmp_path, body)
+    assert run(pm, "FMT-12")[0] == []
+    assert not [f for f in run(pm, "FMT-11")[0] if "Insert" in (f.quote or "")]
 
 
 def test_fmt12_experimenter_script_is_not_assistant_text(tmp_path):

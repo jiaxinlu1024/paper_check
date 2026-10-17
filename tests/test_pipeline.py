@@ -203,3 +203,18 @@ def test_merge_runs_pairs_single_findings_of_one_check(work_copy):
     fs = FindingSet.load(work_copy / "findings" / "agent_behavioral.json")
     assert len(fs.findings) == 1
     assert fs.findings[0].verification["runs"] == "2 of 2 runs" and fs.findings[0].status == "confirmed"
+
+
+def test_recurring_minor_findings_are_grouped_but_major_ones_are_not(work_copy):
+    quotes = ["The experiment was preregistered.", SESSIONS, "We ran 10 survey sessions in total.",
+              "Table 1 reports the main estimates.", "Figure 1 shows the distribution of contribution rates."]
+    _write(work_copy, "agent_language.json", {"producer": "agent_language", "findings":
+        [_finding(check_id="LANG-02", title="Overlong sentence", severity="minor", quote=q, problem="Too long.") for q in quotes]
+        + [_finding(check_id="LOG-04", title="Contradiction", severity="major", quote=q, problem="Conflict.") for q in quotes[:2]]})
+    main(["verify", str(work_copy)])
+    main(["report", str(work_copy)])
+    data = json.loads((work_copy.parent / "paper-check-findings.json").read_text())
+    lang = [f for f in data["findings"] if f["check_id"] == "LANG-02"]
+    assert len(lang) == 1 and lang[0]["extra"]["instances"] == 5 and len(lang[0]["related_quotes"]) == 4
+    assert "and 2 more places" in lang[0]["where"]
+    assert len([f for f in data["findings"] if f["check_id"] == "LOG-04"]) == 2

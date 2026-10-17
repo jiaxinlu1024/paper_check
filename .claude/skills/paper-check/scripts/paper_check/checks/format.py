@@ -1598,6 +1598,8 @@ def typography(pm, ctx):
 _LEFTOVER = re.compile(
     r"\b(?:TODO|FIXME|TBD|TBA|XXX+)\b:?|\blorem ipsum\b"
     r"|\[(?:citation needed|cite|citation|refs?|references?|add (?:citation|reference|ref)|source\??|\?\?\?)\]"
+    r"|\[insert (?!(?:table|figure|fig\.|exhibit|chart|graph|appendix table|appendix figure)\s+[A-Z]?\d+[a-z]?\s+(?:about\s+)?here\b)[^\]]{1,80}\]"
+    r"|\[your (?:name|institution|affiliation|university)\]"
     r"|\b(?:Figure|Fig\.|Table|Section|Appendix|Equation|Eq\.)\s+(?:X{1,3}|\?\?\?)(?![\w)])"
     r"|\(\s*(?:cite|ref|citation)\s*\??\s*\)|\bxx+\s*%|\bN\s*=\s*xx+\b", re.I)
 _CASED_LEFTOVER = re.compile(r"TODO|FIXME|TBD|TBA|XXX")
@@ -1778,7 +1780,6 @@ _AI_LEFTOVER = re.compile(
     r"draft|possible) (?:version|draft|paragraph|text|abstract|introduction|section)\b"
     r"|\bregenerate response\b|\bI hope this helps\b|\blet me know if you(?:['’]d| would)? (?:like|want|need)\b"
     r"|\bas of my (?:last )?(?:knowledge|training) (?:cutoff|cut-off|update)\b|\bmy knowledge cut-?off\b"
-    r"|\[insert [^\]]{1,80}\]|\[your (?:name|institution|affiliation|university)\]"
     r"|\bin this revised version\b|\bI have (?:revised|rewritten|polished) (?:the|your)\b", re.I)
 
 
@@ -1789,8 +1790,10 @@ _MATERIALS = re.compile(r"\binstructions?\b|\bquestionnaires?\b|\bsurveys?\b|\bs
 
 @register("FMT-12")
 def ai_leftovers(pm, ctx):
-    steps = ["Searched every text block for phrases that AI assistants leave behind, such as 'As an AI language "
-             "model', 'Certainly, here is', '[insert ...]' and 'Regenerate response'."]
+    steps = ["Searched every text block for phrases from chat assistants' replies, such as 'As an AI language "
+             "model', 'Certainly, here is' and 'Regenerate response'. Placeholders such as '[insert citation]' are "
+             "reported as draft leftovers (FMT-11), and placement markers such as '[Insert Table 1 here]' are normal "
+             "in submission manuscripts."]
     for b in prose(pm, PROSE_KINDS + FRONT_KINDS + ("heading",)):
         materials = any(_MATERIALS.search(s) for s in b.section or [])
         for m in _AI_LEFTOVER.finditer(b.text):
@@ -1800,7 +1803,7 @@ def ai_leftovers(pm, ctx):
             quoted = bool(re.search(r"[\"“'‘]\s*$", b.text[max(0, m.start() - 3):m.start()]))
             yield ctx.finding(
                 "FMT-12", "Leftover AI assistant text", "critical",
-                f"\"{m.group(0)}\" is text an AI assistant produces, left in the paper."
+                f"\"{m.group(0)}\" is wording from a chat assistant's reply, not part of the paper's argument."
                 + (" It is inside quotation marks, so it may be an example; check." if quoted else ""),
                 block=b, quote=quote, status="needs_human" if quoted else "confirmed",
                 confidence="medium" if quoted else "high",
@@ -1808,7 +1811,7 @@ def ai_leftovers(pm, ctx):
                 trajectory=steps + [f"Matched \"{m.group(0)}\" at {b.anchor.label()}."],
                 fix=Fix(action="delete", original=quote, detail="Remove the assistant's text and check the passage "
                                                                 "around it for other generated wording.",
-                        resolved_when="No assistant phrases or unfilled placeholders remain."),
+                        resolved_when="No chat-assistant phrases remain in the text."),
                 script=SCRIPT, extra={"phrase": m.group(0)})
 
 

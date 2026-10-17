@@ -164,7 +164,10 @@ class Locator:
         for loc in f.locations:
             start = span.get("start") if span.get("block") == loc.block else None
             labels.append(self.label(loc.block, loc.anchor, loc.section, start))
-        return "; ".join(dict.fromkeys(labels)) or "whole paper"
+        labels = list(dict.fromkeys(labels))
+        if len(labels) > 3:
+            return "; ".join(labels[:3]) + f"; and {len(labels) - 3} more places"
+        return "; ".join(labels) or "whole paper"
 
     def first_order(self, f) -> int:
         for loc in f.locations:
@@ -304,6 +307,32 @@ def _pair_runs(findings: list) -> list:
     return [f for f in findings if id(f) not in drop]
 
 
+GROUP_MIN = 4  # this many minor findings of one kind from one producer become one finding
+
+
+def _group_patterns(findings: list) -> list:
+    """Collapse a recurring minor problem, such as 17 overlong sentences, into one finding that lists every
+    instance. Critical and Major findings always stay separate."""
+    groups: dict = defaultdict(list)
+    for f in findings:
+        if f.severity in ("minor", "suggestion"):
+            groups[(_source(f), f.check_id, f.title, f.severity)].append(f)
+    drop = set()
+    for key, fs in groups.items():
+        if len(fs) < GROUP_MIN:
+            continue
+        keep, rest = fs[0], fs[1:]
+        keep.extra["instances"] = len(fs)
+        keep.problem = f"{len(fs)} instances of this problem; the first is quoted, the others are listed below. {keep.problem}"
+        for o in rest:
+            if o.quote:
+                keep.related_quotes.append({"quote": o.quote, "block": o.locations[0].block if o.locations else None})
+            keep.locations.extend(l for l in o.locations if l.block not in {x.block for x in keep.locations})
+            drop.add(id(o))
+        keep.trajectory.append(f"Grouped {len(fs)} findings of the same kind from {keep.producer.get('name')}.")
+    return [f for f in findings if id(f) not in drop]
+
+
 def _dedupe(findings: list, pm=None) -> list:
     """Collapse exact repeats from one producer, then merge what different producers found
     about the same passage. Two findings from the same producer are never merged here,
@@ -327,7 +356,7 @@ def _dedupe(findings: list, pm=None) -> list:
         keep.evidence.extend(e for e in f.evidence if e not in keep.evidence)
         keep.trajectory.extend(t for t in f.trajectory if t not in keep.trajectory)
         keep.extra.setdefault("merged_from", []).append(f.producer.get("name"))
-    return _merge_root_causes(list(merged.values()), pm)
+    return _group_patterns(_merge_root_causes(list(merged.values()), pm))
 
 
 def _refuted(f) -> bool:
@@ -440,6 +469,10 @@ def _coverage(checklist: dict, coverage: dict, kept: list) -> list:
             found[cid] += 1
     for cid, info in checklist.items():
         entries = coverage.get(cid, [])
+        # "skipped: waiting for ..." is provisional: a later run of the same check replaces it
+        if any(c.status == "run" for c in entries):
+            entries = [c for c in entries if not (c.status == "skipped" and
+                                                  str(c.reason or "").lower().startswith("waiting"))]
         statuses = {c.status for c in entries}
         reasons = sorted({f"{c.producer + ': ' if c.producer else ''}{c.reason}" for c in entries
                           if c.reason and c.status != "run"})
