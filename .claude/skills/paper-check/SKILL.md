@@ -57,7 +57,7 @@ Read the printed counts and warnings, then skim `paper_text.md`. Check that the 
 PC checks WORK
 ```
 
-This runs the deterministic checks for format, numbers and statistics, venue rules, coherence, language and the local reference list, and writes `WORK/findings/scripts.json`. Reading agents later review these so they don't duplicate them.
+This runs the deterministic checks for format, numbers and statistics, venue rules, coherence, language, the local reference list, duplicate images, and classic findings cited to a known wrong source, and writes `WORK/findings/scripts.json`. Reading agents later review these so they don't duplicate them.
 
 ## 3. References
 
