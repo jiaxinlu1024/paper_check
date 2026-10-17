@@ -143,6 +143,17 @@ Two guardrails catch false positives, which are what make reviewers stop trustin
 
    A refuter can overturn a finding only by quoting counter-evidence from the paper or the source, and `PC verify` sets a refutation aside if that quote cannot be found. The outcome goes in `verification.refuter` ("not refuted", "refuted" or "downgraded") with `verification.refuter_note`. Refuted findings move to an appendix, so nothing disappears silently.
 
+### Launching in waves
+
+Claude Code runs a limited number of subagents at once (20 by default), and a deep check of a paper with 40 references needs 40 or more. Launch in this order, filling free slots as agents finish:
+
+1. web checks, digests, the reading agents and the second runs;
+2. judges, as soon as the digests for their references exist (judges of references without full text need no digest and can start at once);
+3. REV-02, when the facts and citations agents are done;
+4. refuters, when everything they will read is written and the runs are merged.
+
+If a launch is refused because the limit is reached, don't retry at once: launch it when the next agent finishes. When checking several papers, a free slot can go to another paper's first wave, but each paper's refuters still wait for that paper's own files.
+
 ## 7. Verify and report
 
 ```
