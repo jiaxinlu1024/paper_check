@@ -178,6 +178,16 @@ def compare_authors(cited: Iterable, found: Iterable) -> dict:
     truncated = any(is_not_author(c) for c in cited)
     cited = [c for c in cited if not is_not_author(c)]
     found = [f for f in (found or []) if isinstance(f, dict)]
+    # Some records list every author twice (a DataCite record merged from two sources): keep the first.
+    seen, unique = set(), []
+    for person in found:
+        ident = (str(person.get("family") or person.get("name") or "").strip().lower(),
+                 str(person.get("given") or "").strip().lower()[:1])
+        if ident in seen and ident != ("", ""):
+            continue
+        seen.add(ident)
+        unique.append(person)
+    found = unique
     fams = [family_key(c) for c in cited]
     used, pairs = set(), []
     for i, fam in enumerate(fams):

@@ -850,3 +850,10 @@ def test_an_article_known_only_as_its_working_paper_is_not_drift(tmp_path):
     assert card["verdict"] in ("verified", "single_source"), card["field_checks"]
     fields = {c["field"]: c for c in card["field_checks"]}
     assert fields["version"]["status"] == "note" and "doi" not in fields and "year" not in fields
+
+
+def test_a_record_that_lists_its_authors_twice_is_not_an_author_mismatch():
+    from paper_check.lookups.matching import compare_authors
+    found = [{"family": "Carlson", "given": "Andrea"}, {"family": "Page", "given": "Elina"}] * 2
+    au = compare_authors([{"family": "Carlson"}, {"family": "Page"}], found)
+    assert au["record_not_cited"] == [] and au["fraction"] == 1.0 and au["record_count"] == 2
