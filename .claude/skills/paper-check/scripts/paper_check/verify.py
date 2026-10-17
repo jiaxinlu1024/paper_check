@@ -240,8 +240,17 @@ def locate(pm: PaperMap, quote: str, prefer: Optional[str] = None):
 
 
 def _source_text(work: Path, ref: str) -> Optional[str]:
+    """The cached text of a cited work, without page markers, so a quote can run across a page break."""
     path = work / "citations" / "sources" / f"{ref}.txt"
-    return path.read_text(encoding="utf-8", errors="replace") if path.exists() else None
+    if not path.exists():
+        return None
+    text = path.read_text(encoding="utf-8", errors="replace")
+    try:
+        from .citations.scan import strip_markers
+    except ImportError:
+        import re
+        return re.sub(r"\[\[(?:page \d+|abstract)\]\]", " ", text)
+    return strip_markers(text)
 
 
 def _fill_location(pm: PaperMap, loc: Location) -> None:
@@ -254,8 +263,14 @@ def _fill_location(pm: PaperMap, loc: Location) -> None:
         loc.section = list(block.section)
 
 
+def _is_counter(ev) -> bool:
+    return str((ev.data or {}).get("role") or "").lower().replace("_", "-") == "counter-evidence"
+
+
 def verify_finding(pm: PaperMap, work: Path, finding, source_cache: dict) -> dict:
-    report = {"checked": 0, "failed": [], "unverifiable": [], "moved": False}
+    """Check every quote in a finding. Counter-evidence added by a refuter is checked
+    separately: if it fails, the refutation is void, but the finding itself stands."""
+    report = {"checked": 0, "failed": [], "unverifiable": [], "moved": False, "counter_failed": []}
     prefer = finding.locations[0].block if finding.locations else None
 
     def check_paper(quote: str, block_hint: Optional[str], what: str):
@@ -284,8 +299,15 @@ def verify_finding(pm: PaperMap, work: Path, finding, source_cache: dict) -> dic
                 rq["block"] = hit[0].id
                 rq["location"] = hit[0].anchor.label()
     for ev in finding.evidence:
+        counter = _is_counter(ev)
         if ev.type == "quote" and ev.text:
-            hit = check_paper(ev.text, ev.block, "evidence quote")
+            if counter:
+                report["checked"] += 1
+                hit = locate(pm, ev.text, ev.block)
+                if not hit:
+                    report["counter_failed"].append(f"counter-evidence not found in the paper: {ev.text[:80]!r}")
+            else:
+                hit = check_paper(ev.text, ev.block, "evidence quote")
             if hit:
                 ev.block = hit[0].id
         elif ev.type == "source_quote" and ev.text:
@@ -297,17 +319,35 @@ def verify_finding(pm: PaperMap, work: Path, finding, source_cache: dict) -> dic
             if source is None:
                 report["unverifiable"].append(f"source quote from {ref}: no cached text to check against")
             elif not find_quote(ev.text, source):
-                report["failed"].append(f"source quote from {ref}: not found in the cached text: {ev.text[:80]!r}")
+                msg = f"source quote from {ref}: not found in the cached text: {ev.text[:80]!r}"
+                report["counter_failed" if counter else "failed"].append(msg)
     for loc in finding.locations:
         _fill_location(pm, loc)
     return report
+
+
+def _void_refutation(f, reasons: list) -> None:
+    """A refutation whose counter-evidence cannot be found does not count."""
+    import re
+
+    ver = f.verification
+    previous, note = ver.get("refuter"), ver.get("refuter_note") or ""
+    if previous == "downgraded":
+        m = re.search(r"downgraded from (critical|major|minor|suggestion)", note, re.I)
+        if m:
+            f.severity = m.group(1).lower()
+    ver["refuter"] = "not refuted"
+    ver["refuter_note"] = (f"The refuter's {previous} outcome was set aside because its counter-evidence could "
+                           f"not be found ({'; '.join(reasons)}). Original note: {note}").strip()
+    ver["refutation_voided"] = True
+    f.evidence = [e for e in f.evidence if not _is_counter(e)]
 
 
 def verify_work(work: Path) -> int:
     pm = PaperMap.load(work / "paper_map.json")
     files = sorted((work / "findings").glob("*.json")) if (work / "findings").exists() else []
     source_cache: dict = {}
-    total = dropped = moved = unverifiable = 0
+    total = dropped = moved = unverifiable = voided = 0
     unreadable = []
     for path in files:
         fs, errors, _notes = load_findings_file(path)
@@ -318,6 +358,9 @@ def verify_work(work: Path) -> int:
             total += 1
             result = verify_finding(pm, work, f, source_cache)
             f.verification["quotes"] = result
+            if result["counter_failed"] and str(f.verification.get("refuter") or "").lower() in ("refuted", "downgraded"):
+                voided += 1
+                _void_refutation(f, result["counter_failed"])
             if result["failed"]:
                 if f.status != "dropped":
                     dropped += 1
@@ -331,7 +374,8 @@ def verify_work(work: Path) -> int:
         fs.save(path)
     print(f"Verified {total} findings in {len(files) - len(unreadable)} files: {dropped} dropped for quotes not found, "
           f"{moved} relocated to the block where the quote was found, "
-          f"{unverifiable} with source quotes that have no cached text.")
+          f"{unverifiable} with source quotes that have no cached text, "
+          f"{voided} refutations voided because their counter-evidence was not found.")
     for name, errors in unreadable:
         print(f"ERROR: {name} could not be read, so its findings are missing from the report: {errors[0]}")
     return 1 if unreadable else 0

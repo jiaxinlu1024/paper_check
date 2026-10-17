@@ -1,9 +1,9 @@
 """Settings: user-level credentials and per-paper options.
 
 User file, never committed:  ~/.paper-check/config.yaml
-    contact_email, openalex_api_key, semantic_scholar_api_key, repec_access_code
+    contact_email, openalex_api_key, semantic_scholar_api_key, repec_access_code, core_api_key
 Environment variables override it: PAPER_CHECK_CONTACT_EMAIL, OPENALEX_API_KEY,
-SEMANTIC_SCHOLAR_API_KEY, REPEC_ACCESS_CODE.
+SEMANTIC_SCHOLAR_API_KEY, REPEC_ACCESS_CODE, CORE_API_KEY.
 
 Per-paper file, optional:  paper-check.yaml beside the paper
     venue, field, study_type, language_variant, mode, network, sources, paid_pdfs,
@@ -35,6 +35,7 @@ _ENV = {
     "openalex_api_key": "OPENALEX_API_KEY",
     "semantic_scholar_api_key": "SEMANTIC_SCHOLAR_API_KEY",
     "repec_access_code": "REPEC_ACCESS_CODE",
+    "core_api_key": "CORE_API_KEY",
 }
 
 
@@ -53,6 +54,7 @@ class Credentials:
     openalex_api_key: Optional[str] = None
     semantic_scholar_api_key: Optional[str] = None
     repec_access_code: Optional[str] = None
+    core_api_key: Optional[str] = None
 
     @classmethod
     def load(cls) -> "Credentials":

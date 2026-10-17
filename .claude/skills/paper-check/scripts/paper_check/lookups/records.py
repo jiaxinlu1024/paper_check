@@ -126,6 +126,7 @@ class Query:
     results: int = 0
     from_cache: bool = False
     detail: Optional[str] = None
+    stage: Optional[str] = None     # identity, versions, retractions, replications, links
 
     @property
     def completed(self) -> bool:

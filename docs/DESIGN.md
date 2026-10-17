@@ -387,7 +387,7 @@ Rebuilt from journal and data-editor policies, as the survey recommended. Each r
 
 | ID | Check | How | Typical |
 |---|---|---|---|
-| BEH-01 | Deception: giving participants false information counts as deception. Withholding information is a gray area and needs human judgment | READ | Critical where banned, as at Experimental Economics and the Journal of the Economic Science Association; Major elsewhere unless justified |
+| BEH-01 | Deception: giving participants false information counts as deception. Withholding information is a gray area and needs human judgment | READ | Critical where banned, as at Experimental Economics; Major elsewhere unless justified. The Journal of the Economic Science Association follows the ESA guidelines, which ask authors to avoid deception if at all possible and to consult the editors |
 | BEH-02 | Incentives: participants are paid, the payment mechanism is described and incentive compatible, and show-up fee, average earnings and session length are reported | READ | Major |
 | BEH-03 | Materials: full instructions in an appendix, translations where relevant, screenshots, and the experiment files such as z-Tree, oTree or Qualtrics in the replication package. For ReStud, a reference to an online appendix is not enough | READ | Major |
 | BEH-04 | Comprehension and attention checks are described, with exclusion rules stated in advance. On Prolific, a participant in a study of five minutes or more can be rejected only after failing at least two attention checks | READ | Major |
@@ -631,7 +631,7 @@ Gathered by the survey on 2026-10-17. Recheck each source when implementing the 
 - RePEc IDEAS API: https://ideas.repec.org/api.html
 - Retraction Watch data: https://gitlab.com/crossref/retraction-watch-data
 - FORRT Replication Database: https://github.com/forrtproject/FReD
-- STW Thesaurus for Economics, ODbL: https://www.zbw.eu/stw/version/9.10/download/about.en.html
+- STW Thesaurus for Economics, CC BY 4.0 since version 9.20 (earlier versions ODbL): https://www.zbw.eu/stw/version/latest/download/about.en.html
 
 **Behavioral economics policies**
 

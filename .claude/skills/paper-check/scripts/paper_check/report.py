@@ -173,7 +173,102 @@ class Locator:
         return 10**9
 
 
-def _dedupe(findings: list) -> list:
+# Checks that often report the same underlying problem from different angles. Findings
+# from one family whose quotes overlap in the same block are merged into one finding,
+# which keeps every producer's problem statement and evidence.
+RELATED = [
+    {"NUM-01", "COH-02", "NUM-05", "NUM-06", "COH-04", "LOG-04"},
+    {"NUM-03", "NUM-08", "LOG-09", "BEH-09"},
+    {"NUM-02", "NUM-09", "NUM-07"},
+    {"CIT-06", "FACT-02", "FACT-03", "BEH-15", "CIT-13", "CIT-08"},
+    {"CIT-02", "CIT-03", "CIT-12"},
+    {"LOG-02", "LOG-03", "LANG-03", "LOG-09"},
+    {"BEH-06", "MTH-07", "BEH-07"},
+    {"FMT-11", "FMT-12"},
+    {"COH-05", "COH-06", "COH-07"},
+    {"CIT-01", "FMT-05"},
+    {"FMT-05", "FMT-16", "COH-03"},
+    {"BEH-01", "ETH-01"},
+    {"BEH-12", "ETH-01", "FMT-03"},
+    {"BEH-13", "MTH-03", "CIT-11"},
+    {"BEH-11", "CIT-11"},
+    {"FIG-04", "FMT-10", "NUM-07"},
+    {"LANG-02", "LANG-08", "COH-08"},
+    {"FACT-06", "REV-02", "CIT-09"},
+    {"BEH-16", "FMT-03", "FMT-01"},
+    {"FMT-18", "ETH-04"},
+]
+STATUS_RANK = {"confirmed": 0, "likely": 1, "needs_human": 2}
+CONF_RANK = {"high": 0, "medium": 1, "low": 2}
+
+
+def _related(a: str, b: str) -> bool:
+    return a == b or any(a in g and b in g for g in RELATED)
+
+
+def _span(f):
+    sp = (f.verification or {}).get("quotes", {}).get("quote_span")
+    return (sp["block"], sp["start"], sp["end"]) if sp else None
+
+
+def _strength(f) -> tuple:
+    return (SEVERITY_RANK.get(f.severity, 9), STATUS_RANK.get(f.status, 9), CONF_RANK.get(f.confidence, 9),
+            0 if f.producer.get("kind") == "script" else 1)
+
+
+def _absorb(keep, other, note: str) -> None:
+    keep.evidence.extend(e for e in other.evidence if e not in keep.evidence)
+    keep.related_quotes.extend(q for q in other.related_quotes if q not in keep.related_quotes)
+    keep.trajectory.extend(t for t in other.trajectory if t not in keep.trajectory)
+    keep.extra.setdefault("also", []).append({
+        "check_id": other.check_id, "title": other.title, "severity": other.severity, "status": other.status,
+        "producer": other.producer.get("name"), "problem": other.problem, "note": note})
+    if STATUS_RANK.get(other.status, 9) < STATUS_RANK.get(keep.status, 9):
+        keep.status = other.status
+    if CONF_RANK.get(other.confidence, 9) < CONF_RANK.get(keep.confidence, 9):
+        keep.confidence = other.confidence
+
+
+def _sentence_of(pm, block_id: str, pos: int):
+    block = pm.block(block_id) if pm is not None else None
+    if block is None:
+        return None
+    for i, sent in enumerate(block.sentences):
+        if sent.start <= pos < sent.end:
+            return i
+    return None
+
+
+def _merge_root_causes(findings: list, pm=None) -> list:
+    """Merge findings of related checks that quote the same passage: their quotes overlap by
+    half or more in one block, or overlap at all within one sentence."""
+    findings = sorted(findings, key=_strength)
+    kept: list = []
+    for f in findings:
+        sf = _span(f)
+        target = None
+        if sf:
+            for k in kept:
+                sk = _span(k)
+                if not sk or sk[0] != sf[0] or not (_related(k.check_id, f.check_id) or any(
+                        _related(a.get("check_id", ""), f.check_id) for a in k.extra.get("also", []))):
+                    continue
+                inter = min(sk[2], sf[2]) - max(sk[1], sf[1])
+                if inter <= 0:
+                    continue
+                same_sentence = (_sentence_of(pm, sf[0], max(sk[1], sf[1])) is not None and
+                                 _sentence_of(pm, sf[0], sf[1]) == _sentence_of(pm, sk[0], sk[1]))
+                if inter >= 0.5 * min(sk[2] - sk[1], sf[2] - sf[1]) or same_sentence:
+                    target = k
+                    break
+        if target is None:
+            kept.append(f)
+        else:
+            _absorb(target, f, "same passage, related check")
+    return kept
+
+
+def _dedupe(findings: list, pm=None) -> list:
     merged: dict = {}
     for f in findings:
         block = f.locations[0].block if f.locations else None
@@ -185,10 +280,14 @@ def _dedupe(findings: list) -> list:
         keep = merged[key]
         if SEVERITY_RANK.get(f.severity, 9) < SEVERITY_RANK.get(keep.severity, 9):
             keep.severity = f.severity
+        if STATUS_RANK.get(f.status, 9) < STATUS_RANK.get(keep.status, 9):
+            keep.status = f.status
+        if CONF_RANK.get(f.confidence, 9) < CONF_RANK.get(keep.confidence, 9):
+            keep.confidence = f.confidence
         keep.evidence.extend(e for e in f.evidence if e not in keep.evidence)
         keep.trajectory.extend(t for t in f.trajectory if t not in keep.trajectory)
         keep.extra.setdefault("merged_from", []).append(f.producer.get("name"))
-    return list(merged.values())
+    return _merge_root_causes(list(merged.values()), pm)
 
 
 def _refuted(f) -> bool:
@@ -197,6 +296,8 @@ def _refuted(f) -> bool:
 
 def _evidence_line(ev, loc: Locator) -> str:
     d = ev.data or {}
+    if str(d.get("role") or "").lower().replace("_", "-") == "counter-evidence":
+        return "Refuter's counter-evidence: " + _evidence_line(type(ev)(**{**ev.__dict__, "data": {}}), loc)
     if ev.type == "quote":
         where = loc.label(ev.block) if ev.block else ""
         return f'Quote{", " + where if where else ""}: "{normalize(ev.text or "")}"'
@@ -240,13 +341,19 @@ def _render_finding(f, loc: Locator, checklist: dict, dimensions: dict) -> str:
     info = checklist.get(f.check_id, {})
     check_title = info.get("title", "")
     dim = dimensions.get(f.dimension, f.dimension)
+    also = f.extra.get("also", [])
+    also_ids = list(dict.fromkeys(a["check_id"] for a in also if a.get("check_id") != f.check_id))
     lines = [f"### {f.id} · {SEVERITY_TITLE.get(f.severity, f.severity)} · {f.check_id} · {f.title or check_title}",
-             f"Check: {f.check_id} {check_title} ({dim}) · Status: {STATUS_TEXT.get(f.status, f.status)} · "
-             f"Confidence: {f.confidence}",
+             f"Check: {f.check_id} {check_title} ({dim})" + (f", also {', '.join(also_ids)}" if also_ids else "")
+             + f" · Status: {STATUS_TEXT.get(f.status, f.status)} · Confidence: {f.confidence}",
              f"Where: {loc.where(f)}", ""]
     if f.quote:
         lines += [f"> \"{normalize(f.quote)}\"", ""]
     lines += [f"Problem: {f.problem}", ""]
+    for a in also:
+        if normalize(a.get("problem") or "") != normalize(f.problem):
+            lines += [f"Also reported by {a.get('producer') or 'another producer'} under {a.get('check_id')} "
+                      f"({a.get('title')}): {a.get('problem')}", ""]
     proof = [_evidence_line(e, loc) for e in f.evidence]
     for rq in f.related_quotes:
         text = rq.get("quote") if isinstance(rq, dict) else rq
@@ -288,12 +395,17 @@ def _render_finding(f, loc: Locator, checklist: dict, dimensions: dict) -> str:
 def _coverage(checklist: dict, coverage: dict, kept: list) -> list:
     rows = []
     found = Counter(f.check_id for f in kept)
+    for f in kept:
+        for cid in {a.get("check_id") for a in f.extra.get("also", [])} - {f.check_id}:
+            found[cid] += 1
     for cid, info in checklist.items():
         entries = coverage.get(cid, [])
         statuses = {c.status for c in entries}
         reasons = sorted({f"{c.producer + ': ' if c.producer else ''}{c.reason}" for c in entries
                           if c.reason and c.status != "run"})
-        if not entries:
+        if not entries and found.get(cid):
+            status, detail = "run", f"{found[cid]} findings; the producer recorded no coverage entry"
+        elif not entries:
             status, detail = "not run", "No producer covered this check in this run."
         elif statuses == {"run"} or statuses == {"run", "not_applicable"}:
             notes = sorted({c.reason for c in entries if c.status == "run" and c.reason})
@@ -355,7 +467,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
             coverage[c.check_id].append(c)
     dropped = [f for f in findings if f.status == "dropped" and not _refuted(f)]
     refuted = [f for f in findings if _refuted(f)]
-    kept = _dedupe([f for f in findings if f.status != "dropped" and not _refuted(f)])
+    kept = _dedupe([f for f in findings if f.status != "dropped" and not _refuted(f)], pm)
     min_rank = SEVERITY_RANK.get(settings.min_severity, 3)
     below = [f for f in kept if SEVERITY_RANK.get(f.severity, 9) > min_rank]
     kept = [f for f in kept if SEVERITY_RANK.get(f.severity, 9) <= min_rank]
@@ -432,8 +544,9 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
         md += ["## Index in paper order", ""]
         index_rows = sorted(kept, key=lambda f: (loc.first_order(f), SEVERITY_RANK.get(f.severity, 9)))
         md += _md_table(["Finding", "Where", "Check", "Severity", "Problem"],
-                        [[f.id, loc.where(f), f.check_id, SEVERITY_TITLE[f.severity], _cell(f.problem, 160)]
-                         for f in index_rows])
+                        [[f.id, loc.where(f),
+                          " + ".join(dict.fromkeys([f.check_id] + [a["check_id"] for a in f.extra.get("also", [])])),
+                          SEVERITY_TITLE[f.severity], _cell(f.problem, 160)] for f in index_rows])
         md.append("")
 
     md += ["## Coverage", "",
@@ -447,19 +560,44 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     appendices = {}
     cards = _load_json(work / "references" / "cards.json")
     if isinstance(cards, dict):
-        cards = cards.get("cards") or list(cards.values())
+        cards = cards.get("cards") or []
+    web_rows = {}
+    for wpath in sorted((work / "references").glob("web_checks*.json")) if (work / "references").exists() else []:
+        data = _load_json(wpath)
+        for row in data if isinstance(data, list) else []:
+            if isinstance(row, dict) and row.get("ref"):
+                web_rows[row["ref"]] = row
     if cards:
         appendices["references"] = cards
+        if web_rows:
+            appendices["reference_web_checks"] = list(web_rows.values())
         md += ["## Appendix: references", "",
-               "One evidence card per reference. The full cards, with every query made, are in "
-               f"{OUTPUT_FINDINGS} and paper-check-work/references/cards.json.", ""]
+               "One evidence card per reference. Verified means two independent databases agree. "
+               "Not found in databases is not the same as non-existent: the web check and a second review "
+               f"decide that. The full cards, with every query made, are in {OUTPUT_FINDINGS} and "
+               "paper-check-work/references/cards.json.", ""]
         rows = []
         for c in cards:
             matched = c.get("matched") if isinstance(c.get("matched"), dict) else {}
-            rows.append([c.get("ref"), _cell(c.get("raw"), 110), c.get("verdict"),
-                         _cell(c.get("matched_title") or matched.get("title") or "", 80),
-                         ", ".join(c.get("databases_reached") or c.get("databases") or [])])
-        md += _md_table(["Ref", "Reference", "Verdict", "Matched record", "Databases"], rows)
+            closest = c.get("closest") if isinstance(c.get("closest"), dict) else {}
+            record = matched or closest.get("record") or {}
+            label = record.get("title") or ""
+            if record and not matched:
+                label = f"closest: {label}"
+            if record.get("doi"):
+                label += f" (doi:{record['doi']})"
+            verdict = str(c.get("verdict") or "").replace("_", " ")
+            web = web_rows.get(c.get("ref"))
+            if web:
+                verdict += f"; web check: {web.get('outcome')}"
+                if web.get("dedicated_page"):
+                    verdict += f" ({web['dedicated_page']})"
+            elif c.get("needs_web_check"):
+                verdict += "; web check not done"
+            dbs = c.get("agreeing_databases") or c.get("databases_reached") or []
+            rows.append([f"{c.get('ref')} {c.get('key') or ''}".strip(), _cell(c.get("raw"), 100), verdict,
+                         _cell(label, 90), ", ".join(dbs)])
+        md += _md_table(["Ref", "Reference", "Verdict", "Matched record", "Databases agreeing"], rows)
         md.append("")
     if verdicts:
         appendices["citation_support"] = verdicts

@@ -471,6 +471,7 @@ class HttpClient:
         bucket = bucket or bucket_for(full)
         accept = (headers or {}).get("Accept", "")
         key = CacheStore.key("GET", canonical_url(full), accept)
+        entry = None
         if use_cache and self.cache is not None:
             entry = self.cache.get(key)
             if entry is not None:
@@ -485,6 +486,10 @@ class HttpClient:
                            self.max_retries if max_retries is None else max_retries,
                            self.retry_after_cap if retry_after_cap is None else retry_after_cap,
                            max_bytes, timeout or self.timeout)
+        if entry is not None and (resp.status is None or resp.status in RETRY_STATUSES):
+            # A failed refresh keeps the answer we already have; it is marked stale.
+            self._count(bucket, "cache_hits")
+            return self._from_entry(entry, stale=True)
         if resp.ok and transform is not None:
             try:
                 resp.body = transform(resp.body)

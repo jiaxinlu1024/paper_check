@@ -109,6 +109,14 @@ def cmd_scan(args):
     return scan_command(_work(args.work), args.ref, args.terms, context=args.context, top=args.top)
 
 
+def cmd_terms(args):
+    try:
+        from .citations.terms import terms_command
+    except ImportError as exc:
+        raise SystemExit(f"Term expansion is not available in this version: {exc}")
+    return terms_command(args.terms, offline=args.offline)
+
+
 def cmd_render(args):
     try:
         from .ingest.render import render_command
@@ -279,6 +287,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--context", type=int, default=300, help="characters of context per hit")
     s.add_argument("--top", type=int, default=8, help="passages to show")
     s.set_defaults(func=cmd_scan)
+
+    s = sub.add_parser("terms", help="expand concepts into synonyms and related terms (STW thesaurus and glossary)")
+    s.add_argument("terms", nargs="+")
+    s.add_argument("--offline", action="store_true", help="use only the cached thesaurus")
+    s.set_defaults(func=cmd_terms)
 
     s = sub.add_parser("render", help="render a PDF page, or a region of it, to PNG")
     s.add_argument("work")

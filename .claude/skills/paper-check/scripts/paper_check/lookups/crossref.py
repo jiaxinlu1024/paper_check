@@ -20,7 +20,7 @@ import urllib.parse
 from typing import Optional
 
 from .http import HttpClient, Response
-from .records import Query, Record, query_from
+from .records import Record, query_from
 
 BASE = "https://api.crossref.org"
 SELECT = ("DOI,title,subtitle,author,editor,issued,published,published-print,published-online,posted,"
@@ -63,8 +63,8 @@ def _notice(u: dict) -> dict:
 
 
 def parse_work(m: dict, api_url: Optional[str] = None) -> Record:
-    title = _first(m.get("title")) or ""
-    subtitle = _first(m.get("subtitle"))
+    title = " ".join((_first(m.get("title")) or "").split())
+    subtitle = " ".join((_first(m.get("subtitle")) or "").split()) or None
     if subtitle and subtitle.lower() not in title.lower():
         title = f"{title}: {subtitle}" if title else subtitle
     people = m.get("author") or m.get("editor") or []

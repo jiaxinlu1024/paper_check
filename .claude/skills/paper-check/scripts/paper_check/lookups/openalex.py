@@ -19,8 +19,9 @@ from __future__ import annotations
 import re
 from typing import Optional
 
+from .crossref import doi_path
 from .http import HttpClient, Response
-from .records import Query, Record, query_from, skipped
+from .records import Record, query_from, skipped
 
 BASE = "https://api.openalex.org"
 SELECT = ("id,doi,title,display_name,publication_year,publication_date,type,authorships,primary_location,"
@@ -68,7 +69,8 @@ def parse_work(w: dict, api_url: Optional[str] = None) -> Record:
     best = w.get("best_oa_location") or {}
     year = w.get("publication_year")
     return Record(
-        source="openalex", id=str(w.get("id") or "").rsplit("/", 1)[-1], title=w.get("title") or w.get("display_name") or "",
+        source="openalex", id=str(w.get("id") or "").rsplit("/", 1)[-1],
+        title=" ".join((w.get("title") or w.get("display_name") or "").split()),
         authors=authors, year=year if isinstance(year, int) else None, years=[year] if isinstance(year, int) else [],
         container=source.get("display_name"), containers=[source["display_name"]] if source.get("display_name") else [],
         volume=biblio.get("volume"), issue=biblio.get("issue"), pages=pages, doi=_strip_doi(w.get("doi")),
@@ -118,7 +120,7 @@ class OpenAlex:
         return resp
 
     def work_by_doi(self, doi: str) -> tuple:
-        resp = self._get(f"{BASE}/works/doi:{doi.strip()}", {"select": SELECT})
+        resp = self._get(f"{BASE}/works/doi:{doi_path(doi)}", {"select": SELECT})
         rec = parse_work(resp.json(), resp.url) if resp.ok and isinstance(resp.json(), dict) else None
         return rec, query_from(self.name, "doi", doi, resp, 1 if rec else 0)
 

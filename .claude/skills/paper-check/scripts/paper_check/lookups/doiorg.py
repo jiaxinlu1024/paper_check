@@ -37,7 +37,8 @@ def parse_csl(c: dict, agency: Optional[str] = None, api_url: Optional[str] = No
     title = c.get("title")
     if isinstance(title, list):
         title = title[0] if title else ""
-    return Record(source="doi.org", id=(c.get("DOI") or "").lower(), title=title or "", authors=authors,
+    return Record(source="doi.org", id=(c.get("DOI") or "").lower(), title=" ".join((title or "").split()),
+                  authors=authors,
                   year=years[0] if years else None, years=sorted(set(years)), container=container,
                   containers=[container] if container else [], volume=c.get("volume"), issue=c.get("issue"),
                   pages=c.get("page"), doi=(c.get("DOI") or "").lower() or None, url=c.get("URL"),

@@ -1,0 +1,37 @@
+# Synthetic thesaurus in the structure of the STW Thesaurus for Economics (SKOS plus ZBW extensions).
+# Concept ids and labels are made up for the tests; nothing here is copied from STW.
+<http://zbw.eu/stw> <http://www.w3.org/2002/07/owl#versionInfo> "0.1-test" .
+<http://zbw.eu/stw> <http://purl.org/dc/terms/issued> "2026-01-01"^^<http://www.w3.org/2001/XMLSchema#date> .
+<http://zbw.eu/stw> <http://creativecommons.org/ns#license> <https://creativecommons.org/licenses/by/4.0/> .
+<http://zbw.eu/stw> <http://creativecommons.org/ns#attributionName> "ZBW - Leibniz Information Centre for Economics"@en .
+<http://zbw.eu/stw> <http://creativecommons.org/ns#attributionName> "ZBW - Leibniz-Informationszentrum Wirtschaft"@de .
+<http://zbw.eu/stw/descriptor/90001-1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://zbw.eu/namespaces/zbw-extensions/Descriptor> .
+<http://zbw.eu/stw/descriptor/90001-1> <http://www.w3.org/2004/02/skos/core#prefLabel> "Time consistency"@en .
+<http://zbw.eu/stw/descriptor/90001-1> <http://www.w3.org/2004/02/skos/core#prefLabel> "Zeitkonsistenz"@de .
+<http://zbw.eu/stw/descriptor/90001-1> <http://www.w3.org/2004/02/skos/core#altLabel> "Time inconsistency"@en .
+<http://zbw.eu/stw/descriptor/90001-1> <http://www.w3.org/2004/02/skos/core#altLabel> "Hyperbolic discounting"@en .
+<http://zbw.eu/stw/descriptor/90001-1> <http://zbw.eu/namespaces/zbw-extensions/altLabelNarrower> "Quasi-hyperbolic discounting"@en .
+<http://zbw.eu/stw/descriptor/90001-1> <http://www.w3.org/2004/02/skos/core#broader> <http://zbw.eu/stw/descriptor/90002-2> .
+<http://zbw.eu/stw/descriptor/90001-1> <http://www.w3.org/2004/02/skos/core#broader> <http://zbw.eu/stw/thsys/99001> .
+<http://zbw.eu/stw/descriptor/90001-1> <http://www.w3.org/2004/02/skos/core#related> <http://zbw.eu/stw/descriptor/90003-3> .
+<http://zbw.eu/stw/descriptor/90002-2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://zbw.eu/namespaces/zbw-extensions/Descriptor> .
+<http://zbw.eu/stw/descriptor/90002-2> <http://www.w3.org/2004/02/skos/core#prefLabel> "Intertemporal choice"@en .
+<http://zbw.eu/stw/descriptor/90002-2> <http://www.w3.org/2004/02/skos/core#altLabel> "Time preference"@en .
+<http://zbw.eu/stw/descriptor/90002-2> <http://www.w3.org/2004/02/skos/core#altLabel> "Present-biased preferences"@en .
+<http://zbw.eu/stw/descriptor/90002-2> <http://www.w3.org/2004/02/skos/core#narrower> <http://zbw.eu/stw/descriptor/90001-1> .
+<http://zbw.eu/stw/descriptor/90003-3> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://zbw.eu/namespaces/zbw-extensions/Descriptor> .
+<http://zbw.eu/stw/descriptor/90003-3> <http://www.w3.org/2004/02/skos/core#prefLabel> "Discounting"@en .
+<http://zbw.eu/stw/descriptor/90003-3> <http://www.w3.org/2004/02/skos/core#altLabel> "Discount factor"@en .
+<http://zbw.eu/stw/descriptor/90003-3> <http://www.w3.org/2004/02/skos/core#related> <http://zbw.eu/stw/descriptor/90001-1> .
+<http://zbw.eu/stw/descriptor/90004-4> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://zbw.eu/namespaces/zbw-extensions/Descriptor> .
+<http://zbw.eu/stw/descriptor/90004-4> <http://www.w3.org/2004/02/skos/core#prefLabel> "Prospect theory"@en .
+<http://zbw.eu/stw/descriptor/90004-4> <http://www.w3.org/2004/02/skos/core#altLabel> "Loss aversion theory"@en .
+<http://zbw.eu/stw/descriptor/90004-4> <http://zbw.eu/namespaces/zbw-extensions/altLabelRelated> "Framing effect"@en .
+<http://zbw.eu/stw/descriptor/90005-5> <http://www.w3.org/2004/02/skos/core#prefLabel> "Old discount concept"@en .
+<http://zbw.eu/stw/descriptor/90005-5> <http://www.w3.org/2002/07/owl#deprecated> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+<http://zbw.eu/stw/descriptor/90005-5> <http://purl.org/dc/terms/isReplacedBy> <http://zbw.eu/stw/descriptor/90003-3> .
+<http://zbw.eu/stw/descriptor/90006-6> <http://www.w3.org/2004/02/skos/core#prefLabel> "Behavioral economics"@en .
+<http://zbw.eu/stw/descriptor/90006-6> <http://www.w3.org/2004/02/skos/core#prefLabel> "Verhaltensökonomik"@de .
+<http://zbw.eu/stw/descriptor/90006-6> <http://www.w3.org/2004/02/skos/core#altLabel> "Behavioural economics"@en .
+<http://zbw.eu/stw/thsys/99001> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://zbw.eu/namespaces/zbw-extensions/Thsys> .
+<http://zbw.eu/stw/thsys/99001> <http://www.w3.org/2004/02/skos/core#prefLabel> "V.99 Test category"@en .

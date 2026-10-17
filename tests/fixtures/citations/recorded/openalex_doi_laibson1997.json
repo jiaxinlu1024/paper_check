@@ -1,0 +1,151 @@
+{
+ "id": "https://openalex.org/W2118052532",
+ "doi": "https://doi.org/10.1162/003355397555253",
+ "title": "Golden Eggs and Hyperbolic Discounting",
+ "display_name": "Golden Eggs and Hyperbolic Discounting",
+ "publication_year": 1997,
+ "type": "article",
+ "authorships": [
+  {
+   "author": {
+    "display_name": "David Laibson"
+   }
+  }
+ ],
+ "best_oa_location": {
+  "is_oa": true,
+  "landing_page_url": "http://nrs.harvard.edu/urn-3:HUL.InstRepos:4481499",
+  "pdf_url": "https://dash.harvard.edu/bitstream/1/4481499/2/Laibson_GoldenEggs.pdf",
+  "source": {
+   "display_name": "Digital Access to Scholarship at Harvard (DASH) (Harvard University)"
+  },
+  "license": "cc-by",
+  "version": "submittedVersion"
+ },
+ "locations": [
+  {
+   "is_oa": false,
+   "landing_page_url": "https://doi.org/10.1162/003355397555253",
+   "pdf_url": null,
+   "source": {
+    "display_name": "The Quarterly Journal of Economics"
+   },
+   "license": null,
+   "version": "publishedVersion"
+  },
+  {
+   "is_oa": false,
+   "landing_page_url": "http://dash.harvard.edu/bitstream/handle/1/4481499/Laibson_GoldenEggs.pdf",
+   "pdf_url": "http://dash.harvard.edu/bitstream/handle/1/4481499/Laibson_GoldenEggs.pdf",
+   "source": {
+    "display_name": "RePEc: Research Papers in Economics"
+   },
+   "license": null,
+   "version": "submittedVersion"
+  },
+  {
+   "is_oa": true,
+   "landing_page_url": "http://nrs.harvard.edu/urn-3:HUL.InstRepos:4481499",
+   "pdf_url": "https://dash.harvard.edu/bitstream/1/4481499/2/Laibson_GoldenEggs.pdf",
+   "source": {
+    "display_name": "Digital Access to Scholarship at Harvard (DASH) (Harvard University)"
+   },
+   "license": "cc-by",
+   "version": "submittedVersion"
+  },
+  {
+   "is_oa": false,
+   "landing_page_url": "http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.321.5263",
+   "pdf_url": null,
+   "source": null,
+   "license": null,
+   "version": "submittedVersion"
+  },
+  {
+   "is_oa": false,
+   "landing_page_url": "http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.337.3544",
+   "pdf_url": null,
+   "source": null,
+   "license": null,
+   "version": "submittedVersion"
+  },
+  {
+   "is_oa": false,
+   "landing_page_url": "http://hdl.handle.net/10.1162/003355397555253",
+   "pdf_url": null,
+   "source": {
+    "display_name": "RePEc: Research Papers in Economics"
+   },
+   "license": null,
+   "version": "submittedVersion"
+  },
+  {
+   "is_oa": false,
+   "landing_page_url": "http://qje.oxfordjournals.org/cgi/content/short/112/2/443",
+   "pdf_url": null,
+   "source": {
+    "display_name": "HighWire Press Open Archive"
+   },
+   "license": null,
+   "version": "submittedVersion"
+  }
+ ],
+ "open_access": {
+  "is_oa": true,
+  "oa_status": "green",
+  "oa_url": "https://dash.harvard.edu/bitstream/1/4481499/2/Laibson_GoldenEggs.pdf",
+  "any_repository_has_fulltext": true
+ },
+ "has_content": {
+  "grobid_xml": true,
+  "pdf": true
+ },
+ "abstract_inverted_index": {
+  "Synthetic": [
+   0
+  ],
+  "abstract": [
+   1
+  ],
+  "for": [
+   2
+  ],
+  "tests:": [
+   3
+  ],
+  "employees": [
+   4
+  ],
+  "enrolled": [
+   5
+  ],
+  "automatically": [
+   6
+  ],
+  "kept": [
+   7
+  ],
+  "the": [
+   8
+  ],
+  "default": [
+   9
+  ],
+  "contribution": [
+   10
+  ],
+  "rate.": [
+   11
+  ]
+ },
+ "primary_location": {
+  "is_oa": false,
+  "landing_page_url": "https://doi.org/10.1162/003355397555253",
+  "pdf_url": null,
+  "source": {
+   "display_name": "The Quarterly Journal of Economics"
+  },
+  "license": null,
+  "version": "publishedVersion"
+ }
+}

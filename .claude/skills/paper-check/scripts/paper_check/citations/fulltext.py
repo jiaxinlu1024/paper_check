@@ -122,7 +122,12 @@ class Response:
     def describe(self) -> str:
         if self.status is None:
             return self.error or "no response"
-        return f"HTTP {self.status}"
+        return f"HTTP {self.status}" + (f" ({self.error})" if self.error else "")
+
+    @property
+    def transient(self) -> bool:
+        """A failure worth retrying on the next run: rate limits, server errors, network errors."""
+        return self.status is None or self.status in RETRY_STATUSES
 
 
 def urllib_transport(url: str, headers: dict, timeout: float, max_bytes: int):
@@ -155,6 +160,8 @@ class Fetcher:
         self.sleep = sleep
         self.requests = 0
         self._last: dict = {}
+        self._cooldown: dict = {}   # host -> monotonic time before which it is not asked again
+        self._failures: dict = {}   # host -> consecutive calls that ended in a network error
         self._secrets = [s for s in [*secrets, email] if s]
 
     def scrub(self, text: str) -> str:
@@ -173,6 +180,11 @@ class Fetcher:
         if self.offline:
             return Response(clean, None, error="offline, and not in the cache")
         host = (urllib.parse.urlsplit(url).hostname or "").lower()
+        until = self._cooldown.get(host)
+        if until is not None and time.monotonic() < until:
+            if self._failures.get(host, 0) >= 2:
+                return Response(clean, None, error=f"{host} was unreachable earlier in this run; not asked again")
+            return Response(clean, 429, error=f"rate limited by {host} earlier in this run; not asked again")
         hdrs = {"User-Agent": user_agent(self.email if api else None), "Accept": accept}
         hdrs.update(headers or {})
         status, rheaders, body, final, error = None, {}, b"", url, None
@@ -186,10 +198,22 @@ class Fetcher:
                 error = self.scrub(f"{type(exc).__name__}: {exc}")[:300]
             self._last[host] = time.monotonic()
             self.requests += 1
+            wait = self._retry_after(rheaders)
+            if status in RETRY_STATUSES and wait is not None and wait > 60:
+                # the server asks for a long pause: respect it by leaving the host alone for this run
+                self._cooldown[host] = time.monotonic() + wait
+                error = f"rate limited: {host} asks to wait {int(wait)} s"
+                break
             if attempt < retries and (status in RETRY_STATUSES or (status is None and attempt == 0)):
-                self.sleep(self._backoff(attempt, rheaders))
+                self.sleep(wait if wait is not None else min(60.0, 2.0 * (2 ** attempt)))
                 continue
             break
+        if status is None:  # two calls in a row that cannot reach a host: leave it alone for this run
+            self._failures[host] = self._failures.get(host, 0) + 1
+            if self._failures[host] >= 2:
+                self._cooldown[host] = time.monotonic() + 6 * 3600
+        else:
+            self._failures[host] = 0
         response = Response(clean, status, body or b"", str(rheaders.get("content-type") or ""),
                             strip_secrets(final or url), error)
         if use_cache and status is not None and status not in RETRY_STATUSES:
@@ -206,11 +230,9 @@ class Fetcher:
                 self.sleep(wait)
 
     @staticmethod
-    def _backoff(attempt: int, headers: dict) -> float:
-        retry_after = str(headers.get("retry-after") or "").strip()
-        if retry_after.isdigit():
-            return min(60.0, float(retry_after))
-        return min(60.0, 2.0 * (2 ** attempt))
+    def _retry_after(headers: dict) -> Optional[float]:
+        value = str((headers or {}).get("retry-after") or "").strip()
+        return float(value) if value.isdigit() else None
 
     def _cache_base(self, clean_url: str) -> Optional[Path]:
         if not self.cache_dir:
@@ -224,7 +246,7 @@ class Fetcher:
             return None
         try:
             meta = json.loads(base.with_suffix(".json").read_text(encoding="utf-8"))
-            ttl = POSITIVE_TTL if 200 <= int(meta["status"]) < 300 else NEGATIVE_TTL
+            ttl = POSITIVE_TTL if 200 <= int(meta["status"]) < 300 and not meta.get("negative") else NEGATIVE_TTL
             if not self.offline and time.time() - float(meta["fetched"]) > ttl:
                 return None
             body_path = base.with_suffix(".bin")
@@ -233,6 +255,18 @@ class Fetcher:
             return None
         return Response(clean_url, int(meta["status"]), body, meta.get("content_type", ""),
                         meta.get("final_url") or clean_url, None, from_cache=True)
+
+    def mark_negative(self, url: str) -> None:
+        """Keep a cached answer for 24 hours only, such as a bot-protection page served with HTTP 200."""
+        base = self._cache_base(strip_secrets(url))
+        if base is None or not base.with_suffix(".json").exists():
+            return
+        try:
+            meta = json.loads(base.with_suffix(".json").read_text(encoding="utf-8"))
+            meta["negative"] = True
+            base.with_suffix(".json").write_text(json.dumps(meta), encoding="utf-8")
+        except (OSError, ValueError):
+            pass
 
     def _cache_put(self, clean_url: str, response: Response) -> None:
         base = self._cache_base(clean_url)
@@ -450,7 +484,7 @@ def identify(fields: dict, first_text: str) -> dict:
     if not title:
         ok = result["doi_found"] or (au or 0) >= 0.5
         basis = "no title in the reference; " + ("DOI found" if result["doi_found"] else "authors found" if ok else "nothing to match")
-    elif result["doi_found"] and ts >= 60:
+    elif result["doi_found"] and ts >= 70:
         ok, basis = True, "DOI and title on the first pages"
     elif result["doi_found"]:
         ok, basis = False, "the reference's DOI is on the first pages but the title is not: possibly a different work"
@@ -606,7 +640,7 @@ def match_sources(folder: Optional[Path], references: list, cache_file: Optional
             au = ident["author_score"]
             early = ident.get("title_position") is not None and ident["title_position"] < 2500
             score, basis = 0.0, None
-            if doi_hit and (ts >= 60 or meta_ts >= 80 or not fields.get("title")):
+            if doi_hit and (ts >= 70 or meta_ts >= 80 or not fields.get("title")):
                 score, basis = 300 + ts, "DOI and title"
             elif doi_hit:
                 result["warnings"].append(
@@ -677,6 +711,7 @@ class _State:
     versions: Optional[list] = None
     s2_done: bool = False
     paid_hint: Optional[str] = None
+    transient: bool = False
     result: Optional[dict] = None
 
     def attempt(self, step: str, outcome: str, url: Optional[str] = None) -> None:
@@ -684,6 +719,12 @@ class _State:
         if url:
             row["url"] = url
         self.attempts.append(row)
+
+    def failed(self, step: str, what: str, response: "Response", url: Optional[str] = None) -> None:
+        """Log a failed request; a rate limit or network error makes the next run try again."""
+        if response.transient:
+            self.transient = True
+        self.attempt(step, f"{what}: {response.describe()}" if what else response.describe(), url)
 
     def warn(self, text: str) -> None:
         if text not in self.warnings:
@@ -803,7 +844,7 @@ class Cascade:
             elif response.status == 404:
                 st.attempt("openalex", "DOI not found in OpenAlex")
             else:
-                st.attempt("openalex", f"DOI lookup failed: {response.describe()}")
+                st.failed("openalex", "DOI lookup failed", response)
         if work is None and st.title:
             for record in self._openalex_title_search(st):
                 if self._matches(st, record.get("title"), self._oa_keys(record), record.get("publication_year"), by_id=False):
@@ -828,7 +869,7 @@ class Cascade:
         response = self._openalex_get(f"/works?filter=title.search:{urllib.parse.quote(words)}&per_page=10")
         data = response.json() if response.ok else None
         if not data:
-            st.attempt("openalex", f"title search failed: {response.describe()}")
+            st.failed("openalex", "title search failed", response)
             return []
         return data.get("results") or []
 
@@ -889,17 +930,22 @@ class Cascade:
 
     # ---------------------------------------------------------------- fetching one candidate
     def _try(self, st: _State, cand: Candidate, hop: int = 0) -> bool:
+        if cand.url.startswith("http://") and not cand.shown_url:
+            secure = "https://" + cand.url[len("http://"):]   # prefer HTTPS; fall back to the address as listed
+            if secure not in st.tried and self._try(st, dataclasses.replace(cand, url=secure), hop):
+                return True
+        shown = cand.shown_url or strip_secrets(cand.url)
         if cand.url in st.tried:
+            st.attempt(cand.source, "same URL as an earlier step; not fetched again", shown)
             return False
         st.tried.add(cand.url)
-        shown = cand.shown_url or strip_secrets(cand.url)
         response = self.fetcher.get(cand.url, accept="application/pdf, */*;q=0.5", api=cand.api,
                                     headers=cand.headers, timeout=90)
         if not response.ok:
             if is_challenge(response):
                 st.attempt(cand.source, "blocked by bot protection (not bypassed)", shown)
             else:
-                st.attempt(cand.source, response.describe(), shown)
+                st.failed(cand.source, "", response, shown)
             return False
         body = response.body
         if not body.lstrip()[:8].startswith(b"%PDF"):
@@ -910,6 +956,7 @@ class Cascade:
                 st.attempt(cand.source, "landing page; following its citation_pdf_url", shown)
                 return self._try(st, follow, hop=1)
             if is_challenge(response):
+                self.fetcher.mark_negative(cand.url)
                 st.attempt(cand.source, "blocked by bot protection (not bypassed)", shown)
             else:
                 st.attempt(cand.source, f"not a PDF ({response.content_type or 'unknown type'})", shown)
@@ -983,7 +1030,10 @@ class Cascade:
                                     f"?email={urllib.parse.quote(self.email)}", api=True, accept="application/json")
         record = response.json() if response.ok else None
         if not record:
-            st.attempt("unpaywall", "DOI not in Unpaywall" if response.status == 404 else f"lookup failed: {response.describe()}")
+            if response.status == 404:
+                st.attempt("unpaywall", "DOI not in Unpaywall")
+            else:
+                st.failed("unpaywall", "lookup failed", response)
             return False
         keys = family_keys(record.get("z_authors") or [])
         if not self._matches(st, record.get("title"), keys, record.get("year"), by_id=True):
@@ -1024,6 +1074,10 @@ class Cascade:
         else:
             return None
         response = self.fetcher.get(url, api=True, headers=headers, accept="application/json")
+        if response.status == 404 and by_id and st.title:
+            # its DOI index misses many older economics articles; the title match often finds them
+            url, by_id = f"{base}/search/match?query={urllib.parse.quote(norm_text(st.title))}&fields={fields}", False
+            response = self.fetcher.get(url, api=True, headers=headers, accept="application/json")
         if response.status == 429:
             self.disabled["semantic_scholar"] = "rate limited" + ("" if self.s2_key else " (no API key)")
             st.attempt("semantic_scholar", self.disabled["semantic_scholar"])
@@ -1032,7 +1086,10 @@ class Cascade:
         if data and "data" in data:
             data = (data.get("data") or [None])[0]
         if not data:
-            st.attempt("semantic_scholar", "no matching record" if response.status in (200, 404) else f"lookup failed: {response.describe()}")
+            if response.status in (200, 404):
+                st.attempt("semantic_scholar", "no matching record")
+            else:
+                st.failed("semantic_scholar", "lookup failed", response)
             return None
         keys = names_from_display(a.get("name") or "" for a in data.get("authors") or [])
         if not self._matches(st, data.get("title"), keys, data.get("year"), by_id=by_id):
@@ -1073,7 +1130,7 @@ class Cascade:
         response = self.fetcher.get(f"https://export.arxiv.org/api/query?search_query={query}&max_results=5",
                                     api=True, accept="application/atom+xml")
         if not response.ok:
-            st.attempt("arxiv", f"title search failed: {response.describe()}")
+            st.failed("arxiv", "title search failed", response)
             return []
         parser = etree.XMLParser(resolve_entities=False, no_network=True, huge_tree=False)
         try:
@@ -1118,7 +1175,7 @@ class Cascade:
         response = self.fetcher.get(url, api=True, accept="application/json")
         data = response.json() if response.ok else None
         if not data:
-            st.attempt("nber", f"Crossref search failed: {response.describe()}")
+            st.failed("nber", "Crossref search failed", response)
             return
         for item in (data.get("message") or {}).get("items") or []:
             title = (item.get("title") or [""])[0]
@@ -1127,11 +1184,13 @@ class Cascade:
             if not m:
                 continue
             sim, overlap = title_similarity(st.title, title), author_overlap(st.keys, keys)
+            year = ((item.get("issued") or {}).get("date-parts") or [[None]])[0][0]
             if sim >= 92 and (overlap is None or overlap >= 0.5):
                 if m.group(1) not in st.nber:
                     st.nber.append(m.group(1))
-            elif st.keys and sorted(set(keys)) == sorted(set(st.keys)):
-                year = ((item.get("issued") or {}).get("date-parts") or [[None]])[0][0]
+            elif (st.keys and sorted(set(keys)) == sorted(set(st.keys)) and st.year and year
+                  and st.year - 6 <= int(year) <= st.year + 1):
+                # same author team, a working paper up to six years before the cited version
                 st.candidate_versions.append({
                     "doi": item.get("DOI"), "title": title, "year": year,
                     "note": "NBER working paper by the same authors under another title; possibly an earlier "
@@ -1184,7 +1243,7 @@ class Cascade:
                                     headers={"Authorization": f"Bearer {self.core_key}"})
         data = response.json() if response.ok else None
         if not data:
-            st.attempt("core", f"search failed: {response.describe()}")
+            st.failed("core", "search failed", response)
             return False
         texts = []
         for item in data.get("results") or []:
@@ -1276,8 +1335,8 @@ class Cascade:
         now = dt.datetime.now(dt.timezone.utc)
         meta = {"ref": st.ref.id, "key": st.ref.key, "title": st.title or None, "doi": st.doi,
                 "fetched": now.date().isoformat(), "fetched_at": now.isoformat(timespec="seconds"),
-                "offline": self.offline, "attempts": st.attempts, "warnings": st.warnings,
-                "ids": {k: v for k, v in st.ids.items() if not k.startswith("_") and v}}
+                "offline": self.offline, "transient_failure": st.transient, "attempts": st.attempts,
+                "warnings": st.warnings, "ids": {k: v for k, v in st.ids.items() if not k.startswith("_") and v}}
         abstract = st.abstracts.get("openalex") or st.abstracts.get("semantic_scholar")
         if abstract:
             meta["abstract"] = abstract[:4000]

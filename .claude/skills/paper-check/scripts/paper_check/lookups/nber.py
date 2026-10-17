@@ -24,6 +24,7 @@ _META = re.compile(r'<meta\s+name="(citation_[a-z_]+)"\s+content="([^"]*)"\s*/?>
 _PUBLISHED = re.compile(r'<h2[^>]*>\s*Published Versions?\s*</h2>(.*?)</div>', re.I | re.S)
 _PARA = re.compile(r"<p[^>]*>(.*?)</p>", re.I | re.S)
 _HREF = re.compile(r'href="([^"]+)"', re.I)
+_ANCHOR = re.compile(r"<a\b[^>]*>(.*?)</a>", re.I | re.S)
 
 
 def nber_doi(number: str) -> str:
@@ -65,8 +66,13 @@ def parse_page(text: str, number: str, api_url: Optional[str] = None) -> tuple:
         for para in _PARA.findall(pub.group(1)):
             cite = _strip_tags(para)
             cite = re.sub(r"\s*citation courtesy of\s*$", "", cite, flags=re.I).strip()
-            if cite:
-                versions.append({"text": cite, "links": _HREF.findall(para)})
+            if not cite:
+                continue
+            # The first link is the title, in both the journal style ("Title," Journal, year)
+            # and the book-chapter style (Title, authors. in Book).
+            first = _ANCHOR.search(para)
+            title = _strip_tags(first.group(1)).strip(" ,.\"“”") if first else ""
+            versions.append({"text": cite, "title": title, "links": _HREF.findall(para)})
     return rec, versions
 
 

@@ -33,7 +33,8 @@ def parse_doi(item: dict, api_url: Optional[str] = None) -> Record:
     except (TypeError, ValueError):
         year = None
     types = a.get("types") or {}
-    return Record(source="datacite", id=(a.get("doi") or item.get("id") or "").lower(), title=title or "",
+    return Record(source="datacite", id=(a.get("doi") or item.get("id") or "").lower(),
+                  title=" ".join((title or "").split()),
                   authors=authors, year=year, years=[year] if year else [], container=container,
                   containers=[c for c in {container, publisher} if c], doi=(a.get("doi") or "").lower() or None,
                   url=a.get("url"), type=types.get("resourceTypeGeneral") or types.get("resourceType"),

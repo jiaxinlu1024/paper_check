@@ -81,16 +81,14 @@ def extract(fields: dict, raw: str = "") -> dict:
     doi = clean_doi(fields.get("doi"))
     if not doi:
         for source in (fields.get("url"), fields.get("note"), raw):
-            if source and re.search(r"doi", str(source), re.I) or (source and DOI_RE.search(str(source))):
-                doi = clean_doi(str(source))
-                if doi:
-                    break
+            doi = clean_doi(str(source)) if source else None
+            if doi:
+                break
     arxiv = None
     eprint = str(fields.get("eprint") or "").strip()
-    if eprint and (ARXIV_NEW.fullmatch(re.sub(r"^arxiv:", "", eprint, flags=re.I).split("v")[0] if False else "")
-                   or ARXIV_NEW.search(eprint) or ARXIV_OLD.search(eprint)):
+    if eprint:
         m = ARXIV_NEW.search(eprint) or ARXIV_OLD.search(eprint)
-        arxiv = m.group(1)
+        arxiv = m.group(1) if m else None
     if not arxiv:
         m = ARXIV_URL.search(hay)
         if m:

@@ -134,3 +134,57 @@ def test_report_layout_order_coverage_and_appendices(work_copy):
     assert [v["id"] for v in data["appendices"]["citation_support"]] == ["c001", "c002"]
     assert [f["id"] for f in data["findings"]] == ["F-001", "F-002", "F-003"]
     assert data["findings"][0]["dimension"] == "LOG" and data["findings"][0]["where"].startswith("2 Experimental design")
+
+
+ABSTRACT_23 = "reduces the share of employees who save nothing by 23%"
+
+
+def test_refutation_without_real_counter_evidence_is_set_aside(work_copy):
+    _write(work_copy, "agent_logic.json", {"producer": "agent_logic", "findings": [
+        _finding(severity="minor", verification={
+            "refuter": "downgraded",
+            "refuter_note": 'Downgraded from major to minor: "this association need not be causal" (b0040).'},
+            evidence=[{"type": "quote", "text": "this association need not be causal",
+                       "data": {"role": "counter-evidence"}}]),
+        _finding(check_id="LOG-04", title="Sessions", quote=SESSIONS, verification={
+            "refuter": "refuted", "refuter_note": "The appendix counts pilot sessions separately."},
+            evidence=[{"type": "quote", "text": "We ran 10 survey sessions in total.",
+                       "data": {"role": "counter-evidence"}}]),
+    ]})
+    main(["verify", str(work_copy)])
+    fs = FindingSet.load(work_copy / "findings" / "agent_logic.json")
+    voided, refuted = fs.findings
+    assert voided.status != "dropped" and voided.severity == "major"
+    assert voided.verification["refuter"] == "not refuted" and voided.verification["refutation_voided"]
+    assert not [e for e in voided.evidence if (e.data or {}).get("role") == "counter-evidence"]
+    assert refuted.verification["refuter"] == "refuted" and refuted.status != "dropped"
+    main(["report", str(work_copy)])
+    md = (work_copy.parent / "paper-check-report.md").read_text()
+    assert "## Appendix: refuted findings" in md and "pilot sessions separately" in md
+    assert "### F-001 · Major · LOG-03" in md
+
+
+def test_related_findings_on_one_passage_are_merged(work_copy):
+    _write(work_copy, "scripts_num.json", {"producer": "scripts", "findings": [
+        _finding(check_id="NUM-01", title="Abstract and Table 1 disagree", severity="major", status="confirmed",
+                 quote=ABSTRACT_23, problem="Table 1 implies 18.2%, not 23%.",
+                 evidence=[{"type": "computed_result", "data": {"formula": "(9.9 - 8.1) / 9.9", "output": "18.2%"}}]),
+    ]})
+    _write(work_copy, "agent_coherence.json", {"producer": "agent_coherence", "findings": [
+        _finding(check_id="COH-02", title="Abstract number not in the body", severity="major", status="likely",
+                 quote="by 23% relative to the control group", problem="The body never reports 23%."),
+        _finding(check_id="LANG-04", title="Vague wording", severity="minor", quote=ABSTRACT_23,
+                 problem="A different problem on the same words."),
+    ]})
+    main(["verify", str(work_copy)])
+    main(["report", str(work_copy)])
+    data = json.loads((work_copy.parent / "paper-check-findings.json").read_text())
+    by_check = {f["check_id"]: f for f in data["findings"]}
+    assert set(by_check) == {"NUM-01", "LANG-04"}
+    merged = by_check["NUM-01"]
+    assert merged["status"] == "confirmed" and merged["extra"]["also"][0]["check_id"] == "COH-02"
+    md = (work_copy.parent / "paper-check-report.md").read_text()
+    assert "(Numbers inside the paper), also COH-02" in md
+    assert "Also reported by agent_coherence under COH-02" in md
+    cov = {r["check_id"]: r for r in data["coverage"]}
+    assert cov["COH-02"]["detail"].startswith("1 findings")

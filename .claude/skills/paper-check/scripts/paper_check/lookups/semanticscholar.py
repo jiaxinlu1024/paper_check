@@ -27,7 +27,8 @@ def parse_paper(p: dict, api_url: Optional[str] = None) -> Record:
     authors = [{"name": a.get("name")} for a in p.get("authors") or [] if a.get("name")]
     doi = (ext.get("DOI") or "").lower() or None
     return Record(
-        source="semanticscholar", id=p.get("paperId") or "", title=p.get("title") or "", authors=authors,
+        source="semanticscholar", id=p.get("paperId") or "", title=" ".join((p.get("title") or "").split()),
+        authors=authors,
         year=p.get("year") if isinstance(p.get("year"), int) else None,
         years=[p["year"]] if isinstance(p.get("year"), int) else [],
         container=venue, containers=[v for v in {journal.get("name"), p.get("venue")} if v],
@@ -69,7 +70,13 @@ class SemanticScholar:
         resp = self._get(f"/paper/{urllib.parse.quote(paper_id, safe=':/._-()')}", {"fields": FIELDS})
         rec = parse_paper(resp.json(), resp.url) if resp.ok and isinstance(resp.json(), dict) else None
         kind = "doi" if paper_id.upper().startswith("DOI:") else "id"
-        return rec, query_from(self.name, kind, paper_id, resp, 1 if rec else 0)
+        return rec, self._query(kind, paper_id, resp, 1 if rec else 0)
+
+    def _query(self, kind: str, query: str, resp: Response, results: int) -> Query:
+        q = query_from(self.name, kind, query, resp, results)
+        if resp.status == 429:
+            q.detail = self.blocked or "throttled (HTTP 429)"
+        return q
 
     def match(self, title: str) -> tuple:
         title = " ".join((title or "").split())[:300]
@@ -83,7 +90,7 @@ class SemanticScholar:
             data = (resp.json() or {}).get("data") or []
             if data:
                 rec = parse_paper(data[0], resp.url)
-        q = query_from(self.name, "match", title, resp, 1 if rec else 0)
+        q = self._query("match", title, resp, 1 if rec else 0)
         if resp.not_found:
             q.status = "no_results"
         return rec, q
