@@ -54,8 +54,9 @@ entries:
     topic: risk and uncertainty
     finding: >-
       Daniel Bernoulli's 1738 paper resolved the St. Petersburg game with a logarithmic
-      utility of wealth, the origin of expected utility with diminishing marginal utility;
-      the game itself was posed by Nicolaus Bernoulli in 1713.
+      utility of wealth, the classic source for expected utility with diminishing marginal
+      utility (Gabriel Cramer had proposed a similar idea earlier); the game itself was posed
+      by Nicolaus Bernoulli in 1713.
     terms:
       - St. Petersburg paradox
       - St Petersburg paradox
@@ -100,6 +101,12 @@ entries:
       - quote: "Daniel argued that the agent’s utility of wealth equals the logarithm of the monetary amount"
         url: https://plato.stanford.edu/entries/paradox-stpetersburg/
         kind: encyclopedia
+      - quote: "Cramér correctly calculated the expected utility (“moral value”) of the St. Petersburg game to be about 2.9 units for an agent whose utility of money is given by the root function."
+        url: https://plato.stanford.edu/entries/paradox-stpetersburg/
+        kind: encyclopedia
+      - quote: "Daniel Bernoulli proposed a very similar idea in his famous 1738 article"
+        url: https://plato.stanford.edu/entries/paradox-stpetersburg/
+        kind: encyclopedia
       - quote: "English translation, 1954, “Exposition of a New Theory on the Measurement of Risk”, Econometrica, 22(1): 23–36."
         url: https://plato.stanford.edu/entries/paradox-stpetersburg/
         kind: encyclopedia
@@ -107,7 +114,9 @@ entries:
     notes: >-
       Crossref lists only the first page (23); the range 23-36 is from the Stanford
       Encyclopedia of Philosophy bibliography. Wikipedia's St. Petersburg paradox article
-      gives 22-36, which conflicts with Crossref's first page.
+      gives 22-36, which conflicts with Crossref's first page. Because the encyclopedia
+      credits Cramer with a similar, earlier solution, a sentence crediting Cramer as well as
+      Bernoulli is not an error.
 
   - id: allais-paradox
     topic: risk and uncertainty
@@ -331,6 +340,12 @@ entries:
       - quote: "including the iconic measure of 2.25 reported by Tversky and Kahneman (1992)"
         url: https://biblio.ugent.be/publication/8756103/file/8756105.pdf
         kind: review
+      - quote: "The authors elicit the preferences of 25 graduate students from elite west-coast American universities using three sessions of unincentivized lottery-choice experiments."
+        url: https://biblio.ugent.be/publication/8756103/file/8756105.pdf
+        kind: review
+      - quote: "0.88 reported in Tversky and Kahneman (1992)"
+        url: https://biblio.ugent.be/publication/8756103/file/8756105.pdf
+        kind: review
       - quote: "Tversky and Kahneman (1992) estimated that the value attached to a moderate loss is about twice the value attached to an equally large gain."
         url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2002.pdf
         kind: review
@@ -347,8 +362,9 @@ entries:
     notes: >-
       This is the S4 example in case study 1. The 1992 attribution is confirmed by Brown et
       al. (2024), green open-access copy at Ghent University, which also describes the
-      sample (25 graduate students, three unincentivized sessions) and reports median
-      curvature 0.88. That the 1979 paper gives no numerical estimate rests on its abstract
+      sample and, in a figure note, the median curvature of 0.88 (the PDF's text layer drops
+      the Greek letters, so the quotes avoid them). That the 1979 paper gives no numerical
+      estimate rests on its abstract
       and on Brown et al. treating the 1992 figure as one of the first estimates; the 1979
       full text is paywalled and was not read page by page. The Gächter et al. quote is at
       https://link.springer.com/article/10.1007/s11238-021-09839-8.
@@ -749,8 +765,8 @@ entries:
     topic: judgment and heuristics
     finding: >-
       Svenson (1981) asked student samples in the United States and Sweden to compare their
-      driving skill and safety with the others in the group; most placed themselves above
-      the median, more so in the US sample.
+      driving skill and safety with other people's; most placed themselves in the top half,
+      more so in the US sample.
     terms:
       - better-than-average effect
       - above-average effect
@@ -885,7 +901,7 @@ entries:
         url: https://www.econometricsociety.org/publications/econometrica/2018/11/01/surprised-hot-hand-fallacy-truth-law-small-numbers
         kind: later_paper
     replication:
-      note: Miller and Sanjurjo (2018) find significant evidence of streak shooting after correcting the streak-selection bias.
+      note: Correcting the streak-selection bias reverses the original study's conclusions (Miller and Sanjurjo 2018).
       url: https://www.econometricsociety.org/publications/econometrica/2018/11/01/surprised-hot-hand-fallacy-truth-law-small-numbers
     status: verified
 
@@ -1036,8 +1052,9 @@ entries:
     topic: time preference and self-control
     finding: >-
       Strotz's "Myopia and Inconsistency in Dynamic Utility Maximization" showed that
-      non-exponential discounting makes plans time-inconsistent and discussed commitment
-      devices; the article is dated 1955 in Crossref and RePEc but is widely cited as 1956.
+      non-exponential discounting, such as hyperbolic discounting, makes plans
+      time-inconsistent, and discussed commitment devices such as Christmas clubs; the
+      article is dated 1955 in Crossref and RePEc but is widely cited as 1956.
     terms:
       - time inconsistency
       - dynamic inconsistency
@@ -1076,6 +1093,9 @@ entries:
       policy, not individual preferences.
     evidence:
       - quote: "Strotz showed that hyperbolic discounting leads to a problem of time-inconsistency"
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+      - quote: "Real-world examples of commitment devices include the “Christmas Clubs” mentioned by Strotz (1956) and Thaler (1981)"
         url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
         kind: review
       - quote: "Research on this second type of time-inconsistency was one of the motivations for the prize to the 2004 Laureates in Economic Sciences, Finn Kydland and Edward Prescott (Kydland and Prescott 1977)."
@@ -1126,7 +1146,7 @@ entries:
         why: Right for the generalized hyperbola and the catalogue of intertemporal anomalies, not for the origin.
         code: S4
     rule: >-
-      Cite Ainslie (and his 1975 review) for the origin of hyperbolic discounting and Thaler
+      Cite Ainslie (1975), or his related work, for the origin of hyperbolic discounting and Thaler
       (1981), Economics Letters 8(3), doi 10.1016/0165-1765(81)90067-7, for the first human
       evidence. Laibson (1997) is the source for applying a quasi-hyperbolic function to
       consumption and saving; crediting it with discovering hyperbolic discounting is
@@ -1350,10 +1370,10 @@ entries:
   - id: marshmallow-test
     topic: time preference and self-control
     finding: >-
-      The link between preschool delay of gratification and adolescent outcomes such as SAT
-      scores comes from the follow-up by Shoda, Mischel and Peake (1990); Watts, Duncan and
-      Quan (2018) found the association about half as large and much reduced by background
-      controls.
+      The best-known evidence linking preschool delay of gratification to adolescent outcomes
+      such as SAT scores is the follow-up by Shoda, Mischel and Peake (1990), after a 1988
+      follow-up on parent-rated competence; Watts, Duncan and Quan (2018) found the
+      association about half as large and much reduced by background controls.
     terms:
       - marshmallow test
       - marshmallow experiment
@@ -1384,15 +1404,20 @@ entries:
         why: The conceptual replication found a much smaller association that shrinks with controls.
         code: CIT-14
     rule: >-
-      For the link between preschool delay and adolescent outcomes, cite Shoda, Mischel and
-      Peake (1990). Citing Mischel and Ebbesen (1970) for long-run outcomes is misattributed
-      (S4). A sentence presenting the link as strong or causal should note Watts, Duncan and
-      Quan (2018) (CIT-14).
+      For the link between preschool delay and SAT scores or achievement, cite Shoda,
+      Mischel and Peake (1990); for parent-rated adolescent competence, Mischel, Shoda and
+      Peake (1988), Journal of Personality and Social Psychology 54(4), doi
+      10.1037/0022-3514.54.4.687, is also correct. Citing Mischel and Ebbesen (1970) for
+      long-run outcomes is misattributed (S4). A sentence presenting the link as strong or
+      causal should note Watts, Duncan and Quan (2018) (CIT-14).
     evidence:
       - quote: "We replicated and extended Shoda, Mischel, and Peake's (1990) famous marshmallow study, which showed strong bivariate correlations between a child's ability to delay gratification just before entering school and both adolescent achievement and socioemotional behaviors."
         url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=29799765&rettype=abstract&retmode=text
         kind: later_paper
       - quote: "In 1990, a second follow-up study showed that the ability to delay gratification also correlated with higher SAT scores."
+        url: https://en.wikipedia.org/wiki/Stanford_marshmallow_experiment
+        kind: encyclopedia
+      - quote: "In 1988, the first follow-up study showed that \"preschool children who delayed gratification longer in the self-imposed delay paradigm, were described more than 10 years later by their parents as adolescents who were significantly more competent.\""
         url: https://en.wikipedia.org/wiki/Stanford_marshmallow_experiment
         kind: encyclopedia
     replication:
@@ -1517,7 +1542,7 @@ entries:
     often_miscited_as:
       - source: Thaler and Sunstein (2008), Nudge, as the origin of libertarian paternalism
         why: The term dates from the 2003 papers; the book popularized the approach.
-        code: CIT-03
+        code: S4
       - source: Camerer, Issacharoff, Loewenstein, O'Donoghue and Rabin (2003), "asymmetric paternalism"
         why: A related but distinct proposal.
         code: S4
@@ -1527,8 +1552,9 @@ entries:
     rule: >-
       Cite Thaler and Sunstein (2003) or Sunstein and Thaler (2003), University of Chicago
       Law Review 70(4), doi 10.2307/1600573, for libertarian paternalism, and Thaler and
-      Sunstein (2008) for the nudge framing. Dating libertarian paternalism to the 2008 book
-      is a year error; citing popular books as the origin is secondhand (S5).
+      Sunstein (2008) for the nudge framing. Crediting the 2008 book with introducing
+      libertarian paternalism points to the wrong work (S4, mild); citing other popular books
+      as the origin is secondhand (S5).
     evidence:
       - quote: "The term was coined by behavioral economist Richard Thaler and legal scholar Cass Sunstein in a 2003 article in the American Economic Review."
         url: https://en.wikipedia.org/wiki/Libertarian_paternalism
@@ -2063,6 +2089,9 @@ entries:
       - quote: "A more recent definition of inequity aversion (resistance to inequitable outcomes) was developed in 1999 by Fehr and Schmidt."
         url: https://en.wikipedia.org/wiki/Inequity_aversion
         kind: encyclopedia
+      - quote: "where α parametrizes the distaste of person i for disadvantageous inequality in the first nonstandard term, and β parametrizes the distaste of person i for advantageous inequality in the final term."
+        url: https://en.wikipedia.org/wiki/Inequity_aversion
+        kind: encyclopedia
       - quote: "Gary E Bolton and Axel Ockenfels provided a more general model called ERC (equity, reciprocity, and competition) in 2000."
         url: https://en.wikipedia.org/wiki/Inequity_aversion
         kind: encyclopedia
@@ -2159,8 +2188,9 @@ entries:
     status: verified
     notes: >-
       The second quote is the abstract of the 2000 paper. The Crossref record for the 2002
-      paper links an update (doi 10.1038/nature03256, labelled erratum), which PubMed lists as
-      a 2005 comment and reply; check it under CIT-05 before relying on specific numbers.
+      paper carries an update link labelled erratum to doi 10.1038/nature03256, which PubMed
+      lists among comments on the paper (2005); treat it as a lead for CIT-05, not as a
+      correction confirmed here.
 
   # -------------------------------------------------------------- markets, labor and the field
 
