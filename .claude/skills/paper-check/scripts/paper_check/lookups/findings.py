@@ -18,7 +18,35 @@ CHECKS = ("CIT-02", "CIT-03", "CIT-04", "CIT-05", "CIT-12", "CIT-14")
 PRODUCER = "refs"
 SCRIPT = "lookups"
 FIELD_NAMES = {"title": "title", "authors": "author list", "year": "year", "container": "journal or series",
-               "volume": "volume", "issue": "issue", "pages": "pages", "version": "version"}
+               "volume": "volume", "issue": "issue", "pages": "pages", "version": "version", "doi": "DOI"}
+
+
+def format_citation(rec: dict) -> str:
+    """An author-year citation from a record, for the writer to adapt to the journal's style."""
+    people = rec.get("author_list") or [{"family": a} for a in rec.get("authors") or []]
+    names = []
+    for a in people:
+        fam = (a.get("family") or "").strip()
+        if not fam:
+            continue
+        given = (a.get("given") or "").replace(".", " ").split()
+        initials = " ".join(g[0] + "." for g in given if g[:1].isalpha())
+        names.append(f"{fam}, {initials}" if initials else fam)
+    if len(names) > 1:
+        who = ", ".join(names[:-1]) + ", & " + names[-1]
+    else:
+        who = names[0] if names else ""
+    out = f"{who} ({rec.get('year') or 'n.d.'}). {str(rec.get('title') or '').rstrip('.')}."
+    if rec.get("container"):
+        out += f" {rec['container']}"
+        if rec.get("volume"):
+            out += f", {rec['volume']}" + (f"({rec['issue']})" if rec.get("issue") else "")
+        if rec.get("pages"):
+            out += f", {str(rec['pages']).replace('-', '–')}"
+        out += "."
+    if rec.get("doi"):
+        out += f" https://doi.org/{rec['doi']}"
+    return out
 IDENTIFIER_NAMES = {"doi": "DOI", "arxiv": "arXiv ID", "nber": "NBER number", "ssrn": "SSRN ID"}
 
 
@@ -290,6 +318,44 @@ class Builder:
                   confidence="high" if all_confirmed else "medium", status="confirmed" if all_confirmed else "likely",
                   extra={"field_checks": drift})
 
+    # ---- CIT-03, missing parts -----------------------------------------------
+    def missing_parts(self, card: dict) -> None:
+        """Report the parts an entry leaves out that its matched record gives, with their values."""
+        if card.get("verdict") not in ("verified", "metadata_drift", "single_source"):
+            return
+        raw = (card.get("raw") or "").lower()
+        missing = [c for c in card.get("field_checks") or [] if c.get("status") == "missing"]
+        # a DOI printed in the entry but not parsed into its own field is not missing
+        missing = [c for c in missing if not (c["field"] == "doi" and str(c["found"]).lower() in raw)]
+        if not missing:
+            return
+        core = {"year", "authors", "container", "volume", "pages"}
+        sev = "minor" if any(c["field"] in core for c in missing) else "suggestion"
+        names = [FIELD_NAMES.get(c["field"], c["field"]) for c in missing]
+
+        def show(c):
+            v = c["found"]
+            return "; ".join(v) if isinstance(v, list) else str(v)
+        values = "; ".join(f"{FIELD_NAMES.get(c['field'], c['field'])}: {show(c)}" for c in missing)
+        matched = card.get("matched") or {}
+        problem = (f"The reference leaves out its {_join(names)}. The published record ({_label(matched)}"
+                   + (f", doi:{matched['doi']}" if matched.get("doi") else "") + f") gives {values}.")
+        evidence = [_lookup(matched.get("source", ""), card["raw"][:200], matched, matched.get("api_url"))] if matched else []
+        where = (card.get("anchor") or {}).get("file", "")
+        line = (card.get("anchor") or {}).get("line")
+        fix = Fix(action="insert",
+                  detail=f"Add to entry {card.get('key') or card['ref']}" + (f" ({where}:{line})" if where and line else "")
+                         + f": {values}. A complete version from the record: {format_citation(matched)}",
+                  resolved_when="The entry gives every part its citation style requires: authors, year, title, "
+                                "journal, volume, issue, pages, and the DOI where the style uses DOIs.")
+        steps = [f"Matched in {_join(card.get('matched_in') or [])}.",
+                 f"Compared the entry's parts with the record: {_join(names)} absent from the entry."]
+        self.make(card, "CIT-03", f"Reference entry is missing its {_join(names)}", sev, problem,
+                  evidence=evidence, trajectory=steps, fix=fix,
+                  confidence="high" if card.get("verdict") == "verified" else "medium",
+                  status="confirmed" if card.get("verdict") == "verified" else "likely",
+                  extra={"missing": [c["field"] for c in missing], "values": {c["field"]: c["found"] for c in missing}})
+
     # ---- CIT-04 --------------------------------------------------------------
     def versions(self, card: dict) -> None:
         info = card.get("version_check") or {}
@@ -319,10 +385,10 @@ class Builder:
         steps += info.get("notes") or []
         self.make(card, "CIT-04", "A published version of this working paper exists", "suggestion", problem,
                   evidence=evidence, trajectory=steps, confidence=best.get("confidence", "medium"), status="likely",
-                  fix=Fix(action="investigate",
-                          detail=f"Replace the entry with the published version" + (
-                              f" (doi:{best['doi']})" if best.get("doi") else "") + ", unless the working paper is "
-                                                                                    "cited on purpose.",
+                  fix=Fix(action="replace", original=card.get("raw"), replacement=format_citation(best),
+                          detail="Replace the entry with the published version, in the journal's citation style, "
+                                 "unless the working paper is cited on purpose; check that the cited claims still "
+                                 "hold in the published version.",
                           resolved_when="The reference cites the published version, or the text says why the working "
                                         "paper is cited."),
                   extra={"published_version": best})

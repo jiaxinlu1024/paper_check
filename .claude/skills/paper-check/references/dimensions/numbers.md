@@ -46,6 +46,8 @@ Your brief gives the work folder (`WORK` below), the command for the scripts (`P
 
 If you notice a star or p-value inconsistency (NUM-03) or an impossible mean (NUM-04) that scripts.json does not list, for example because a table could not be parsed, report it with a `computed_result`, but record no coverage for those checks.
 
+**NUM-10 Sample sizes across tables and models** (Major). Cross-reference the number of observations in every table and model with the main sample the data section describes. When N changes between tables or between columns, find where the paper explains the change: a subsample, missing values, attrition, a balanced panel, lags or first differences, a restriction to respondents who answered a module. The script reports changes it found no explanation for (`grep -n '"check_id": "NUM-10"' "WORK/findings/scripts.json"`): read the data and methods sections for explanations phrased in other words, dispute a script finding that the paper does explain, and report changes the script missed, such as an N stated only in a note or in the text. Quote the table row or note and, when it exists, the explanation; when it does not, add a `checked_absence` item naming the sections you read.
+
 ## Judging well
 
 - Check whether the context resolves a gap before flagging: a different sample, a subgroup, a stated rounding rule or a table note.

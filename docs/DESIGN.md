@@ -195,7 +195,7 @@ No open tool handles economics working papers, so this part is new.
    This step adapts the survey's recommendation. Dense embeddings and a reranker are optional, because they add a heavy PyTorch dependency, and the digest covers paraphrase instead. The evaluation sets decide whether dense retrieval is needed.
 6. **Judge.** Give a verdict and a failure code under the rules below.
 7. **Verify.** A script checks every quote taken from the source. A refuter re-examines every negative verdict, searching appendices, tables and footnotes. It may overturn a verdict only by quoting counter-evidence.
-8. **Suggest a fix.** Either rewrite the sentence to match what the source says, quoting it, or propose replacement citations. Every replacement must itself pass the existence and support checks.
+8. **Suggest a fix (CIT-15).** Either rewrite the sentence to match what the source says, quoting it, or propose replacement citations found by searching the literature with `pc.py works`. Every replacement must itself pass the existence and support checks: it comes from a database record, and a quote from its abstract or full text states the claim.
 9. **Summarize.** Count the verdicts for each section in the report.
 
 ### Verdicts
@@ -250,8 +250,8 @@ Typical severity is a default. The actual severity depends on the instance.
 |---|---|---|---|
 | CIT-01 | Every in-text citation has a reference entry, and every entry is cited | SCRIPT; Word citations are matched through their field codes | Major |
 | CIT-02 | Every reference exists, under the policy in section 6 | LOOKUP | Critical for a non-existent work, Major for a chimeric citation |
-| CIT-03 | Reference metadata is accurate: title, authors and order, year, venue, volume, pages and DOI, with an evidence card | LOOKUP and a field-by-field SCRIPT diff | Minor, Major when the author list is substantially wrong |
-| CIT-04 | A working paper or preprint is cited when a published version exists, section 6 | LOOKUP | Suggestion |
+| CIT-03 | Reference metadata is accurate and complete: title, authors and order, year, venue, volume, issue, pages and DOI, with an evidence card; parts the entry leaves out are reported with the values from the published record | LOOKUP and a field-by-field SCRIPT diff | Minor, Major when the author list is substantially wrong |
+| CIT-04 | A working paper or preprint is cited when a published version exists, with the full published citation, section 6 | LOOKUP | Suggestion |
 | CIT-05 | Cited work is retracted, corrected or under an expression of concern, section 6 | LOOKUP | Critical |
 | CIT-06 | The cited work supports the sentence that cites it, section 7. Runs on every citation | LOOKUP for full text, READ, SCRIPT quote checks, and a refuter | Major |
 | CIT-07 | Citation needed: statistics, prior results, "well known", "studies show", and datasets, tools or models used without a citation | READ | Major |
@@ -262,6 +262,7 @@ Typical severity is a default. The actual severity depends on the instance.
 | CIT-12 | URLs and DOIs resolve; dead links get an archived alternative | LOOKUP | Minor |
 | CIT-13 | Direct quotations match the source word for word and carry page numbers when the style requires | LOOKUP and SCRIPT | Major |
 | CIT-14 | Replication status: cited findings that failed to replicate, or replicated with smaller effects, are reported with the replication's own label and quote, section 6 | LOOKUP | Major when the paper relies on the finding without saying so |
+| CIT-15 | Replacement citations: for every citation that does not support its claim, a replacement source that does, found by searching the literature, verified to exist and checked for support in its abstract or full text; otherwise the claim is rewritten | LOOKUP and READ | Major |
 
 ### 8.3 Numbers inside the paper (NUM)
 
@@ -276,6 +277,7 @@ Typical severity is a default. The actual severity depends on the instance.
 | NUM-07 | Units, magnitudes and precision: units present and consistent, conversions correct, magnitudes plausible, no false precision such as 87.2341% | SCRIPT and READ | Minor |
 | NUM-08 | "Significant" is used only with a statistical test, and gains within the reported uncertainty are not claimed as effects | COMPARE and READ | Major |
 | NUM-09 | Percent and percentage points, and log outcomes. A rise from 20% to 25% is 5 percentage points or 25%. A coefficient of 0.50 on a log outcome implies a 64.9% change, not 50% | SCRIPT | Major |
+| NUM-10 | Sample sizes across tables and models: the number of observations in every table and model matches the main sample, or the paper explains each change, such as subsamples, missing values, attrition, balanced panels, lags or restrictions | SCRIPT inventory, then READ | Major |
 
 ### 8.4 Facts about the outside world (FACT)
 
@@ -333,6 +335,7 @@ Typical severity is a default. The actual severity depends on the instance.
 | LANG-06 | Readability for the target audience: jargon explained, acronym density | SCRIPT metrics, then READ | Suggestion |
 | LANG-07 | Inclusive and bias-free language | SCRIPT word list, then READ | Minor |
 | LANG-08 | Wordiness and filler | SCRIPT, then READ | Suggestion |
+| LANG-09 | Formal academic register: colloquial, informal or imprecise statements are rewritten in the register of a scholarly journal | READ | Minor |
 
 ### 8.8 Methods, data and reproducibility (MTH)
 
@@ -380,6 +383,9 @@ These checks verify that the paper reports what a replicator needs. They do not 
 | REV-02 | Novelty holds up against the searches from FACT-06 and CIT-09 | LOOKUP and READ | Major |
 | REV-03 | The paper argues why the result matters | READ | Suggestion |
 | REV-04 | Simulated reviews: two or three independent reviewer personas list likely objections and questions, each tied to a quote. Its redesign is deferred, see section 16 | READ | Suggestion |
+| REV-05 | Alternative models better suited to the research design and data structure, with the reason for each | READ | Suggestion |
+| REV-06 | Robustness checks and falsification or placebo tests the paper should add, each specified: what to estimate, on which sample, and what result would threaten the conclusion | READ | Minor |
+| REV-07 | Key methodological, empirical and data limitations the discussion must state transparently, each tied to the passage it qualifies | READ and COMPARE with LOG-11 | Minor |
 
 ### 8.12 Behavioral economics module (BEH)
 
@@ -599,6 +605,7 @@ The skill lives in the shared GitHub repository. Your coworker opens that reposi
 ## 16. Deferred recommendations (P2)
 
 - **Reviewer personas.** Run REV-04 as two or three independent personas, such as a methodologist, a behavioral field expert and a skeptic. Each reads an anonymized paper map and never sees the others' output. Objections are tied to quotes, with no scores, and a table shows which objections recur.
+- **Zotero libraries.** Read cited full texts directly from a Zotero group or user library through the Zotero Web API, as a source ahead of the open-access cascade. Requested on 2026-10-17 and deferred; a local Zotero storage folder already works as the sources folder, because PDFs are matched by DOI or title in any subfolder.
 - **Optional accelerators.** Probe for GROBID, Camelot, pandoc, Vale, proselint, a LanguageTool server, arxiv-mcp-server and zotero-mcp. Use them when present, report "skipped: tool missing" otherwise, and never install anything silently.
 - **Packaging.** Ship as a project skill plus a one-plugin `marketplace.json`. Keep the frontmatter to the Agent Skills fields, pre-approve the exact script commands, and quote every path, since drafts often sit in folders with spaces.
 

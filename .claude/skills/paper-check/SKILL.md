@@ -82,7 +82,7 @@ This extracts every attributed proposition, the claim each citation is meant to 
 Then launch subagents, all in one message when you can:
 
 1. **Digests (deep mode).** For every reference with full text, a digest agent follows `references/agents/source-digest.md` and writes `WORK/citations/digests/<ref>.json`, a page-anchored digest with verbatim quotes. Give each agent two to four references.
-2. **Judges.** After the digests are written, judge agents follow `references/agents/citation-judge.md`. Give each two to four references with all their propositions (from `WORK/citations/by_ref.json`), the mode and the venue, and a batch number n, numbered 1, 2, 3 and so on even when there is only one judge. Judges expand concepts with `PC terms "<concept>"` and search with `PC scan WORK --ref <ref> --terms ...`, the exhaustive term search that proves absence. Judge n writes its findings to `WORK/findings/agent_citations_<n>.json` and one row per citation to `WORK/citations/verdicts_<n>.json`. Separate files let judges run in parallel without overwriting each other; the report merges them.
+2. **Judges.** After the digests are written, judge agents follow `references/agents/citation-judge.md`. Give each two to four references with all their propositions (from `WORK/citations/by_ref.json`), the mode and the venue, and a batch number n, numbered 1, 2, 3 and so on even when there is only one judge. Judges expand concepts with `PC terms "<concept>"` and search with `PC scan WORK --ref <ref> --terms ...`, the exhaustive term search that proves absence. For every citation that fails, they look for a replacement source with `PC works WORK "<claim>"` and propose it only with a quote that states the claim (CIT-15). Judge n writes its findings to `WORK/findings/agent_citations_<n>.json` and one row per citation to `WORK/citations/verdicts_<n>.json`. Separate files let judges run in parallel without overwriting each other; the report merges them.
 
 After the sources are cached, run `PC checks WORK --only ETH-06` for verbatim overlap with the cited works. This merges into the earlier script results.
 
@@ -96,15 +96,15 @@ Launch one subagent per dimension, all in a single message so they run in parall
 |---|---|---|
 | `format.md` | Reading parts of FMT-02, FMT-03, FMT-07, FMT-09 | Uses the venue profile |
 | `citations.md` | CIT-07, CIT-08, CIT-09, CIT-11 | CIT-09 searches for missing related work (12 searches by default) and writes `WORK/agents/related_work.json` |
-| `numbers.md` | Reading parts of NUM-01, NUM-02, NUM-05 to NUM-09 | Catches what the number scripts miss |
+| `numbers.md` | Reading parts of NUM-01, NUM-02, NUM-05 to NUM-10 | Catches what the number scripts miss, including sample sizes that change across tables without an explanation |
 | `facts.md` | FACT-01 to FACT-06 | Web search (40 searches by default) and writes `WORK/agents/fact_checks.json`; priority claims get "no contrary evidence in N searches" at best |
 | `logic.md` | LOG-01 to LOG-11 | Also writes the claim-evidence map to `WORK/agents/claim_map.json` |
 | `coherence.md` | COH-01 to COH-06, COH-08 to COH-12 | Reviews the script findings for COH-05 to COH-07 and COH-09 |
-| `language.md` | LANG-01 to LANG-08, and the reading part of FMT-12 | |
+| `language.md` | LANG-01 to LANG-09, and the reading part of FMT-12 | Rewrites informal or unclear sentences in a formal academic register |
 | `methods.md` | MTH-01 to MTH-07 | |
 | `ethics.md` | ETH-01 to ETH-08 | Reviews the ETH-06 and ETH-07 script findings |
 | `figures.md` | FIG-01 to FIG-06, FMT-17 | Needs images: see below |
-| `reviewer.md` | REV-01 to REV-03 | REV-04 is deferred and recorded as skipped; REV-02 runs later, see below |
+| `reviewer.md` | REV-01 to REV-03, REV-05 to REV-07 | Alternative models, robustness and falsification tests, limitations to address; REV-04 is deferred and recorded as skipped; REV-02 runs later, see below |
 | `behavioral.md` | Reading parts of BEH-01 to BEH-10, BEH-12 to BEH-15 | Uses the venue profile, `references/guidelines/economics-experiments.md` and `references/guidelines/misattributions.yaml`; give it the pre-analysis plan or replication package if the user has one |
 
 Give every agent the same short brief, filled in:
@@ -193,7 +193,7 @@ If the Agent tool is unavailable, for example when this skill itself runs inside
 
 ## Files
 
-- `references/checks.yaml` and `references/checklist.md`: all 119 checks, with how each is done and its typical severity.
+- `references/checks.yaml` and `references/checklist.md`: all 125 checks, with how each is done and its typical severity.
 - `references/report-format.md`, `references/reference-policy.md`, `references/citation-support.md`: the rules behind the report, the reference verdicts and the citation verdicts.
 - `references/dimensions/`: one prompt per reading agent. `references/agents/`: digest, judge, refuter, web check and second run.
 - `references/venues/`: dated journal profiles; every confirmed rule quotes its source. `references/guidelines/`: the reporting checklist for economics experiments.

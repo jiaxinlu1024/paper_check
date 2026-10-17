@@ -340,6 +340,20 @@ def field_checks(cited: dict, evs: list) -> list:
                                "detail": "the DOI belongs to a working-paper or preprint version, not to the journal "
                                          "article"})
                 break
+    # parts the entry leaves out that the matched record gives (missing DOI, volume, issue, pages, ...)
+    rec = primary["record"]
+    rtype = (rec.type or "").lower()
+    is_article = rtype in ("journal-article", "article", "article-journal") or \
+        (cited.get("type") or "").lower() in ("article", "article-journal")
+    wanted = [("doi", rec.doi), ("year", rec.year)]
+    if is_article:
+        wanted += [("container", rec.container), ("volume", rec.volume), ("issue", rec.issue), ("pages", rec.pages)]
+    if rec.authors:
+        wanted.append(("authors", [author_label(a) for a in rec.authors[:12]]))
+    for name, value in wanted:
+        if value and not cited.get(name):
+            checks.append({"field": name, "cited": None, "found": value, "status": "missing",
+                           "sources": {rec.source: value}})
     return checks
 
 

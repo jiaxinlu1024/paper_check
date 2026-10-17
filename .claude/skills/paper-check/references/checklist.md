@@ -1,6 +1,6 @@
 # Checklist
 
-All 119 checks of the paper-check skill, grouped by dimension. Generated on 2026-10-17 from `references/checks.yaml` (version 0.4, itself generated from `docs/DESIGN.md` section 8). When checks.yaml changes, regenerate this file rather than editing it by hand.
+All 125 checks of the paper-check skill, grouped by dimension. Generated on 2026-10-17 from `references/checks.yaml` (version 0.4, itself generated from `docs/DESIGN.md` section 8). When checks.yaml changes, regenerate this file rather than editing it by hand.
 
 ## How to read it
 
@@ -39,8 +39,8 @@ All 119 checks of the paper-check skill, grouped by dimension. Generated on 2026
 |---|---|---|---|---|
 | CIT-01 | Every in-text citation has a reference entry, and every entry is cited | SCRIPT; Word citations are matched through their field codes | Major | scripts |
 | CIT-02 | Every reference exists, under the policy in section 6 | LOOKUP | Critical for a non-existent work, Major for a chimeric citation | lookups; `agents/reference-web-check.md`; refuter as second reviewer |
-| CIT-03 | Reference metadata is accurate: title, authors and order, year, venue, volume, pages and DOI, with an evidence card | LOOKUP and a field-by-field SCRIPT diff | Minor, Major when the author list is substantially wrong | lookups; `agents/reference-web-check.md` |
-| CIT-04 | A working paper or preprint is cited when a published version exists, section 6 | LOOKUP | Suggestion | lookups |
+| CIT-03 | Reference metadata is accurate and complete: title, authors and order, year, venue, volume, issue, pages and DOI, with an evidence card; parts the entry leaves out are reported with the values from the published record | LOOKUP and a field-by-field SCRIPT diff | Minor, Major when the author list is substantially wrong | lookups; `agents/reference-web-check.md` |
+| CIT-04 | A working paper or preprint is cited when a published version exists, with the full published citation, section 6 | LOOKUP | Suggestion | lookups |
 | CIT-05 | Cited work is retracted, corrected or under an expression of concern, section 6 | LOOKUP | Critical | lookups |
 | CIT-06 | The cited work supports the sentence that cites it, section 7. Runs on every citation | LOOKUP for full text, READ, SCRIPT quote checks, and a refuter | Major | citation module: `pc.py cite-prepare`, `agents/source-digest.md`, `agents/citation-judge.md`; refuter |
 | CIT-07 | Citation needed: statistics, prior results, "well known", "studies show", and datasets, tools or models used without a citation | READ | Major | `dimensions/citations.md` |
@@ -51,6 +51,7 @@ All 119 checks of the paper-check skill, grouped by dimension. Generated on 2026
 | CIT-12 | URLs and DOIs resolve; dead links get an archived alternative | LOOKUP | Minor | lookups |
 | CIT-13 | Direct quotations match the source word for word and carry page numbers when the style requires | LOOKUP and SCRIPT | Major | `agents/citation-judge.md` |
 | CIT-14 | Replication status: cited findings that failed to replicate, or replicated with smaller effects, are reported with the replication's own label and quote, section 6 | LOOKUP | Major when the paper relies on the finding without saying so | lookups |
+| CIT-15 | Replacement citations: for every citation that does not support its claim, a replacement source that does, found by searching the literature (`pc.py works`), verified to exist, and checked for support in its abstract or full text; otherwise the claim is rewritten | LOOKUP and READ | Major | `agents/citation-judge.md` |
 
 ## Numbers inside the paper (NUM)
 
@@ -65,6 +66,7 @@ All 119 checks of the paper-check skill, grouped by dimension. Generated on 2026
 | NUM-07 | Units, magnitudes and precision: units present and consistent, conversions correct, magnitudes plausible, no false precision such as 87.2341% | SCRIPT and READ | Minor | scripts; `dimensions/numbers.md` |
 | NUM-08 | "Significant" is used only with a statistical test, and gains within the reported uncertainty are not claimed as effects | COMPARE and READ | Major | scripts; `dimensions/numbers.md` |
 | NUM-09 | Percent and percentage points, and log outcomes. A rise from 20% to 25% is 5 percentage points or 25%. A coefficient of 0.50 on a log outcome implies a 64.9% change, not 50% | SCRIPT | Major | scripts; `dimensions/numbers.md` |
+| NUM-10 | Sample sizes across tables and models: the number of observations in every table and model matches the main sample, or the paper explains each change (subsamples, missing values, attrition, balanced panels, lags, restrictions) | SCRIPT inventory, then READ | Major | scripts; `dimensions/numbers.md` |
 
 ## Facts about the outside world (FACT)
 
@@ -122,6 +124,7 @@ All 119 checks of the paper-check skill, grouped by dimension. Generated on 2026
 | LANG-06 | Readability for the target audience: jargon explained, acronym density | SCRIPT metrics, then READ | Suggestion | scripts; `dimensions/language.md` |
 | LANG-07 | Inclusive and bias-free language | SCRIPT word list, then READ | Minor | scripts; `dimensions/language.md` |
 | LANG-08 | Wordiness and filler | SCRIPT, then READ | Suggestion | scripts; `dimensions/language.md` |
+| LANG-09 | Formal academic register: colloquial, informal or imprecise statements rewritten in the register of a scholarly journal | READ | Minor | `dimensions/language.md` |
 
 ## Methods, data and reproducibility (MTH)
 
@@ -167,6 +170,9 @@ All 119 checks of the paper-check skill, grouped by dimension. Generated on 2026
 | REV-02 | Novelty holds up against the searches from FACT-06 and CIT-09 | LOOKUP and READ | Major | `dimensions/reviewer.md`, after `facts.md` and `citations.md` have searched |
 | REV-03 | The paper argues why the result matters | READ | Suggestion | `dimensions/reviewer.md` |
 | REV-04 | Simulated reviews: two or three independent reviewer personas list likely objections and questions, each tied to a quote. Its redesign is deferred, see section 16 | READ | Suggestion | deferred (DESIGN section 16); `dimensions/reviewer.md` records it as skipped |
+| REV-05 | Alternative models better suited to the design and data structure, with the reason for each | READ | Suggestion | `dimensions/reviewer.md` |
+| REV-06 | Robustness checks and falsification or placebo tests to add, each specified: what to estimate, on which sample, and what result would threaten the conclusion | READ | Minor | `dimensions/reviewer.md` |
+| REV-07 | Key methodological, empirical and data limitations the discussion must state, each tied to the passage it qualifies | READ and COMPARE with LOG-11 | Minor | `dimensions/reviewer.md` |
 
 ## Behavioral economics module (BEH)
 

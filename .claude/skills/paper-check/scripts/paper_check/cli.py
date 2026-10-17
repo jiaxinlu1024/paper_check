@@ -109,6 +109,13 @@ def cmd_scan(args):
     return scan_command(_work(args.work), args.ref, args.terms, context=args.context, top=args.top)
 
 
+def cmd_works(args):
+    from .lookups.works import works_command
+    work = _work(args.work)
+    return works_command(work, " ".join(args.query), limit=args.limit, year_from=args.year_from,
+                         offline=args.offline or not _settings(work).network)
+
+
 def cmd_terms(args):
     try:
         from .citations.terms import terms_command
@@ -287,6 +294,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--context", type=int, default=300, help="characters of context per hit")
     s.add_argument("--top", type=int, default=8, help="passages to show")
     s.set_defaults(func=cmd_scan)
+
+    s = sub.add_parser("works", help="search the literature for candidate works, with abstracts (OpenAlex, Crossref)")
+    s.add_argument("work")
+    s.add_argument("query", nargs="+", help="a short description of the claim or topic, never the paper's text")
+    s.add_argument("--limit", type=int, default=8)
+    s.add_argument("--year-from", dest="year_from", type=int)
+    s.add_argument("--offline", action="store_true", help="use only the cache")
+    s.set_defaults(func=cmd_works)
 
     s = sub.add_parser("terms", help="expand concepts into synonyms and related terms (STW thesaurus and glossary)")
     s.add_argument("terms", nargs="+")

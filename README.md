@@ -2,7 +2,7 @@
 
 A Claude Code skill that checks behavioral economics paper drafts before submission. It reads LaTeX, PDF or Word, and writes a report in which every finding quotes the draft, gives its location, shows the proof and the steps that led to it, and suggests a fix, so that a writer or an agent can fix the paper. It never edits the paper.
 
-It covers 119 checks in twelve dimensions: format and journal rules, references, whether each cited work supports its sentence, numbers and statistics, outside facts, logic, coherence, language, methods, ethics, figures and tables, the reviewer's view, and behavioral and experimental economics standards.
+It covers 125 checks in twelve dimensions: format and journal rules, references, whether each cited work supports its sentence, numbers and statistics, outside facts, logic, coherence, language, methods, ethics, figures and tables, the reviewer's view, and behavioral and experimental economics standards.
 
 Status: working version 0.1. The scripts, the agent prompts and the orchestration are built and tested on synthetic LaTeX, Word and PDF test papers. Tests on real drafts come next.
 

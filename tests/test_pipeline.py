@@ -91,7 +91,9 @@ def test_skip_records_reasons_and_uncovered(work_copy):
     assert {c.check_id for c in fs.coverage} >= {"FIG-01", "FIG-06", "REV-04"}
     assert main(["skip", str(work_copy), "--uncovered", "--reason", "not run in quick mode"]) == 0
     fs = FindingSet.load(work_copy / "findings" / "orchestrator.json")
-    assert len(fs.coverage) == 119
+    import yaml
+    checks = yaml.safe_load((Path(__file__).resolve().parents[1] / ".claude/skills/paper-check/references/checks.yaml").read_text())
+    assert len(fs.coverage) == len(checks["checks"])
 
 
 def test_report_layout_order_coverage_and_appendices(work_copy):
@@ -188,3 +190,16 @@ def test_related_findings_on_one_passage_are_merged(work_copy):
     assert "Also reported by agent_coherence under COH-02" in md
     cov = {r["check_id"]: r for r in data["coverage"]}
     assert cov["COH-02"]["detail"].startswith("1 findings")
+
+
+def test_merge_runs_pairs_single_findings_of_one_check(work_copy):
+    _write(work_copy, "agent_behavioral.json", {"producer": "agent_behavioral", "findings": [
+        _finding(check_id="BEH-03", title="Materials missing", quote="The experiment was preregistered.", status="confirmed"),
+    ]})
+    _write(work_copy, "agent_behavioral_run2.json", {"producer": "agent_behavioral", "findings": [
+        _finding(check_id="BEH-03", title="Instructions not provided", quote=SESSIONS),
+    ]}, folder="runs")
+    main(["merge-runs", str(work_copy), "--dimension", "behavioral"])
+    fs = FindingSet.load(work_copy / "findings" / "agent_behavioral.json")
+    assert len(fs.findings) == 1
+    assert fs.findings[0].verification["runs"] == "2 of 2 runs" and fs.findings[0].status == "confirmed"

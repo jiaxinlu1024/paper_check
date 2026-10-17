@@ -28,7 +28,7 @@ from .. import __version__
 from ..model import Coverage, Evidence, Finding, FindingSet, Fix, Location, PaperMap
 
 _REGISTRY: list = []
-MODULES = ["format", "numbers", "venue", "coherence", "language", "references_local", "integrity", "behavioral"]
+MODULES = ["format", "numbers", "venue", "coherence", "language", "references_local", "integrity", "behavioral", "samples"]
 
 
 def register(*check_ids: str, name: Optional[str] = None):

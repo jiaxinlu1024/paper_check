@@ -47,7 +47,7 @@ sources: sources        # folder of PDFs of the cited works
 
 Two files appear beside the paper:
 
-- `paper-check-report.md` for people: a summary, the findings grouped by severity, an index in paper order for fixing the draft from top to bottom, a coverage table of all 119 checks, and appendices for references, citation support and recomputed numbers.
+- `paper-check-report.md` for people: a summary, the findings grouped by severity, an index in paper order for fixing the draft from top to bottom, a coverage table of all 125 checks, and appendices for references, citation support and recomputed numbers.
 - `paper-check-findings.json` for agents: the same findings with the same IDs, ready for a fixing agent.
 
 Each finding shows:

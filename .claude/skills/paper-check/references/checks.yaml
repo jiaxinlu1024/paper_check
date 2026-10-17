@@ -221,6 +221,13 @@ checks:
     the replication''s own label and quote, section 6'
   how: LOOKUP
   typical: Major when the paper relies on the finding without saying so
+- id: CIT-15
+  dimension: CIT
+  title: Replacement citations for unsupported claims
+  check: 'For every citation that does not support its claim, a replacement source that does: found by searching the literature,
+    verified to exist, and checked for support in its abstract or full text, or else the claim is rewritten'
+  how: LOOKUP with pc.py works, then READ by the citation judge
+  typical: Major
 - id: NUM-01
   dimension: NUM
   title: Numbers consistent across sections
@@ -286,6 +293,13 @@ checks:
     of 0.50 on a log outcome implies a 64.9% change, not 50%
   how: SCRIPT
   typical: Major
+- id: NUM-10
+  dimension: NUM
+  title: Sample sizes across tables and models
+  check: 'The number of observations in every table and model is consistent with the main sample, or the paper explains each
+    change: subsamples, missing values, attrition, balanced panels, lags or restrictions'
+  how: SCRIPT inventory of observation rows, then READ for explanations
+  typical: Major
 - id: FACT-01
   dimension: FACT
   title: External factual claims
@@ -319,7 +333,7 @@ checks:
   typical: Minor
 - id: FACT-06
   dimension: FACT
-  title: 'Priority claims such as "first" or "novel"'
+  title: Priority claims such as "first" or "novel"
   check: Priority claims such as "first", "only", "novel" or "no prior work" survive a literature search. The best verdict
     possible is "no contrary evidence in N searches", never "verified novel"
   how: LOOKUP and READ
@@ -519,6 +533,13 @@ checks:
   check: Wordiness and filler
   how: SCRIPT, then READ
   typical: Suggestion
+- id: LANG-09
+  dimension: LANG
+  title: Formal academic register
+  check: 'Precise, formal academic language: colloquial, informal or imprecise statements are rewritten in the register of
+    a scholarly journal'
+  how: READ, with a rewrite for each instance
+  typical: Minor
 - id: MTH-01
   dimension: MTH
   title: Enough detail to reproduce the analysis
@@ -675,6 +696,28 @@ checks:
     a quote. Its redesign is deferred, see section 16'
   how: READ
   typical: Suggestion
+- id: REV-05
+  dimension: REV
+  title: Alternative models suited to the design and data
+  check: Given the research design and data structure, whether other estimators or models suit the analysis better, such as
+    fixed effects for panel data, a nonlinear model for a limited outcome, or design-based inference, with the reason for
+    each
+  how: READ
+  typical: Suggestion
+- id: REV-06
+  dimension: REV
+  title: Robustness checks and falsification tests to add
+  check: 'The robustness checks and falsification or placebo tests the paper should add, each specified: what to estimate,
+    on which sample, and what result would threaten the conclusion'
+  how: READ
+  typical: Minor
+- id: REV-07
+  dimension: REV
+  title: Limitations to address in the discussion
+  check: The key methodological, empirical and data limitations that the discussion must state transparently, each tied to
+    the passage it qualifies
+  how: READ and COMPARE with LOG-11
+  typical: Minor
 - id: BEH-01
   dimension: BEH
   title: Deception

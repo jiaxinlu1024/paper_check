@@ -84,6 +84,23 @@ def merge_runs(work: Path, dimension: str) -> int:
         used2.add(j)
         matched.append((i, j))
 
+    # A check with exactly one unmatched finding in each run: the two runs quoted different passages for the
+    # same problem, which happens for absences such as "materials are not described".
+    from collections import defaultdict
+    left1, left2 = defaultdict(list), defaultdict(list)
+    for i, f in enumerate(first.findings):
+        if i not in used1:
+            left1[f.check_id].append(i)
+    for j, f in enumerate(second.findings):
+        if j not in used2:
+            left2[f.check_id].append(j)
+    for cid, idx1 in left1.items():
+        if len(idx1) == 1 and len(left2.get(cid, [])) == 1:
+            i, j = idx1[0], left2[cid][0]
+            used1.add(i)
+            used2.add(j)
+            matched.append((i, j))
+
     for i, j in matched:
         f1, f2 = first.findings[i], second.findings[j]
         f1.verification["runs"] = "2 of 2 runs"
@@ -97,6 +114,7 @@ def merge_runs(work: Path, dimension: str) -> int:
         if i not in used1:
             f1.verification["runs"] = "1 of 2 runs"
             if f1.status == "confirmed":
+                f1.verification["status_before_runs"] = "confirmed"
                 f1.status = "likely"
     added = 0
     for j, f2 in enumerate(second.findings):
@@ -104,6 +122,7 @@ def merge_runs(work: Path, dimension: str) -> int:
             continue
         f2.verification["runs"] = "1 of 2 runs"
         if f2.status == "confirmed":
+            f2.verification["status_before_runs"] = "confirmed"
             f2.status = "likely"
         f2.producer["run"] = 2
         first.findings.append(f2)

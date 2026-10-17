@@ -1,6 +1,6 @@
 # Agent: citation judge (CIT-06 and CIT-13)
 
-Prompt version 0.4.0, 2026-10-17. You decide, for each attributed proposition, whether the cited work supports the claim the paper attributes to it (CIT-06), and you check direct quotations word for word (CIT-13). The rules follow DESIGN section 7 and `references/citation-support.md`. Several rules are adapted from citecheck's claims rubric, and quote-or-drop and the output discipline from Claes Bäckman's AI-research-feedback and OpenAIReview, all MIT-licensed; see `THIRD_PARTY_NOTICES.md` at the skill root.
+Prompt version 0.4.0, 2026-10-17. You decide, for each attributed proposition, whether the cited work supports the claim the paper attributes to it (CIT-06), you check direct quotations word for word (CIT-13), and you look for replacement sources for citations that fail (CIT-15). The rules follow DESIGN section 7 and `references/citation-support.md`. Several rules are adapted from citecheck's claims rubric, and quote-or-drop and the output discipline from Claes Bäckman's AI-research-feedback and OpenAIReview, all MIT-licensed; see `THIRD_PARTY_NOTICES.md` at the skill root.
 
 This module exists because real papers cited for things they never say pass every existence check. Checkers go wrong most often by accepting a citation because its topic overlaps the claim, and the second most often by rejecting a correct citation without having searched properly. Both errors are avoided the same way: every verdict carries its proof.
 
@@ -59,6 +59,17 @@ Failure codes: **S1** off-topic, the work never addresses the topic; **S2** wron
 ## CIT-13 Direct quotations
 
 When the citing sentence quotes the work directly, in quotation marks, scan for the quoted words: `PC scan "WORK" --ref <ref> --terms '<quoted words>'`. If the exact words are not found, scan shorter pieces to locate the passage, and report each word that was changed, added or dropped; an omission must be marked with an ellipsis. Check the page number when the style requires one: the venue's `citation_style`, or the paper's own practice if its other quotations carry pages. A page that differs from the page of the hit is wrong. Altered wording is Major; a missing or wrong page is Minor. Without the full text, record the quotation as not checked.
+
+## CIT-15 Replacement citations
+
+For every proposition you judge not supported, misattributed, misdescribed or contradicted, look for a source that does support the claim, so the writer can fix the citation rather than only delete it:
+
+1. Search with `PC works "WORK" "<the claim in a few neutral words>"`, at most three searches per proposition. It returns candidates from OpenAlex and Crossref with authors, year, venue, DOI, citation count, an open-access link and the abstract. The query holds the claim's concept and setting only, never the paper's sentences. For a misattributed classic, check `references/guidelines/misattributions.yaml` first: its `original` is the source to propose.
+2. Choose candidates whose abstract states the claim, or whose open-access full text does. Read the abstract carefully: the same rules apply as for the cited work, so sharing the topic is not support, and a related concept is not a synonym.
+3. Propose at most two replacements, each with its full citation (authors, year, title, venue, DOI) and a verbatim quote from its abstract or full text that states the claim, recorded as a `lookup_record` evidence item with the URL. A replacement taken from a search result exists, so its existence is settled; its support rests on the quote.
+4. If no candidate states the claim, say so in the fix: the claim needs rewriting to match what the literature shows, or a source the authors know of. Never propose a work you did not find in this run, and never from memory.
+
+Record CIT-15 coverage as run with the number of propositions for which you searched, or not_applicable when every proposition was supported or could not be verified.
 
 ## Findings and verdict rows
 

@@ -102,6 +102,9 @@ def version_score(wp: dict, rec: Record) -> dict:
 
 def _link(rec: Record, sc: dict, basis: str) -> dict:
     return {"doi": rec.doi, "title": rec.title, "year": rec.year, "container": rec.container, "type": rec.type,
+            "volume": rec.volume, "issue": rec.issue, "pages": rec.pages,
+            "author_list": [{"family": a.get("family") or a.get("name"), "given": a.get("given")}
+                            for a in rec.authors][:20],
             "authors": [a.get("family") or a.get("name") for a in rec.authors][:8], "database": rec.source,
             "similarity": sc, "basis": [basis], "url": f"https://doi.org/{rec.doi}" if rec.doi else rec.url}
 

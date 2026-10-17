@@ -279,11 +279,37 @@ def _source(f) -> tuple:
     return (f.producer.get("name"), f.producer.get("check"))
 
 
+def _pair_runs(findings: list) -> list:
+    """Join the run-1 and run-2 copies of one problem that merge-runs left unpaired: a producer with exactly
+    one single-run finding of a check from each run."""
+    groups: dict = defaultdict(list)
+    for f in findings:
+        if (f.verification or {}).get("runs") == "1 of 2 runs":
+            groups[(f.producer.get("name"), f.check_id)].append(f)
+    drop = set()
+    for (_name, _cid), fs in groups.items():
+        one = [f for f in fs if f.producer.get("run") != 2]
+        two = [f for f in fs if f.producer.get("run") == 2]
+        if len(one) == 1 and len(two) == 1:
+            keep, other = one[0], two[0]
+            keep.verification["runs"] = "2 of 2 runs"
+            if keep.verification.get("status_before_runs"):
+                keep.status = keep.verification.pop("status_before_runs")
+            keep.evidence.extend(e for e in other.evidence if e not in keep.evidence)
+            keep.related_quotes.extend(q for q in other.related_quotes if q not in keep.related_quotes)
+            if other.quote and other.quote != keep.quote:
+                keep.related_quotes.append({"quote": other.quote})
+            keep.trajectory.append("Second run found it independently, quoting another passage.")
+            drop.add(id(other))
+    return [f for f in findings if id(f) not in drop]
+
+
 def _dedupe(findings: list, pm=None) -> list:
     """Collapse exact repeats from one producer, then merge what different producers found
     about the same passage. Two findings from the same producer are never merged here,
     because a producer that reports two findings means two problems."""
     merged: dict = {}
+    findings = _pair_runs(findings)
     for f in findings:
         block = f.locations[0].block if f.locations else None
         key = (_source(f), f.check_id, block, normalize(f.quote or "").lower()[:200],
