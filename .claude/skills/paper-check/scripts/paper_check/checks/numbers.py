@@ -1287,6 +1287,8 @@ def _table_ci_findings(pt: ParsedTable, ctx, counts: dict, notes: list):
         df_low, df_desc = _df_low(pt, est)
         res = st.check_ci(est.coef.num, ci.num, ci.second, se, pt.ci_level, df_low)
         counts["intervals"] += 1
+        if re.search(r"bootstrap|percentile|bias[\s-]+corrected|profile|exact", pt.notes or "", re.I):
+            res.width_verdict = None  # such intervals need not equal b +/- c * SE
         problems = []
         status, severity = "likely", "minor"
         if not res.contains_estimate:

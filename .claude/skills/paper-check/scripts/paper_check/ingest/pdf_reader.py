@@ -541,6 +541,8 @@ def find_citations(text: str) -> list:
             starts = [n.start() for n in re.finditer(_NAME, text[:m.end("authors")]) if n.start() >= m.start()]
             found.append({"start": m.start(), "end": m.end(), "kind": "citet", "items": items, "name_starts": starts})
     for m in re.finditer(r"\[(\d{1,3}(?:\s*[-\u2013,;]\s*\d{1,3})*)\]", text):
+        if re.search(r"\d,\d{3}\b", m.group(1)):
+            continue  # "[2,097, 2,720]" is an interval, not citations
         if not any(s <= m.start() < e for s, e in taken):
             nums = []
             for part in re.split(r"\s*[,;]\s*", m.group(1)):
@@ -1913,16 +1915,16 @@ class PdfReader:
                 self._text_block("front_matter", [l], attrs={"role": "date" if DATE_LINE.match(text) else "note"})
                 k += 1
                 continue
+            if l.toks and l.toks[0].script == "super" and state == "authors":
+                self._text_block("front_matter", [l], attrs={"role": "affiliation"})
+                k += 1
+                continue
             if state == "authors" and self._author_line(l):
                 self._author_blocks(l)
                 k += 1
                 continue
             if state == "authors" and (re.search(r"@|\b(?:university|universit\u00e4t|universidad|institute|school|department|"
                                                  r"college|centre|center|bank|nber|cepr|iza|cesifo)\b", low)):
-                self._text_block("front_matter", [l], attrs={"role": "affiliation"})
-                k += 1
-                continue
-            if l.toks and l.toks[0].script == "super" and state == "authors":
                 self._text_block("front_matter", [l], attrs={"role": "affiliation"})
                 k += 1
                 continue
@@ -2273,7 +2275,8 @@ class PdfReader:
             year = ref.fields.get("year", "nd")
             base = reference_key(fam, year) + ref.fields.get("year_suffix", "")
             seen[base] += 1
-            ref.key = base if seen[base] == 1 else f"{base}{'abcdefghij'[seen[base] - 1]}"
+            n = seen[base] - 1
+            ref.key = base if n == 0 else f"{base}{chr(ord('a') + n)}" if n < 26 else f"{base}_{n + 1}"
             ref.fields["key_generated"] = True
         for b in self.blocks:
             if b.kind == "reference":
@@ -2378,8 +2381,8 @@ class PdfReader:
                     continue
                 keys, ok = [], True
                 if "numbers" in c:
-                    if not numbered:
-                        continue  # "[3]" means nothing without a numbered reference list
+                    if not numbered or not c["numbers"] or any(int(n) > len(refs) for n in c["numbers"]):
+                        continue  # "[3]" is a citation only with a numbered reference list that long
                     for n in c["numbers"]:
                         ref = numbered.get(n)
                         keys.append(ref.key if ref else f"[{n}]")

@@ -18,8 +18,8 @@ expressions or test cases were copied from any implementation:
   statcheck is GPL-3, so this is a fresh implementation from the paper.
 - GRIM: Brown and Heathers (2017), Social Psychological and Personality Science 8(4).
 - DEBIT: Heathers and Brown (2019), https://osf.io/5vb3u/.
-- GRIMMER: Anaya (2016), PeerJ Preprints 4:e2400, with the parity argument that
-  a sum of squares of integers has the parity of their sum. Cautious flag only.
+- GRIMMER: Anaya (2016), PeerJ Preprints, with the parity argument that a sum
+  of squares of integers has the parity of their sum. Cautious flag only.
 - Bounds on the standard deviation of bounded data: Bhatia and Davis (2000),
   American Mathematical Monthly 107(4), and the extreme-point construction for
   integer data.
@@ -105,9 +105,6 @@ class Reported:
         """The same report times 10**power; a percentage as a share is scaled(-2)."""
         return Reported(self.raw, self.exact * Fraction(10) ** power, self.decimals, self.exponent + power)
 
-    def negated(self) -> "Reported":
-        return Reported(self.raw, -self.exact, self.decimals, self.exponent)
-
     def __str__(self) -> str:
         return self.raw
 
@@ -176,6 +173,7 @@ def fmt_range(rng: tuple, places: int = 3, p: bool = False) -> str:
 
 
 def round_half_up(value: Fraction, places: int) -> str:
+    """value rounded half up to `places` decimals (to a whole number when places <= 0)."""
     q = Decimal(1).scaleb(-places) if places > 0 else Decimal(1)
     d = Decimal(value.numerator) / Decimal(value.denominator)
     return str(d.quantize(q, rounding=ROUND_HALF_UP))
