@@ -1598,7 +1598,8 @@ def typography(pm, ctx):
 _LEFTOVER = re.compile(
     r"\b(?:TODO|FIXME|TBD|TBA|XXX+)\b:?|\blorem ipsum\b"
     r"|\[(?:citation needed|cite|citation|refs?|references?|add (?:citation|reference|ref)|source\??|\?\?\?)\]"
-    r"|\[insert (?!(?:table|figure|fig\.|exhibit|chart|graph|appendix table|appendix figure)\s+[A-Z]?\d+[a-z]?\s+(?:about\s+)?here\b)[^\]]{1,80}\]"
+    r"|\[insert (?!(?:(?:table|figure|fig\.|exhibit|chart|graph|appendix table|appendix figure)s?\s+[A-Z]?\d+[a-z]?"
+    r"(?:\s*(?:,|&|and|to|-|–)\s*(?:(?:table|figure|fig\.|exhibit)\s+)?[A-Z]?\d+[a-z]?)*\s+(?:about\s+)?here\b))[^\]]{1,80}\]"
     r"|\[your (?:name|institution|affiliation|university)\]"
     r"|\b(?:Figure|Fig\.|Table|Section|Appendix|Equation|Eq\.)\s+(?:X{1,3}|\?\?\?)(?![\w)])"
     r"|\(\s*(?:cite|ref|citation)\s*\??\s*\)|\bxx+\s*%|\bN\s*=\s*xx+\b", re.I)
