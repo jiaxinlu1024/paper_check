@@ -92,6 +92,32 @@ IDENTIFIER_VIAS = ("doi", "arxiv", "nber", "ssrn")
 VERDICTS = ("verified", "metadata_drift", "single_source", "chimeric", "not_found_in_databases", "unverified")
 SOURCE_PREFERENCE = ("crossref", "datacite", "openalex", "semanticscholar", "arxiv", "doi.org", "nber")
 WP_RECORD_TYPES = ("report", "posted-content", "preprint")
+ARTICLE_ENTRY_TYPES = {"article", "article-journal", "journal-article"}
+_WP_SERIES = re.compile(r"national bureau of economic research|\bnber\b|\bssrn\b|social science research network|"
+                        r"\biza\b|\bcepr\b|working papers?|discussion papers?|\barxiv\b|\bpreprints?\b", re.I)
+
+
+_SERIES_WORDS = re.compile(r"\b(?:papers?|series|reports?|briefs?|cent(?:er|re)|institute|bureau|foundation)\b", re.I)
+
+
+def cited_is_article(cited: dict) -> bool:
+    """The entry cites a journal article: it names a journal with a volume, issue or pages, or its type
+    says article and its venue does not look like a paper series. (Reference managers often type a
+    working paper as a journal article: "Kilts Center ... Data Center Paper", no volume.)"""
+    container = str(cited.get("container") or "")
+    details = bool(cited.get("volume") or cited.get("issue") or cited.get("pages"))
+    series = bool(_WP_SERIES.search(container) or _SERIES_WORDS.search(container))
+    if (cited.get("type") or "").lower() in ARTICLE_ENTRY_TYPES:
+        return details or not series
+    return bool(container) and details and not series
+
+
+def record_is_working_paper(rec) -> bool:
+    if (rec.type or "").lower() in WP_RECORD_TYPES:
+        return True
+    if (rec.doi or "").lower().startswith(("10.3386/", "10.2139/", "10.48550/")):
+        return True
+    return bool(_WP_SERIES.search(" ".join([rec.container or "", rec.publisher or ""])))
 POORLY_INDEXED = ("book", "inbook", "incollection", "booklet", "misc", "techreport", "unpublished", "manual", "online",
                   "phdthesis", "mastersthesis", "dataset", "software", "electronic", "report")
 DATA_HINT = re.compile(r"\b(data ?set|data|software|replication (?:package|data)|zenodo|dataverse|icpsr|osf)\b", re.I)
@@ -239,6 +265,12 @@ def field_checks(cited: dict, evs: list) -> list:
     primary = _primary(evs)
     if primary is None:
         return checks
+    # A journal article that the databases know only as its working paper (Card and Krueger's 1994 AER
+    # article as NBER WP 4509, 1993): the record is a version of the cited work, so its year, series and
+    # missing journal details say nothing about errors in the entry.
+    # (An entry that gives the working paper's DOI itself is wrong, and is reported below as a version error.)
+    wp_version = (cited_is_article(cited) and all(record_is_working_paper(e["record"]) for e in evs)
+                  and not any(e["via"] == "doi" for e in evs))
 
     def values(attr):
         return {e["record"].source: getattr(e["record"], attr) for e in evs if getattr(e["record"], attr)}
@@ -283,6 +315,14 @@ def field_checks(cited: dict, evs: list) -> list:
                 check["severity"] = ("major" if (au["fraction"] or 0) < T["author"] or not au["first_author"]
                                      else "minor")
             checks.append(check)
+    if wp_version:
+        rec = primary["record"]
+        where = rec.container or rec.publisher or display_name(rec.source)
+        checks.append({"field": "version", "cited": "journal article", "found": f"{rec.type or 'working paper'} ({where}, "
+                       f"{rec.year or 'no year'})", "status": "note", "sources": {rec.source: rec.type},
+                       "detail": "only a working-paper or preprint version of the cited article was found, so the "
+                                 "entry's year, journal, volume and pages could not be checked against a record"})
+        return checks
     # year
     if cited.get("year"):
         # Crossref holds the publisher's own dates (print, online, issued); when it matched,
@@ -330,7 +370,7 @@ def field_checks(cited: dict, evs: list) -> list:
         checks.append({"field": name, "cited": cited[name], "found": getattr(primary["record"], attr) or
                        next(iter(values(attr).values()), None), "status": status, "sources": values(attr)})
     # version: a journal article cited with the DOI of its working paper or preprint
-    if (cited.get("type") or "").lower() == "article":
+    if cited_is_article(cited):
         for e in evs:
             rtype = (e["record"].type or "").lower()
             if e["via"] == "doi" and rtype in WP_RECORD_TYPES:

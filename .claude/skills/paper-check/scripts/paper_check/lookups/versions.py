@@ -40,7 +40,13 @@ WP_SOURCES = re.compile(r"ssrn|\bnber\b|national bureau of economic research|rep
 PUBLISHED_TYPES = {"journal-article", "article", "book-chapter", "proceedings-article"}
 SERIES = (("nber", "NBER"), ("ssrn", "SSRN"), ("iza", "IZA"), ("cepr", "CEPR"), ("arxiv", "arXiv"))
 PUBLISHED_ENTRY_TYPES = {"article", "book", "inbook", "incollection", "inproceedings", "conference", "phdthesis",
-                         "mastersthesis", "proceedings"}
+                         "mastersthesis", "proceedings",
+                         # CSL types, as Word reference managers write them
+                         "article-journal", "article-magazine", "article-newspaper", "chapter", "paper-conference",
+                         "thesis"}
+# A reply, comment or erratum shares most of its title with the paper it answers but is another work.
+RESPONSE_TITLE = re.compile(r"(?:[:.\-–—]\s*|\b)(?:a\s+)?(?:reply|comment|comments|erratum|corrigendum|rejoinder|"
+                            r"response|correction|addendum)\b", re.I)
 
 
 def is_working_paper(rc: ReferenceCheck) -> tuple:
@@ -62,6 +68,9 @@ def is_working_paper(rc: ReferenceCheck) -> tuple:
         return True, f'the venue is "{m.group(0)}"'
     if entry_type in PUBLISHED_ENTRY_TYPES:
         return False, f"entry type {entry_type}"
+    from .policy import cited_is_article
+    if cited_is_article(rc.cited):
+        return False, "the entry names a journal with a volume or pages"
     if series:
         return True, series
     text = " ".join(str(rc.ref.fields.get(k) or "") for k in ("container", "note", "publisher", "type", "number"))
@@ -96,6 +105,8 @@ def version_score(wp: dict, rec: Record) -> dict:
     score = w["author"] * a + w["title"] * t + w["year"] * year_ok
     accepted = (a >= T["version_author"] and t >= T["version_title"] and year_ok == 1.0
                 and score >= T["version_score"])
+    if accepted and RESPONSE_TITLE.search(rec.title or "") and not RESPONSE_TITLE.search(wp.get("title") or ""):
+        accepted = False  # "...: Reply" answers the paper; it is not its published version
     return {"score": round(score, 3), "authors": round(a, 3), "title": round(t, 3), "year_difference": dy,
             "accepted": accepted}
 

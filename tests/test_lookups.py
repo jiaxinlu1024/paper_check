@@ -828,3 +828,25 @@ def test_network_extra_references(tmp_path):
     assert found["madrian2000wp"]["CIT-04"].extra["published_version"]["doi"] == "10.1162/003355301753265543"
     assert not cards["dellavigna2004wp"]["version_links"]
     assert found["thaler2004typo"]["CIT-12"].fix.replacement == "10.1086/380085"
+
+
+def test_an_article_known_only_as_its_working_paper_is_not_drift(tmp_path):
+    """A 1994 journal article whose databases hold only the 1993 working paper: the year and the
+    missing journal details are not errors in the entry, and the working paper's DOI is not proposed."""
+    wp = {"DOI": "10.3386/w4509", "type": "report", "title": ["Minimum Wages and Employment: A Case Study of the "
+                                                                  "Fast Food Industry"],
+          "author": [{"family": "Card", "given": "David"}, {"family": "Krueger", "given": "Alan"}],
+          "issued": {"date-parts": [[1993, 4]]}, "publisher": "National Bureau of Economic Research"}
+
+    def answer(url, headers, n):
+        if "api.crossref.org/works?" in url:
+            return 200, {}, {"message": {"items": [wp]}}
+        return empty_answers(url, headers, n)
+    card, rc, _ = stub_check(tmp_path, {"type": "article-journal", "title": wp["title"][0], "year": "1994",
+                                        "authors": [{"family": "Card"}, {"family": "Krueger"}],
+                                        "container": "American Economic Review", "volume": "84", "pages": "772-793"},
+                             "Card, D., & Krueger, A. B. (1994). Minimum wages and employment: A case study of the fast "
+                             "food industry. American Economic Review, 84(4), 772-793.", answer)
+    assert card["verdict"] in ("verified", "single_source"), card["field_checks"]
+    fields = {c["field"]: c for c in card["field_checks"]}
+    assert fields["version"]["status"] == "note" and "doi" not in fields and "year" not in fields
