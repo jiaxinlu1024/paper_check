@@ -18,12 +18,18 @@ A coauthor sent their section of a joint behavioral economics paper. During a ro
 | S1 | Off-topic | The cited work does not address the topic at all. "Prior work studied a [X]", but X never mentions a. |
 | S2 | Wrong finding | The cited work is on topic but finds something different, or the opposite. |
 | S3 | Overreach | The finding holds in a narrower setting than the sentence claims, such as a student lab sample cited as a general fact. |
-| S4 | Wrong source | The claim is right but belongs to another paper. Example: a loss aversion coefficient of about 2.25 attributed to Kahneman and Tversky (1979) instead of Tversky and Kahneman (1992). |
+| S4 | Wrong source | The claim is right but belongs to another paper. Example: a loss aversion coefficient of about 2.25 attributed to Kahneman and Tversky (1979) instead of Tversky and Kahneman (1992). This example still has to be confirmed against both original papers. |
 | S5 | Secondhand | The cited work only repeats the claim from another source, such as a survey cited for an original result. |
 | S6 | Misdescribed method | The design, sample or data are described wrongly, such as a lab study described as a field experiment. |
 | S7 | Partial | The source supports only one part of a compound claim. |
 
-Each citation gets one verdict: supported, partly supported, not supported, contradicted, or cannot verify.
+Each citation gets one verdict:
+
+- **Supported.** A quoted passage states the specific claim.
+- **Partly supported.** The report names the part of the claim the source does not cover.
+- **Not supported.** The failure code says which kind. S1 means the topic is absent from the source, and S4 means the claim belongs to another work.
+- **Contradicted.** The source says the opposite.
+- **Cannot verify.** The full text was not available. The report asks for the PDF.
 
 ## How the skill will check it
 
@@ -35,9 +41,9 @@ Each citation gets one verdict: supported, partly supported, not supported, cont
    4. The abstract alone, as a last resort.
 
    The report always records which version was read.
-3. **Search the cited work for the claim.** Expand the concept into synonyms and related terms. For present bias, that means terms such as hyperbolic discounting, quasi-hyperbolic, beta-delta and time inconsistency. Search the full text for every term, and also retrieve the passages closest in meaning. Keep page numbers.
-4. **Judge.** Claude reads the closest passages and gives a verdict and a failure code. A "supported" verdict must quote the passage. A "not supported" verdict must show the search record: the version read, the pages covered, the terms searched with their hit counts, the closest passages, and what the paper is actually about.
-5. **Verify.** A second agent re-reads independently and tries to find support that the first pass missed. A high-confidence "not supported" verdict requires the full text. With only the abstract, the strongest possible verdict is "likely not supported, abstract only".
+3. **Search the cited work for the claim.** Expand the concept into synonyms and related terms. For present bias, that means terms such as hyperbolic discounting, quasi-hyperbolic, beta-delta and time inconsistency. Search the full text for every term, and also retrieve the passages closest in meaning. Keep page numbers and equations, because a source that estimates a present-bias parameter below 1 supports a sentence about present bias even if the phrase never appears. The relation between terms shapes the verdict: a related concept is not a synonym. A source that only fits a hyperbolic discount function partly supports a sentence about present bias.
+4. **Judge.** Claude reads the closest passages and gives a verdict and a failure code. A "supported" verdict must quote a passage that names the specific concept or an approved synonym. Sharing the topic is not support. The survey found that automated checkers most often fail by accepting a citation because its topic overlaps with the claim. A "not supported" verdict must show the search record: the version read, the pages covered, the terms searched with their hit counts, the closest passages, and what the paper is actually about.
+5. **Verify.** A second agent re-reads independently and tries to find support that the first pass missed. The refuter may overturn a verdict only by quoting counter-evidence. Any "not supported" verdict requires the full text. When only the abstract is available, the verdict can be supported, contradicted, or cannot verify, and the report asks for the PDF. Abstracts leave out about a fifth of the concepts that citing sentences attribute to a paper, so an abstract can confirm a citation but can never prove a topic absent.
 6. **Suggest a fix.** Either rewrite the sentence to match what the source says, quoting it, or propose replacement citations found by a literature search, each with the passage that supports the claim. Every suggested replacement must itself pass the existence and support checks, so the skill never introduces a new bad citation.
 7. **Summarize the pattern.** Count the verdicts for each section, for example "Section 2: 14 of 31 citations not supported or contradicted". This shows the scale of a problem without speculating about how the text was written.
 
@@ -94,3 +100,4 @@ The report describes mismatches and the evidence for them. It never speculates a
 - The skill accepts a sources folder of PDFs for cited works, and records which version of each work it read.
 - Verdicts use the failure codes above, and absence claims need a full search record as proof.
 - The report adds a citation support table with one row per citation, and a per-section summary.
+- The survey in `reports/Existing paper check tools.md` found no tool that produces full-text absence proofs. It also found that human annotators agree only weakly on citation accuracy. The test sets above therefore come before any tuning.

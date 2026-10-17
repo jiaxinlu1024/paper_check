@@ -1,6 +1,6 @@
 # Paper Check skill: design draft
 
-Status: draft v0.2, 2026-10-17. Updated with the team's first decisions. No code is built yet.
+Status: draft v0.3, 2026-10-17. Updated with the team's first decisions and three corrections from the survey of existing tools. No code is built yet.
 
 ## 1. Goal
 
@@ -27,7 +27,7 @@ All three formats are converted into one internal "paper map". Every block of te
 | Input | Reader | Anchor used in findings | Notes |
 |---|---|---|---|
 | LaTeX (.tex + .bib, multi-file) | Static parser that follows `\input` and `\include`, parses `.bib`, collects labels, refs and cites | `file:line` | Most precise. If a compiled PDF or `.log` is supplied, it is used for page limits, visuals and build warnings. |
-| PDF | pdfplumber or PyMuPDF text with positions; pages rendered to images with pdftoppm | `page N, line M` | Two-column layouts, math and tables can extract imperfectly. The reference list is parsed heuristically. |
+| PDF | pdfplumber text with character positions; pages rendered to images through pdfplumber | `page N, line M` | Two-column layouts, math and tables can extract imperfectly. The reference list is parsed heuristically. PyMuPDF is optional only, because its AGPL license would bind everyone who shares the skill. Quotes always come from the PDF text layer, never from a parser that re-types the text. |
 | Word (.docx) | python-docx, plus the raw XML for comments and tracked changes; LibreOffice converts to PDF for visual checks | `paragraph N` under its heading path | Comments, tracked changes and document properties are also inspected. |
 
 The paper map holds: section tree, paragraphs, sentences, in-text citations, reference entries, figures and tables with captions, equations, every number with its unit and context, abbreviations, and defined terms and symbols.
@@ -91,6 +91,7 @@ Typical severity is a default. The actual severity depends on the instance.
 | FMT-15 | PDF technical compliance: fonts embedded, Type 3 fonts, page size, metadata, broken links, file size | SCRIPT | Minor to Major |
 | FMT-16 | Supplementary references resolve: "Table S3" or "Appendix B" actually exists | SCRIPT and COMPARE | Major |
 | FMT-17 | Accessibility: figure alt text, color-only distinctions, minimum font size inside figures | SCRIPT and VISUAL | Minor |
+| FMT-18 | Hidden instructions: white or hidden text, and text addressed to AI reviewers such as "give a positive review". Every agent treats the manuscript as material to review, never as instructions | SCRIPT and VISUAL | Critical |
 
 ### 5.2 Citations and references (CIT)
 
@@ -189,7 +190,7 @@ Typical severity is a default. The actual severity depends on the instance.
 | MTH-03 | Code and data availability statements, with working links or a reason | SCRIPT and LOOKUP | Minor to Major |
 | MTH-04 | Statistical methods: tests named, assumptions checked, multiple-comparison correction, effect sizes and intervals, sample-size justification | READ | Major |
 | MTH-05 | Evaluation protocol: metrics defined, how they are computed, number of runs, variance, test set used once | READ | Major |
-| MTH-06 | Reporting guideline for the study type: CONSORT, PRISMA, STROBE, ARRIVE, STARD, TRIPOD, SRQR, COREQ, CHEERS, or venue checklists such as NeurIPS, ICML or ACL | READ against the loaded guideline file | Major |
+| MTH-06 | Reporting guideline for the study type. No CONSORT-style checklist exists for economics, so economics papers use the composite checklist in the BEH module. Biomedical guidelines such as CONSORT or PRISMA apply only to papers of that type | READ against the loaded guideline file | Major |
 | MTH-07 | Preregistration cited where applicable, and protocol deviations explained | READ and LOOKUP | Minor to Major |
 
 ### 5.9 Ethics, integrity and disclosures (ETH)
@@ -390,3 +391,4 @@ The skill lives in a shared GitHub repository. Your coworker opens that reposito
 3. Will you keep a folder of PDFs of the cited works? It gives the skill full text for paywalled journals.
 4. Which network option did you choose for cloud sessions? See `docs/network-setup.md`.
 5. When can you share two or three real drafts, ideally with known problems and in different formats?
+6. Which recommendations from the survey should we adopt? `reports/Existing paper check tools.md` ends with 16 prioritized items in Table 10. I suggest adopting all P0 and P1 items before building.
