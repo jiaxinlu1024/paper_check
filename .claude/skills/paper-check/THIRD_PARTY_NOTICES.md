@@ -113,3 +113,12 @@ Added on 2026-10-17. No code, prompts or text were adapted from MIT or Apache pr
 
 ### Addendum to the OpenAIReview entry in the reading-agent section (2026-10-17)
 - Also adapted: its caveat that text extracted from a PDF can garble symbols, so a reader flags a notation or number problem only if it would remain under the most plausible reading. Used in every `references/dimensions/*.md`.
+
+## Script format, venue, coherence, language and reference checks (`scripts/paper_check/checks/format.py`, `venue.py`, `coherence.py`, `language.py`, `references_local.py`)
+
+Added on 2026-10-17. No code, prompts or text were adapted from MIT or Apache projects for these modules; aclpubcheck was not read or used. arxiv-latex-cleaner is only named, as an example of a tool that strips comments, in the text of one FMT-11 finding.
+
+### TeXtidote (Sylvain Hallé)
+- URL: https://github.com/sylvainhalle/textidote (its README, read on 2026-10-17)
+- License: GPL-3.0
+- Adapted: only the list of rules published in the README, reimplemented in Python from their one-line descriptions in `checks/format.py`, which names each rule's id where it is used: section structure (sh:secorder, sh:secskip, sh:nsubdiv), heading style (sh:001, sh:002, sh:003), figures and tables never referenced and hard-coded numbers (sh:figref, sh:hcfig, sh:hctab, sh:hcsec), caption punctuation (sh:capperiod, checked only for consistency) and citations (sh:c:001, sh:c:002, sh:c:noin, sh:c:mul, sh:c:mix). No TeXtidote code was read, and no code or text was copied.

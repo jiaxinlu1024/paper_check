@@ -1783,7 +1783,8 @@ _AI_LEFTOVER = re.compile(
 
 
 _CONVERSATIONAL = re.compile(r"(?:I(?:['’]m| am)|I cannot|I hope|let me know|sure|certainly|absolutely)", re.I)
-_MATERIALS = re.compile(r"instruction|questionnaire|survey|screen|script|protocol|materials|consent", re.I)
+_MATERIALS = re.compile(r"\binstructions?\b|\bquestionnaires?\b|\bsurveys?\b|\bscreens?\b|\bscreenshots?\b|"
+                        r"\bscripts?\b|\bprotocols?\b|\bmaterials?\b|\bconsent\b", re.I)
 
 
 @register("FMT-12")

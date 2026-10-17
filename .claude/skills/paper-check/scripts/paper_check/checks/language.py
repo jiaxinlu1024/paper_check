@@ -21,12 +21,12 @@ from collections import defaultdict
 from ..model import Evidence, Fix
 from ..textutil import word_count
 from . import register
-from .format import (BODY_KINDS, PROSE_KINDS, inside, math_spans, note_coverage, prose, quote_at, related,
+from .format import (PROSE_KINDS, inside, math_spans, note_coverage, prose, quote_at, related,
                      sentence_bounds, sentence_quote, setting, span_list, venue_other)
 
 SCRIPT = "checks/language.py"
-_INSTRUCTIONS = re.compile(r"instruction|questionnaire|survey (?:items|questions|instrument)|screens?\b|screenshots?|"
-                           r"consent form|script", re.I)
+_INSTRUCTIONS = re.compile(r"\binstructions?\b|\bquestionnaires?\b|\bsurvey (?:items|questions|instruments?)\b|"
+                           r"\bscreens?\b|\bscreenshots?\b|\bconsent forms?\b|\bscripts?\b", re.I)
 
 
 def _texts(pm, kinds=PROSE_KINDS):
@@ -60,7 +60,8 @@ _IZE_ROOTS = ("random|organ|real|recogn|util|optim|maxim|minim|standard|special|
               "normal|central|final|capital|harmon|critic|monet|subsid|stabil|mobil|visual|formal|internal|character|"
               "memor|penal|legal|apolog|theor|hypothes|incentiv|individual|operational|conceptual|parameter|custom|"
               "familiar|local|neutral|rational|social|symbol|sympath|synthes|author|liberal|privat|modern|global|"
-              "industrial|commercial|amortiz|amortis|subsidiz|subsidis|polar|vapor|equal")
+              "industrial|commercial|polar|vapor|equal")
+# Group A: pairs where British and American English differ outright.
 _PAIRS = [
     (r"behavior(?:s|al|ally|ist|ism)?", r"behaviour(?:s|al|ally|ist|ism)?"),
     (r"labor(?:s|ed|er|ers|ing)?", r"labour(?:s|ed|er|ers|ing)?"),
@@ -83,77 +84,112 @@ _PAIRS = [
     (r"skeptic(?:al|ally|ism|s)?", r"sceptic(?:al|ally|ism|s)?"),
     (r"gray", r"grey"),
     (r"aging", r"ageing"),
-    (r"percent", r"per cent"),
-    (rf"(?:{_IZE_ROOTS})iz(?:e|es|ed|ing|ation|ations|er|ers)", rf"(?:{_IZE_ROOTS})is(?:e|es|ed|ing|ation|ations|er|ers)"),
 ]
-_US = [re.compile(rf"\b{us}\b", re.I) for us, _ in _PAIRS]
-_UK = [re.compile(rf"\b{uk}\b", re.I) for _, uk in _PAIRS]
+# -ize is American and also British (Oxford spelling); -ise is British only.
+_IZE = (rf"(?:{_IZE_ROOTS})iz(?:e|es|ed|ing|ation|ations|er|ers)", rf"(?:{_IZE_ROOTS})is(?:e|es|ed|ing|ation|ations|er|ers)")
+# British writers use both 'per cent' and 'percent', so only a mix of the two is reported.
+_PCT = (r"percent", r"per cent")
+_GROUPS = {
+    "A": ([re.compile(rf"\b{us}\b", re.I) for us, _ in _PAIRS], [re.compile(rf"\b{uk}\b", re.I) for _, uk in _PAIRS]),
+    "IZE": ([re.compile(rf"\b{_IZE[0]}\b", re.I)], [re.compile(rf"\b{_IZE[1]}\b", re.I)]),
+    "PCT": ([re.compile(rf"\b{_PCT[0]}\b", re.I)], [re.compile(rf"\b{_PCT[1]}\b", re.I)]),
+}
+
+
+def _variant_hits(pm) -> dict:
+    hits = {g: ([], []) for g in _GROUPS}
+    for b, skip in _texts(pm, PROSE_KINDS + ("heading",)):
+        for g, sides in _GROUPS.items():
+            for side, pats in enumerate(sides):
+                for pat in pats:
+                    for m in pat.finditer(b.text):
+                        if inside(m.start(), skip) or _proper(b.text, m.start()):
+                            continue
+                        hits[g][side].append((b, m.start(), m.end(), m.group(0)))
+    return hits
 
 
 @register("LANG-01")
 def spelling_variant(pm, ctx):
-    hits = {"US": [], "UK": []}
-    for b, skip in _texts(pm, PROSE_KINDS + ("heading",)):
-        for variant, pats in (("US", _US), ("UK", _UK)):
-            for pat in pats:
-                for m in pat.finditer(b.text):
-                    if inside(m.start(), skip) or _proper(b.text, m.start()):
-                        continue
-                    hits[variant].append((b, m.start(), m.end(), m.group(0)))
-    us, uk = len(hits["US"]), len(hits["UK"])
+    hits = _variant_hits(pm)
+    us, uk = (len(x) for x in hits["A"])
+    ize, ise = (len(x) for x in hits["IZE"])
+    pct, per_cent = (len(x) for x in hits["PCT"])
     target = str(setting(ctx, "language_variant") or "").upper().replace("ENGLISH", "").strip() or None
-    venue_rule = venue_other(ctx, "language_variant")
-    steps = [f"Counted US and UK forms of {len(_PAIRS)} spelling pairs (behavior/behaviour, -ize/-ise, "
-             f"enrollment/enrolment, modeling/modelling and others) outside quotations, citations and names: "
-             f"{us} US, {uk} UK."]
-    if target in ("US", "UK"):
-        wrong = hits["UK" if target == "US" else "US"]
-        why = f"The settings ask for {target} English"
+    if target not in ("US", "UK"):
+        target = None
+    steps = [f"Counted US and UK forms of {len(_PAIRS)} spelling pairs (behavior/behaviour, center/centre, "
+             f"enrollment/enrolment, modeling/modelling and others) outside quotations, citations and names: {us} US, "
+             f"{uk} UK. Counted -ize and -ise endings separately ({ize} and {ise}), since British English allows "
+             f"both, and 'percent' against 'per cent' ({pct} and {per_cent})."]
+    wrong, reasons, status = [], [], "likely"
+    if target:
         status = "confirmed"
+        reasons.append(f"the settings ask for {target} English")
+        wrong += hits["A"][1 if target == "US" else 0]
     elif us and uk:
         target = "US" if us > uk else "UK" if uk > us else None
-        wrong = hits["UK"] if target == "US" else hits["US"] if target == "UK" else hits["UK"]
-        why = (f"Most variant spellings are {target} ({max(us, uk)} of {us + uk})" if target
-               else f"US and UK forms are equally common ({us} each)")
-        status = "likely" if target else "needs_human"
+        if target:
+            reasons.append(f"most variant spellings are {target} ({max(us, uk)} of {us + uk})")
+            wrong += hits["A"][1 if target == "US" else 0]
+        else:
+            status = "needs_human"
+            reasons.append(f"US and UK forms are equally common ({us} each)")
+            wrong += hits["A"][1]
     else:
+        target = "US" if us else "UK" if uk else None  # one variant throughout
+    if target == "US" and ise:
+        reasons.append(f"US English spells -ize words with a z, but {ise} use -ise")
+        wrong += hits["IZE"][1]
+    elif ize and ise:
+        reasons.append(f"both -ize ({ize}) and -ise ({ise}) endings are used; British English allows either, but "
+                       "not both")
+        wrong += hits["IZE"][1 if ize >= ise else 0]
+    if pct and per_cent:
+        reasons.append(f"both 'percent' ({pct}) and 'per cent' ({per_cent}) are used")
+        side = 1 if target == "US" else 0 if target == "UK" else (1 if pct >= per_cent else 0)
+        wrong += hits["PCT"][side]
+    if not wrong:
+        venue_rule = venue_other(ctx, "language_variant")
         if venue_rule and re.search(r"\bUK\b|British", str(venue_rule.get("value")), re.I) and us >= 3 and not uk:
-            b, s, e, word = hits["US"][0]
+            b, s, e, word = hits["A"][0][0]
             quote = quote_at(b, s, e, 4, 4)
             yield ctx.finding(
                 "LANG-01", "Journal uses UK spelling", "suggestion",
                 f"The paper uses US spelling throughout ({us} forms such as \"{word}\"), and the venue profile records "
                 f"UK English ({venue_rule.get('value')}).",
                 block=b, quote=quote, status="likely", confidence="medium",
-                evidence=[Evidence(type="script_output", text=", ".join(sorted({w for *_, w in hits['US']}))[:300],
+                evidence=[Evidence(type="script_output", text=", ".join(sorted({w for *_, w in hits['A'][0]}))[:300],
                                    data={"script": SCRIPT, "us": us, "uk": uk})],
                 trajectory=steps,
                 fix=Fix(action="investigate", detail="Switch to UK spelling if the journal requires it at this stage.",
                         resolved_when="The spelling matches the journal's variant."),
                 script=SCRIPT)
-        note_coverage(ctx, "LANG-01", f"{us} US and {uk} UK forms; only variant pairs on the built-in list are checked, "
-                                      "not spelling or grammar in general")
+        note_coverage(ctx, "LANG-01", f"{us} US and {uk} UK forms, {ize} -ize and {ise} -ise; only variant pairs on the "
+                                      "built-in list are checked, not spelling or grammar in general")
         return
-    if not wrong:
-        note_coverage(ctx, "LANG-01", f"{us} US and {uk} UK forms")
-        return
+    order = {blk.id: i for i, blk in enumerate(pm.blocks)}
+    wrong.sort(key=lambda h: (order.get(h[0].id, 0), h[1]))
     b, s, e, word = wrong[0]
     quote = quote_at(b, s, e, 4, 4)
     forms = sorted({w.lower() for *_, w in wrong})
-    other = sorted({w.lower() for *_, w in hits[target]})[:8] if target else []
+    why = "; ".join(reasons)
     yield ctx.finding(
         "LANG-01", "US and UK spelling mixed", "minor",
-        f"{why}, but {len(wrong)} use the other variant: {', '.join(forms[:10])}"
-        + (f" (against {', '.join(other)})" if other else "") + ". Use one variant throughout.",
+        f"{why[0].upper() + why[1:]}. {len(wrong)} form{'s' if len(wrong) != 1 else ''} to change: "
+        f"{', '.join(forms[:10])}{' and others' if len(forms) > 10 else ''}. Use one variant throughout.",
         block=b, quote=quote, status=status, confidence="high" if status == "confirmed" else "medium",
         related=[related(b2, quote_at(b2, s2, e2, 4, 4)) for b2, s2, e2, _ in wrong[1:7]],
-        evidence=[Evidence(type="script_output", text=f"US forms: {us}; UK forms: {uk}; minority forms: {', '.join(forms)}",
-                           data={"script": SCRIPT, "us": us, "uk": uk})],
-        trajectory=steps + [f"Listed the {len(wrong)} forms of the minority variant."],
-        fix=Fix(action="investigate", detail=f"Change {', '.join(forms[:6])} to their {target or 'chosen'} spelling.",
+        evidence=[Evidence(type="script_output",
+                           text=f"US forms: {us}; UK forms: {uk}; -ize: {ize}; -ise: {ise}; percent: {pct}; "
+                                f"per cent: {per_cent}; forms to change: {', '.join(forms)}"[:600],
+                           data={"script": SCRIPT, "us": us, "uk": uk, "ize": ize, "ise": ise})],
+        trajectory=steps + [f"Listed the {len(wrong)} forms that differ from the main variant."],
+        fix=Fix(action="investigate", detail=f"Change {', '.join(forms[:6])} to the {target or 'chosen'} spelling.",
                 resolved_when="All variant spellings follow one variant."),
-        script=SCRIPT, extra={"us": us, "uk": uk, "target": target})
-    note_coverage(ctx, "LANG-01", f"{us} US and {uk} UK forms; only variant pairs on the built-in list are checked")
+        script=SCRIPT, extra={"us": us, "uk": uk, "ize": ize, "ise": ise, "target": target})
+    note_coverage(ctx, "LANG-01", f"{us} US and {uk} UK forms, {ize} -ize and {ise} -ise; only variant pairs on the "
+                                  "built-in list are checked")
 
 
 # =============================================================== LANG-02 long sentences
@@ -200,11 +236,18 @@ def long_sentences(pm, ctx):
 
 
 # =============================================================== LANG-04 vague and loaded words
+# 'trivially' is left out: "the constraint is trivially satisfied" is ordinary mathematical usage.
 _LOADED = ["clearly", "obviously", "of course", "needless to say", "it is well known", "it is well-known",
-           "it is easy to see", "trivially", "undoubtedly", "unquestionably", "groundbreaking", "ground-breaking",
+           "it is easy to see", "undoubtedly", "unquestionably", "groundbreaking", "ground-breaking",
            "unprecedented", "revolutionary", "game-changing", "game changer", "paradigm shift"]
-_INTENSIFIERS = ["very", "really", "extremely", "incredibly", "remarkably", "hugely", "huge", "tremendous",
-                 "tremendously", "massive", "massively", "dramatic", "dramatically", "basically", "actually", "totally"]
+_HYPE = ["incredibly", "hugely", "huge", "tremendous", "tremendously", "massive", "massively", "dramatic",
+         "dramatically"]
+# Common words that are a problem only when overused: reported from MIN_WEAK uses on.
+_WEAK = ["very", "really", "extremely", "remarkably", "basically", "actually", "totally", "interestingly"]
+_INTENSIFIERS = _HYPE + _WEAK
+MIN_WEAK = 3
+_SIGNPOST = {"interestingly", "basically", "actually", "really", "totally"}
+_VERY_ADJ = re.compile(r"\b(?:the|this|that|its|their|his|her|our)\s+$", re.I)  # "the very first": not an intensifier
 _SIGNIF = re.compile(r"\b(?:significantly|significant|insignificant(?:ly)?)\b", re.I)
 _STAT_CONTEXT = re.compile(
     r"\bp\s*[<=>≤≥]\s*0?\.\d|\bp-?values?\b|\bt\s*[=(]|\bz\s*=|\bF\s*\(|χ|chi-?squared?|\bstatistical(?:ly)?\b|"
@@ -237,9 +280,13 @@ def vague_words(pm, ctx):
             for m in re.finditer(rf"\b{re.escape(word)}\b", b.text, re.I):
                 if inside(m.start(), skip) or _proper(b.text, m.start()) and word not in ("clearly", "obviously"):
                     continue
+                if word == "very" and _VERY_ADJ.search(b.text[max(0, m.start() - 12):m.start()]):
+                    continue
                 groups[word.lower()].append((b, m.start(), m.end()))
     for word, hits in groups.items():
         loaded = word in _LOADED
+        if word in _WEAK and len(hits) < MIN_WEAK:
+            continue
         b, s, e = hits[0]
         quote = quote_at(b, s, e, 5, 5)
         yield ctx.finding(
@@ -247,11 +294,13 @@ def vague_words(pm, ctx):
             (f"\"{word}\" asserts rather than shows" if loaded else f"\"{word}\" adds emphasis without information")
             + f" ({len(hits)} use{'s' if len(hits) != 1 else ''}). "
             + ("Let the evidence make the point, or say what makes it clear." if loaded else
+               "Drop the word; the sentence says the same without it." if word in _SIGNPOST else
                "Give the magnitude instead, or drop the word."),
             block=b, quote=quote, status="likely", confidence="medium",
             related=[related(b2, quote_at(b2, s2, e2, 5, 5)) for b2, s2, e2 in hits[1:6]],
             evidence=[Evidence(type="script_output", text=f"\"{word}\": {len(hits)}", data={"script": SCRIPT})],
-            trajectory=["Searched the text, outside quotations, for a list of vague and loaded words.",
+            trajectory=["Searched the text, outside quotations, for a list of vague and loaded words; common "
+                        f"intensifiers such as 'very' are reported only from {MIN_WEAK} uses on.",
                         f"\"{word}\" occurs {len(hits)} time(s); the first is at {b.anchor.label()}."],
             fix=Fix(action="investigate", detail=f"Rewrite without \"{word}\", stating the size or the evidence.",
                     resolved_when=f"\"{word}\" is gone, or each use is backed by the evidence it refers to."),
@@ -299,7 +348,7 @@ _INCLUSIVE = [
     (r"(?:the )?handicapped", "people with disabilities"),
     (r"wheelchair-bound|confined to a wheelchair", "wheelchair users"),
     (r"illegal (?:aliens?|immigrants?)", "undocumented immigrants"),
-    (r"third[- ]world (?:countries|nations)?", "low- and middle-income countries"),
+    (r"third[- ]world(?: countries| nations)?", "low- and middle-income countries"),
     (r"(?:mentally )?retarded", "people with intellectual disabilities"),
     (r"blacklist(?:s|ed|ing)?", "blocklist"),
     (r"whitelist(?:s|ed|ing)?", "allowlist"),
@@ -309,7 +358,7 @@ _INCLUSIVE = [
 @register("LANG-07")
 def inclusive_language(pm, ctx):
     for pattern, better in _INCLUSIVE:
-        pat = re.compile(rf"\b{pattern}\b", re.I)
+        pat = re.compile(rf"\b(?:{pattern})\b", re.I)
         hits = [(b, m) for b, skip in _texts(pm) for m in pat.finditer(b.text)
                 if not inside(m.start(), skip) and not _proper(b.text, m.start())]
         if not hits:
@@ -350,7 +399,8 @@ _FILLERS = [
     (r"take into consideration", "consider"),
     (r"with the exception of", "except"),
     (r"in close proximity to", "near"),
-    (r"on a (?:daily|weekly|monthly|yearly|regular) basis", ""),
+    (r"on an? (daily|weekly|monthly|yearly|annual|regular) basis",
+     lambda m: {"regular": "regularly", "annual": "annually"}.get(m.group(1).lower(), m.group(1).lower())),
 ]
 
 
@@ -358,13 +408,15 @@ _FILLERS = [
 def filler(pm, ctx):
     texts = _texts(pm)
     for pattern, better in _FILLERS:
-        pat = re.compile(rf"\b{pattern}\b", re.I)
+        pat = re.compile(rf"\b(?:{pattern})\b", re.I)
         hits = [(b, m) for b, skip in texts for m in pat.finditer(b.text) if not inside(m.start(), skip)]
         if not hits:
             continue
         b, m = hits[0]
         quote = quote_at(b, m.start(), m.end(), 3, 6)
         phrase = m.group(0)
+        if callable(better):
+            better = better(m)
         if better:
             replacement = better[0].upper() + better[1:] if phrase[:1].isupper() else better
             fix = Fix(action="replace", original=phrase, replacement=replacement,

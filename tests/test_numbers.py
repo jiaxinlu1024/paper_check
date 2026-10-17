@@ -17,7 +17,7 @@ from paper_check.checks import Context
 from paper_check.checks import numbers as num
 from paper_check.checks import stats as st
 from paper_check.model import Anchor, Block, Citation, FindingSet, PaperMap, Table
-from paper_check.textutil import find_quote
+from paper_check.textutil import find_quote, normalize
 from paper_check.verify import load_findings_file, verify_finding
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -54,12 +54,13 @@ def make_map(paragraphs=(), tables=()):
     for j, t in enumerate(tables, 1):
         rows, notes, number = t[:3]
         caption = t[3] if len(t) > 3 else ""
+        raw = t[4] if len(t) > 4 else None
         text = "\n".join(" | ".join(r).strip() for r in rows) + (f"\nNotes: {notes}" if notes else "")
         tid = f"t{j}"
         pm.blocks.append(Block(id=f"bt{j:03d}", kind="table", text=text, anchor=Anchor(file="tables.tex", line=j),
                                section=["3 Results"], attrs={"table_id": tid, "number": number}))
         pm.tables.append(Table(id=tid, anchor=Anchor(file="tables.tex", line=j), caption=caption,
-                               label=f"tab:{number}", number=number, rows=rows, notes=notes))
+                               label=f"tab:{number}", number=number, rows=rows, notes=notes, raw=raw))
     return pm
 
 
@@ -68,7 +69,10 @@ def by_check(findings, cid):
 
 
 def assert_well_formed(pm, findings, work):
-    """Every finding quotes verbatim block text, carries computed evidence, a trajectory and a fix."""
+    """Every finding quotes verbatim block text, carries computed evidence, a trajectory and a fix,
+    and no two findings share check, block and quote (the report would merge them)."""
+    keys = [(f.check_id, f.locations[0].block, normalize(f.quote).lower()) for f in findings]
+    assert len(keys) == len(set(keys)), keys
     for f in findings:
         block = pm.block(f.locations[0].block)
         assert find_quote(f.quote, block.text), (f.check_id, f.quote)
@@ -410,7 +414,6 @@ def test_planted_number_problems_are_found(paper_findings, item_id):
 
 def test_planted_findings_have_honest_statuses(paper_findings):
     _, _, findings, _ = paper_findings
-    status = {f.check_id + ":" + f.title: f.status for f in findings}
     p01 = next(f for f in findings if _matches(f, _planted("P01")))
     assert p01.status == "confirmed" and "18.2%" in p01.problem and p01.fix.replacement == "by 18%"
     p20 = next(f for f in findings if _matches(f, _planted("P20")))
@@ -422,7 +425,8 @@ def test_planted_findings_have_honest_statuses(paper_findings):
     p19 = next(f for f in findings if _matches(f, _planted("P19")))
     assert p19.status == "likely"  # GRIM assumes one integer rating per participant
     assert "3.44" in p19.problem and "3.48" in p19.problem
-    assert status  # every finding has a status
+    p02 = next(f for f in findings if _matches(f, _planted("P02")))
+    assert p02.status == "likely"  # 1,200 could count an earlier stage, such as recruitment
 
 
 def test_negatives_are_not_flagged(paper_findings):
@@ -572,12 +576,11 @@ def test_statcheck_style_reports(run, tmp_path):
     pm = make_map(TEXT_STATS)
     findings, cov = run(pm)
     flagged = {f.quote: f for f in by_check(findings, "NUM-03")}
-    assert set(flagged) == {"A second test gave t(28) = 2.20, p = .01.", "The interaction was F(2, 57) = 3.10, p < .05.",
-                            "The Mann-Whitney U = 300, n1 = 25, n2 = 30, p = .04."}
-    assert flagged["A second test gave t(28) = 2.20, p = .01."].severity == "minor"  # both below .05
-    f_test = flagged["The interaction was F(2, 57) = 3.10, p < .05."]
+    assert set(flagged) == {"t(28) = 2.20, p = .01", "F(2, 57) = 3.10, p < .05", "U = 300, n1 = 25, n2 = 30, p = .04"}
+    assert flagged["t(28) = 2.20, p = .01"].severity == "minor"  # both below .05
+    f_test = flagged["F(2, 57) = 3.10, p < .05"]
     assert f_test.severity == "major" and f_test.status == "confirmed"  # the 5% conclusion flips
-    assert flagged["The Mann-Whitney U = 300, n1 = 25, n2 = 30, p = .04."].status == "needs_human"
+    assert flagged["U = 300, n1 = 25, n2 = 30, p = .04"].status == "needs_human"
     assert "8 statistics in the text" in cov["NUM-03"].reason
     assert_well_formed(pm, findings, tmp_path)
 
@@ -593,8 +596,8 @@ def test_significance_claims(run, tmp_path):
     ])
     findings, _ = run(pm)
     claims = {f.quote: f for f in by_check(findings, "NUM-08")}
-    assert set(claims) == {"The effect on effort is not significant (p = 0.01).",
-                           "The effect on time is significant (p = 0.25)."}
+    assert set(claims) == {"The effect on effort is not significant (p = 0.01)",
+                           "The effect on time is significant (p = 0.25)"}
     assert not by_check(findings, "NUM-03")  # the claim about B is not attached to A's estimate
     assert_well_formed(pm, findings, tmp_path)
 
@@ -607,6 +610,7 @@ def test_changes_counts_and_shares(run, tmp_path):
         ("paragraph", "3 Results", "Effort rose from 20 to 30, a 50% increase."),
         ("paragraph", "3 Results", "Take-up rose from 20% to 25%, an increase of about 5 percentage points."),
         ("paragraph", "3 Results", "Ratings ranged from 1 to 7, and sessions ran from 2019 to 2021."),
+        ("paragraph", "3 Results", "The share rose from 0.20 to 0.25, an increase of 5 percentage points."),
         ("paragraph", "3 Results", "Of the participants, 40% chose A, 35% chose B and the remaining 20% chose C."),
         ("paragraph", "3 Results", "In total, 45 of 120 participants (40%) chose the safe lottery, and 30 of 120 (25%) "
                                    "chose the risky one."),
@@ -644,14 +648,18 @@ def test_grim_family_in_text_and_tables(run, tmp_path):
         ("paragraph", "3 Results", "The mean index of four items was 3.47 on a five-point scale (N = 25 participants)."),
         ("paragraph", "3 Results", "The average treatment effect was 0.47 on a five-point scale (N = 25 participants)."),
         ("paragraph", "3 Results", "Mean patience was 3.48 on a five-point scale (N = 25 participants)."),
+        ("paragraph", "3 Results", "Mean liking was 3.00 (SD = 1.01) on a five-point scale (N = 5 participants)."),
     ], [([["", "Mean", "SD", "N"], ["Female (=1)", "0.43", "0.30", "120"], ["Age", "34.2", "10.1", "120"]],
          "Summary statistics.", "1", "Summary statistics")])
     findings, _ = run(pm)
     titles = sorted(f.title for f in by_check(findings, "NUM-04"))
     assert titles == ["Mean and SD inconsistent for a binary variable in Table 1 (DEBIT)", "Mean outside the scale",
-                      "Percentage impossible for 40 people (GRIM)", "Standard deviation impossible for the scale"]
+                      "Percentage impossible for 40 people (GRIM)", "Standard deviation impossible for the scale",
+                      "Standard deviation may be impossible (GRIMMER)"]
     outside = next(f for f in findings if f.title == "Mean outside the scale")
     assert outside.status == "confirmed"
+    grimmer = next(f for f in findings if "GRIMMER" in f.title)
+    assert grimmer.status == "needs_human" and grimmer.confidence == "low"
     assert_well_formed(pm, findings, tmp_path)
 
 
@@ -742,3 +750,173 @@ def test_odd_inputs_do_not_crash(run):
     _, cov = run(pm)
     assert set(cov) == NUM_IDS
     assert not [c for c in cov.values() if (c.reason or "").startswith("check crashed")]
+
+
+# ================================================================ a clean paper, and the same paper with planted errors
+CLEAN_PARAS = [
+    ("abstract", None, "In an online experiment with 1,204 participants, an opt-out default raises take-up of the "
+                       "savings plan by 14.6 percentage points, a 47% increase over the control group."),
+    ("paragraph", "2 Design", "Our sample consists of 1,240 participants recruited on Prolific, of whom 1,204 passed "
+                              "both attention checks."),
+    ("paragraph", "2 Design", "Participants were randomly assigned to the treatment or the control condition."),
+    ("paragraph", "2 Design", "Participants were paid a show-up fee of £1.50 and earned on average £2.35 "
+                              "(SD = 0.87) from the incentivized choices."),
+    ("paragraph", "2 Design", "We ran 24 sessions with between 18 and 24 participants each."),
+    ("paragraph", "3 Results", "In the control group, 31.2% of participants chose the plan, compared with 45.8% in the "
+                               "treatment group (p < 0.001, Fisher's exact test)."),
+    ("paragraph", "3 Results", "The treatment increased take-up by 14.6 percentage points (Table 1, column 1), a 47% "
+                               "increase relative to the control mean of 31.2%."),
+    ("paragraph", "3 Results", "The coefficient is 0.146 and significant at the 1% level (Table 1)."),
+    ("paragraph", "3 Results", "Column (2) adds demographic controls; the estimate barely changes (0.139 vs. 0.146)."),
+    ("paragraph", "3 Results", "Mean trust in the experimenter was 5.12 (SD = 1.31) on a seven-point scale (N = 1,204)."),
+    ("paragraph", "3 Results", "Take-up rose from 31.2% to 45.8%, an increase of 14.6 percentage points or 47%."),
+    ("paragraph", "3 Results", "A one-standard-deviation increase in present bias (0.23) reduces contributions by "
+                               "0.8 percentage points (SE 0.3)."),
+    ("paragraph", "3 Results", "A Wilcoxon rank-sum test confirms the difference (z = 4.21, p < 0.001), and choices "
+                               "differed across arms ($\\chi^2(2) = 9.87$, $p = 0.007$)."),
+    ("paragraph", "3 Results", "Table 2 shows that the treatment raises log savings by 0.083, or about 8.7%."),
+    ("paragraph", "3 Results", "The effect is robust to excluding the 36 participants who failed an attention check "
+                               "(Table A2)."),
+    ("paragraph", "1 Introduction", "In 2023, 45% of US workers had access to an employer plan (Bureau of Labor "
+                                    "Statistics, 2023), and Madrian and Shea (2001) found that participation rose from "
+                                    "37% to 86%."),
+    ("paragraph", "5 Conclusion", "Defaults raised take-up by nearly 15 percentage points."),
+    ("footnote", "3 Results", "Of the 1,204 participants, 602 were assigned to the control group and 602 to the "
+                              "treatment group."),
+]
+CLEAN_TABLES = [
+    ([["", "(1)", "(2)"], ["", "Take-up", "Take-up"], ["Treatment", "0.146***", "0.139***"], ["", "(0.027)", "(0.026)"],
+      ["Present bias", "", "-0.008**"], ["", "", "(0.003)"], ["Constant", "0.312***", "0.298***"],
+      ["", "(0.019)", "(0.041)"], ["Controls", "No", "Yes"], ["Control mean", "0.312", "0.312"],
+      ["Observations", "1,204", "1,204"], ["R-squared", "0.022", "0.048"]],
+     "Robust standard errors in parentheses. *** p<0.01, ** p<0.05, * p<0.1.", "1", "Effect of the default on take-up"),
+    ([["", "(1)"], ["", "Log savings"], ["Treatment", "0.083**"], ["", "(0.036)"], ["", "[0.012, 0.154]"],
+      ["Observations", "1,204"]],
+     "Heteroskedasticity-robust standard errors in parentheses and 95% confidence intervals in brackets. "
+     "*** p<0.01, ** p<0.05, * p<0.1.", "2", "Savings"),
+    ([["", "Control", "Treatment", "p-value"], ["Female (=1)", "0.51", "0.49", "0.48"], ["", "(0.50)", "(0.50)", ""],
+      ["Age", "34.2", "33.9", "0.61"], ["", "(10.1)", "(9.8)", ""], ["Observations", "602", "602", ""]],
+     "Means with standard deviations in parentheses. The last column reports p-values of t-tests.", "3", "Balance"),
+]
+
+
+def _perturbed(where, old, new):
+    paras = [list(p) for p in CLEAN_PARAS]
+    tables = [[[list(r) for r in t[0]]] + list(t[1:]) for t in CLEAN_TABLES]
+    if where[0] == "para":
+        assert old in paras[where[1]][2]
+        paras[where[1]][2] = paras[where[1]][2].replace(old, new)
+    elif where[0] == "note":
+        assert tables[where[1]][1] == old
+        tables[where[1]][1] = new
+    else:
+        _, t, i, j = where
+        assert tables[t][0][i][j] == old
+        tables[t][0][i][j] = new
+    return make_map([tuple(p) for p in paras], [tuple(t) for t in tables])
+
+
+def test_clean_paper_has_no_findings(run):
+    findings, cov = run(make_map(CLEAN_PARAS, CLEAN_TABLES))
+    assert not findings, [(f.check_id, f.title, f.problem) for f in findings]
+    assert all(c.status == "run" for c in cov.values())
+
+
+@pytest.mark.parametrize("where,old,new,check", [
+    (("para", 0), "by 14.6 percentage points", "by 16.4 percentage points", "NUM-01"),
+    (("table", 0, 3, 2), "(0.026)", "(0.096)", "NUM-03"),
+    (("para", 10), "an increase of 14.6 percentage points or 47%", "an increase of 14.6%", "NUM-09"),
+    (("table", 2, 1, 1), "0.51", "0.31", "NUM-04"),
+    (("para", 17), "602 to the treatment group", "612 to the treatment group", "NUM-05"),
+    (("para", 9), "(SD = 1.31)", "(SD = 3.10)", "NUM-04"),
+    (("para", 12), "z = 4.21", "z = 1.21", "NUM-03"),
+    (("para", 6), "by 14.6 percentage points (Table 1", "by 16.4 percentage points (Table 1", "NUM-06"),
+    (("para", 7), "significant at the 1% level", "not significant at the 5% level", "NUM-08"),
+    (("para", 10), "to 45.8%, an increase", "to 44.8%, an increase", "NUM-02"),
+    (("note", 0), "Robust standard errors in parentheses. *** p<0.01, ** p<0.05, * p<0.1.",
+     "Standard errors in parentheses. *** p<0.01, ** p<0.05, * p<0.1.", "BEH-09"),
+    (("para", 5), "(p < 0.001, Fisher's exact test)", "(p = 0.000, Fisher's exact test)", "NUM-07"),
+    (("para", 13), "or about 8.7%", "or 8.3%", None),  # 100 (exp(0.083) - 1) = 8.65: the approximation is fine
+])
+def test_planted_errors_in_the_clean_paper_are_caught(run, tmp_path, where, old, new, check):
+    pm = _perturbed(where, old, new)
+    findings, _ = run(pm)
+    if check is None:
+        assert not findings, [(f.check_id, f.problem) for f in findings]
+        return
+    assert [f.check_id for f in findings] == [check], [(f.check_id, f.title, f.problem) for f in findings]
+    assert_well_formed(pm, findings, tmp_path)
+
+
+# ================================================================ more paths
+def test_total_rows_and_best_values(run, tmp_path):
+    totals = [["", "Control", "Treatment"], ["Session 1", "20", "22"], ["Session 2", "18", "20"], ["Total", "38", "45"]]
+    est = [["", "(1)", "(2)", "(3)"], ["Treatment", "0.120**", "0.250***", "0.080*"], ["", "(0.050)", "(0.060)", "(0.045)"]]
+    pm = make_map([("paragraph", "3 Results", "Table 2 shows that the largest effect, 0.120, is in column (1).")],
+                  [(totals, "Number of participants per session.", "1"),
+                   (est, "Robust standard errors in parentheses. *** p<0.01, ** p<0.05, * p<0.1", "2")])
+    findings, _ = run(pm)
+    total = [f for f in by_check(findings, "NUM-02") if "Total row" in f.title]
+    assert len(total) == 1 and "42" in total[0].problem and "45" in total[0].problem
+    best = [f for f in by_check(findings, "NUM-06") if "largest" in f.title]
+    assert len(best) == 1 and best[0].status == "needs_human"
+    assert_well_formed(pm, findings, tmp_path)
+
+
+def test_bold_cell_that_is_not_the_best(run):
+    rows = [["", "(1)", "(2)", "(3)"], ["Accuracy", "0.71", "0.65", "0.80"]]
+    # bold marks the middle value, which is neither the highest nor the lowest
+    raw = "\\begin{tabular}{lccc}\n & (1) & (2) & (3) \\\\\nAccuracy & \\textbf{0.71} & 0.65 & 0.80 \\\\\n\\end{tabular}"
+    findings, _ = run(make_map([], [(rows, "", "1", "Accuracy", raw)]))
+    bold = [f for f in by_check(findings, "NUM-06") if "Bold" in f.title]
+    assert len(bold) == 1 and bold[0].status == "needs_human"
+
+
+def test_impossible_shares_probabilities_and_standard_errors(run):
+    rows = [["", "(1)"], ["Treatment", "0.50***"], ["", "(-0.10)"]]
+    pm = make_map([("paragraph", "3 Results", "The share of givers was 112% in the treatment group."),
+                   ("paragraph", "3 Results", "The probability of choosing the lottery is 1.3 in the treatment group."),
+                   ("paragraph", "3 Results", "The share of givers was 112% higher than in the control group, and the "
+                                              "probability of giving is 1.5 times as large.")],
+                  [(rows, "Robust standard errors in parentheses. *** p<0.01", "1")])
+    findings, _ = run(pm)
+    assert sorted(f.title for f in by_check(findings, "NUM-07")) == ["Impossible probability", "Impossible share"]
+    assert [f.title for f in by_check(findings, "NUM-03") if "Negative" in f.title] == ["Negative standard error in Table 1"]
+
+
+def test_points_reported_as_percent(run, tmp_path):
+    rows = [["", "(1)"], ["Treatment", "-0.018**"], ["", "(0.008)"], ["Control mean", "0.099"]]
+    pm = make_map([("abstract", None, "Automatic enrollment reduces the share of employees who save nothing by 1.8%."),
+                   ("paragraph", "3 Results", "Automatic enrollment lowers the share of employees who save nothing from "
+                                              "9.9% in the control group to 8.1% in the treatment group."),
+                   ("paragraph", "3 Results", "Table 1 shows that automatic enrollment lowers zero saving by 1.8%.")],
+                  [(rows, "Robust standard errors in parentheses. ** p<0.05", "1", "Zero saving")])
+    findings, _ = run(pm)
+    titles = sorted(f.title for f in by_check(findings, "NUM-09"))
+    assert titles == ["Percentage-point change reported as percent", "Percentage-point effect reported as percent"]
+    assert not by_check(findings, "NUM-01")  # the headline matches the point change, so it is a unit problem
+    assert_well_formed(pm, findings, tmp_path)
+
+
+def test_roles_and_table_blocks_from_other_readers():
+    pm = make_map([("paragraph", "Abstract", "We find a 23% reduction."), ("paragraph", "3.1 Summary statistics", "x"),
+                   ("paragraph", "6 Conclusion", "y"), ("paragraph", "1 Introduction", "z")],
+                  [([["", "(1)"], ["Treatment", "0.120***"], ["", "(0.080)"]], "*** p<0.01", "1")])
+    for b in pm.blocks:
+        b.attrs.pop("table_id", None)  # a reader that does not link tables to their blocks
+    paper = num._paper(pm)
+    assert [s.role for s in paper.sents] == ["abstract", "body", "conclusion", "intro"]
+    assert paper.tables[0].block is pm.blocks[-1] and len(paper.tables[0].estimates) == 1
+
+
+def test_p_values_next_to_estimates(run, tmp_path):
+    rows = [["", "(1)", "(2)"], ["Treatment", "0.120", "0.250***"], ["", "(0.080)", "(0.050)"]]
+    pm = make_map([("paragraph", "3 Results", "Treatment increases giving by 0.12 (SE 0.08; p < 0.05)."),
+                   ("paragraph", "3 Results", "In Table 1, the coefficient in column (1) is 0.120 (p < 0.01), and the one "
+                                              "in column (2) is 0.250 (p < 0.01).")],
+                  [(rows, "Robust standard errors in parentheses. *** p<0.01", "1")])
+    findings, _ = run(pm)
+    flagged = sorted(f.quote for f in by_check(findings, "NUM-03"))
+    assert flagged == ["0.12 (SE 0.08; p < 0.05)", "0.120 (p < 0.01)"]
+    assert all(f.severity == "major" for f in by_check(findings, "NUM-03"))  # both claim p < 0.05; t = 1.5
+    assert_well_formed(pm, findings, tmp_path)

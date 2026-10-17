@@ -577,7 +577,29 @@ def test_lang01_mixed_spelling(tmp_path):
     assert len(found) == 1 and "behaviour" in found[0].problem
     assert "analyses" not in found[0].problem  # the plural noun is the same in US and UK English
     found_uk, _ = run(pm, "LANG-01", settings=Settings(language_variant="UK"))
-    assert found_uk and found_uk[0].status == "confirmed" and "randomized" in found_uk[0].problem
+    assert found_uk and found_uk[0].status == "confirmed" and "behavior" in found_uk[0].problem
+    assert "randomized" not in found_uk[0].problem  # -ize is also British (Oxford spelling)
+
+
+def test_lang01_oxford_spelling_and_ize_endings(tmp_path):
+    oxford = ("\\section{Intro}\nWe randomized employees and study their behaviour. The organization of the "
+              "labour market and the centre of the city matter, and we summarize the results.")
+    (tmp_path / "oxford").mkdir()
+    pm, _ = ingest_tex(tmp_path / "oxford", oxford)
+    assert run(pm, "LANG-01")[0] == []  # -our with -ize is consistent Oxford spelling
+    mixed = ("\\section{Intro}\nWe randomised employees and study their behaviour. The organization of the "
+             "labour market matters, and we summarise and categorise the results.")
+    (tmp_path / "mixed").mkdir()
+    pm, _ = ingest_tex(tmp_path / "mixed", mixed)
+    found, _ = run(pm, "LANG-01")
+    assert len(found) == 1 and "organization" in found[0].problem and "randomised" not in found[0].problem
+    us = ("\\section{Intro}\nWe randomised employees and study their behavior. The labor market and the center "
+          "of the city matter. We use 5 percent and 6 per cent.")
+    (tmp_path / "us").mkdir()
+    pm, _ = ingest_tex(tmp_path / "us", us)
+    found, _ = run(pm, "LANG-01")
+    assert len(found) == 1 and "randomised" in found[0].problem and "per cent" in found[0].problem
+    assert_well_formed(pm, found)
 
 
 def test_lang02_long_sentence(tmp_path):
@@ -589,7 +611,8 @@ def test_lang02_long_sentence(tmp_path):
 
 
 def test_lang04_vague_words_and_significance(tmp_path):
-    body = ("\\section{Intro}\nThis is clearly important. Defaults very clearly matter.\n\n"
+    body = ("\\section{Intro}\nThis is clearly important. Defaults very clearly matter. Very few employees save. "
+            "Savings are very low at the very start.\n\n"
             "Treatment significantly increases saving.\n\n"
             "Treatment significantly increases saving ($p < 0.01$).\n\n"
             "The effect is significant at the 5\\% level.")
@@ -600,7 +623,14 @@ def test_lang04_vague_words_and_significance(tmp_path):
     signif = [f for f in found if f.extra["word"].lower() in ("significantly", "significant")]
     assert len(signif) == 1
     assert next(f for f in found if f.extra["word"] == "clearly").extra["count"] == 2
+    assert next(f for f in found if f.extra["word"] == "very").extra["count"] == 3  # not "the very start"
     assert_well_formed(pm, found)
+
+
+def test_lang04_common_intensifier_used_rarely_is_not_flagged(tmp_path):
+    pm, _ = ingest_tex(tmp_path, "\\section{Intro}\nThe effect is very small. It is actually larger for women.")
+    found, _ = run(pm, "LANG-04")
+    assert found == []
 
 
 def test_lang07_and_lang08(tmp_path):
@@ -617,6 +647,19 @@ def test_lang07_and_lang08(tmp_path):
     assert_well_formed(pm, inclusive + filler)
 
 
+def test_lang07_lang08_phrase_boundaries(tmp_path):
+    body = ("\\section{Intro}\nFirms in third world economies report sales on a weekly basis. We study them "
+            "despite the fact that data are scarce.")
+    pm, _ = ingest_tex(tmp_path, body)
+    inclusive, _ = run(pm, "LANG-07")
+    assert [f.extra["term"] for f in inclusive] == ["third world"]
+    filler, _ = run(pm, "LANG-08")
+    weekly = next(f for f in filler if "basis" in f.extra["phrase"])
+    assert weekly.fix.action == "replace" and weekly.fix.replacement == "weekly"
+    assert any(f.extra["phrase"] == "despite the fact that" for f in filler)
+    assert_well_formed(pm, inclusive + filler)
+
+
 # ================================================================ CIT checks
 def test_cit01_manual_reference_list(tmp_path):
     body = ("\\section{Intro}\nSee \\citet{a} and \\citet{missing}.\n"
@@ -626,6 +669,26 @@ def test_cit01_manual_reference_list(tmp_path):
     found, _ = run(pm, "CIT-01")
     titles = sorted((f.title, f.extra.get("key")) for f in found)
     assert titles == [("Citation without a reference entry", "missing"), ("Reference never cited", "b")]
+    assert_well_formed(pm, found)
+
+
+def test_cit01_many_uncited_entries_reported_together():
+    refs, specs = [], [("heading", "Introduction"), ("paragraph", "As Author1 (2001) shows, defaults matter.",
+                                                     {}), ("heading", "References")]
+    for i in range(1, 9):
+        raw = f"Author{i}, A. (200{i}). Paper number {i}. Journal {i}."
+        refs.append(Reference(id=f"r{i:03d}", raw=raw, anchor=Anchor(page=2, page_line=i), source="typed",
+                              key=f"author{i}200{i}", fields={"year": f"200{i}"}))
+        specs.append(("reference", raw, {"ref": f"r{i:03d}"}))
+    pm = make_pm(specs, references=refs)
+    para = pm.blocks[1]
+    from paper_check.model import Citation
+    start = para.text.index("Author1 (2001)")
+    para.citations.append(Citation(keys=["author12001"], start=start, end=start + 14, command="text",
+                                   raw="Author1 (2001)"))
+    found, _ = run(pm, "CIT-01")
+    assert len(found) == 1 and found[0].title == "7 references never cited"
+    assert found[0].status == "needs_human" and len(found[0].related_quotes) == 6  # 7 of 8 unmatched: check by hand
     assert_well_formed(pm, found)
 
 
@@ -659,19 +722,37 @@ def test_beh11_software_citations(tmp_path):
     bib = ("@article{chen2016, author={Chen, Daniel L. and Schonger, Martin and Wickens, Chris}, "
            "title={oTree: An open-source platform}, journal={JBEF}, year={2016}, volume={9}, pages={88--97}}\n")
     body = ("\\section{Intro}\nThe study was programmed in oTree \\citep{chen2016}. Participants were recruited "
-            "with ORSEE.")
+            "with ORSEE and hroot.")
     pm, _ = ingest_tex(tmp_path, body, bib=bib)
     found, _ = run(pm, "BEH-11")
-    assert [f.extra["software"] for f in found] == ["ORSEE"]
+    assert [(f.extra["software"], f.severity) for f in found] == [("ORSEE", "minor"), ("hroot", "suggestion")]
     assert_well_formed(pm, found)
 
 
+def test_lang_checks_read_a_data_description_section(tmp_path):
+    body = "\\section{Data description}\nWe link records in order to measure saving."
+    pm, _ = ingest_tex(tmp_path, body)
+    found, _ = run(pm, "LANG-08")
+    assert [f.extra["phrase"] for f in found] == ["in order to"]  # 'description' is not an experimental script
+
+
 def test_beh12_ethics_statement_missing_for_elsevier(tmp_path):
-    pm, _ = ingest_tex(tmp_path, "\\section{Intro}\nParticipants in a lab experiment made choices.")
+    pm, _ = ingest_tex(tmp_path, "\\section{Intro}\nWe ran a lab experiment in which participants made choices.")
     found, _ = run(pm, "BEH-12", venue="jebo")
     assert len(found) == 1 and found[0].severity == "major"
     _, cov = run(pm, "BEH-12")
     assert cov["BEH-12"].status == "skipped"
+
+
+def test_theory_paper_needs_no_ethics_or_registration(tmp_path):
+    body = ("\\section{Intro}\nA large literature uses field experiments and RCTs to study defaults. Market "
+            "participants react to news. We build a model of present bias.\n\\section{Model}\nLet $\\beta$ denote "
+            "present bias.")
+    pm, _ = ingest_tex(tmp_path, body, title="T\\thanks{We thank seminar participants for comments.}")
+    assert run(pm, "BEH-12", venue="jebo")[0] == []
+    assert run(pm, "BEH-06", venue="aer")[0] == []
+    found, _ = run(pm, "FMT-03", venue="jebo")
+    assert not any("ethics" in f.title for f in found)
 
 
 def test_beh16_keywords_and_jel(tmp_path):

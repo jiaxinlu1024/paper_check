@@ -1,5 +1,6 @@
 """`pc.py render WORK --page N [--bbox x0,top,x1,bottom] [--out NAME]`: a PDF page, or a
 region of it, as a PNG image in WORK/images/, for visual checks and image evidence.
+The image is named after the page and region unless --out names it.
 
 Coordinates are points from the page's top-left corner, as in the paper map's
 anchors, so a block's `anchor.bbox` can be passed as it is. Rendering goes
@@ -77,6 +78,10 @@ def _target(images: Path, page: int, region: Optional[tuple], out: Optional[str]
             target = images / target
         if target.suffix.lower() != ".png":
             target = target.with_name(target.name + ".png")
+        try:
+            target.resolve().relative_to(images.resolve())
+        except ValueError:
+            raise SystemExit(f"--out must name a file in {images}, such as table1.png.") from None
         return target
     name = f"page-{page:03d}"
     if region:

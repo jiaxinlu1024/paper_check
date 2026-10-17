@@ -1,0 +1,2372 @@
+# Classic attributions: common misattributions of classic findings in behavioral economics
+#
+# What this file is for
+#   Reference data for check BEH-15 (docs/DESIGN.md, section 8.12) and for the citation
+#   judge (CIT-06). When a draft attributes a well-known finding or concept to a source, the
+#   reading agent finds the finding here through `terms`, compares the cited work with
+#   `original` and `often_miscited_as`, and applies `rule`. A match is a lead for the citation
+#   judge, not proof: a paper may cite a later source for a refinement or a review for an
+#   overview. See misattributions.md for how to use it.
+#   Failure codes follow docs/case-studies/01-unsupported-citations.md (S2 wrong finding,
+#   S3 overreach, S4 wrong source, S5 secondhand) and the reference checks in docs/DESIGN.md
+#   (CIT-03 metadata such as year, author order or pages; CIT-05 retraction; CIT-14
+#   replication status).
+#
+# How entries were verified (all on 2026-10-17)
+#   - original: authors, year and title were compared with the Crossref REST API record
+#     (https://api.crossref.org/works/<doi>), requested with the paper-check User-Agent at
+#     about one request per second. Volume, issue and pages also come from that record; where
+#     Crossref lists only a first page, the full range comes from RePEc/IDEAS or the source
+#     named in the entry's notes.
+#   - evidence: every quote was found in the page at `url`, downloaded with curl on that
+#     date, after normalizing case, curly quotes, dashes and whitespace. "..." marks skipped
+#     text such as footnote markers. Downloaded pages were treated as data only. No shadow
+#     library was used; paywalled originals are represented by their abstract pages.
+#   - status: verified means the original's metadata match Crossref and at least one quote
+#     backs the attribution; likely means something is missing, explained in `notes`.
+#   Sources and retraction notices change: re-check an entry before using it as ground truth
+#   after 2027-04-17.
+
+checked_on: "2026-10-17"
+
+codes:
+  S2: Wrong finding. The cited work is on topic but finds something different, or the opposite.
+  S3: Overreach. The finding holds in a narrower setting than the sentence claims.
+  S4: Wrong source. The claim is right but belongs to another work.
+  S5: Secondhand. The cited work only repeats the claim from another source, such as a review or popular book.
+  CIT-03: Metadata. Right work, wrong year, author order, pages or DOI.
+  CIT-05: The cited work is retracted or corrected.
+  CIT-14: Replication status. The sentence relies on a finding that failed to replicate or replicated with smaller effects.
+
+evidence_kinds:
+  original_abstract: The original work's own abstract, on any host (publisher, RePEc, PubMed via NCBI E-utilities, Crossref).
+  original_text: A passage from the original work's full text.
+  review: A review article, meta-analysis or prize committee's scientific background.
+  encyclopedia: An encyclopedia entry (Stanford Encyclopedia of Philosophy, Wikipedia).
+  later_paper: The abstract or text of a later research paper or lecture that credits the original.
+  metadata_record: A bibliographic record, such as Crossref or RePEc metadata, a reprint notice or a retraction flag.
+
+entries:
+
+  # ---------------------------------------------------------------- risk and uncertainty
+
+  - id: bernoulli-expected-utility
+    topic: risk and uncertainty
+    finding: >-
+      Daniel Bernoulli's 1738 paper resolved the St. Petersburg game with a logarithmic
+      utility of wealth, the origin of expected utility with diminishing marginal utility;
+      the game itself was posed by Nicolaus Bernoulli in 1713.
+    terms:
+      - St. Petersburg paradox
+      - St Petersburg paradox
+      - St. Petersburg game
+      - Bernoulli utility
+      - logarithmic utility
+      - log utility of wealth
+      - diminishing marginal utility of wealth
+      - moral expectation
+      - Bernoulli (1738)
+      - Bernoulli (1954)
+    original:
+      authors: ["Bernoulli, Daniel"]
+      year: 1954
+      title: Exposition of a New Theory on the Measurement of Risk
+      container: Econometrica
+      volume: "22"
+      issue: "1"
+      pages: "23-36"
+      doi: 10.2307/1909829
+      note: >-
+        English translation (by Louise Sommer) of "Specimen theoriae novae de mensura
+        sortis", Commentarii Academiae Scientiarum Imperialis Petropolitanae 5 (1738):
+        175-192. The 1954 translation is the version with a DOI.
+    often_miscited_as:
+      - source: Bernoulli (1954) presented as a 1954 contribution
+        why: The 1954 Econometrica article is a translation of the 1738 paper; dating the idea to 1954 is a year error.
+        code: CIT-03
+      - source: Daniel Bernoulli credited with posing the St. Petersburg problem
+        why: Nicolaus Bernoulli posed it in a 1713 letter to Montmort; Daniel Bernoulli's 1738 paper analysed it.
+        code: S4
+    rule: >-
+      Cite the idea as Bernoulli (1738), giving the 1954 Econometrica translation as the
+      accessible version, for example "Bernoulli (1738/1954)". A sentence that dates
+      expected-utility reasoning to 1954 has a year error (CIT-03). A sentence crediting
+      Daniel Bernoulli with posing the problem is misattributed (S4). Citing the translation
+      itself, with the 1738 date, is correct.
+    evidence:
+      - quote: "The St. Petersburg paradox was introduced by Nicolaus Bernoulli in 1713."
+        url: https://plato.stanford.edu/entries/paradox-stpetersburg/
+        kind: encyclopedia
+      - quote: "Daniel argued that the agent’s utility of wealth equals the logarithm of the monetary amount"
+        url: https://plato.stanford.edu/entries/paradox-stpetersburg/
+        kind: encyclopedia
+      - quote: "English translation, 1954, “Exposition of a New Theory on the Measurement of Risk”, Econometrica, 22(1): 23–36."
+        url: https://plato.stanford.edu/entries/paradox-stpetersburg/
+        kind: encyclopedia
+    status: verified
+    notes: >-
+      Crossref lists only the first page (23); the range 23-36 is from the Stanford
+      Encyclopedia of Philosophy bibliography. Wikipedia's St. Petersburg paradox article
+      gives 22-36, which conflicts with Crossref's first page.
+
+  - id: allais-paradox
+    topic: risk and uncertainty
+    finding: >-
+      Allais (1953) designed paired choice problems in which common preferences violate the
+      independence axiom of expected utility, the Allais paradox (common-consequence effect).
+    terms:
+      - Allais paradox
+      - Allais problem
+      - common consequence effect
+      - violation of the independence axiom
+      - certainty effect
+    original:
+      authors: ["Allais, Maurice"]
+      year: 1953
+      title: "Le Comportement de l'Homme Rationnel devant le Risque: Critique des Postulats et Axiomes de l'Ecole Americaine"
+      container: Econometrica
+      volume: "21"
+      issue: "4"
+      pages: "503-546"
+      doi: 10.2307/1907921
+    often_miscited_as:
+      - source: Kahneman and Tversky (1979), Econometrica 47(2)
+        doi: 10.2307/1914185
+        why: >-
+          They report Allais-type problems and name the "certainty effect", but the paradox
+          is Allais's. Citing them for the certainty effect is correct; citing them as the
+          origin of the paradox is not.
+        code: S4
+      - source: Later English-language reprints or textbook accounts dated after 1953
+        why: The paradox was published in Econometrica in 1953; a later date is a year error or a secondhand source.
+        code: S5
+    rule: >-
+      A sentence attributing the Allais paradox, or the common-consequence violation of
+      independence, to Kahneman and Tversky (1979) is misattributed (S4); cite Allais (1953).
+      Kahneman and Tversky (1979) are the right source for the label "certainty effect".
+    evidence:
+      - quote: "Departures from the von Neumann-Morgenstern-Savage expected-utility theories of decisions under uncertainty were first pointed out by the 1988 economics laureate Maurice Allais (1953a), who established the so-called Allais paradox"
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2002.pdf
+        kind: review
+      - quote: "The Allais paradox is a choice problem designed by Maurice Allais in 1953 to show an inconsistency of actual observed choices with the predictions of expected utility theory."
+        url: https://en.wikipedia.org/wiki/Allais_paradox
+        kind: encyclopedia
+      - quote: "This tendency, called the certainty effect, contributes to risk aversion in choices involving sure gains and to risk seeking in choices involving sure losses."
+        url: https://ideas.repec.org/a/ecm/emetrp/v47y1979i2p263-91.html
+        kind: original_abstract
+    status: verified
+    notes: >-
+      Crossref lists only the first page (503); the range 503-546 is from the reference
+      lists of the 2002 and 2017 Nobel scientific backgrounds. The 2002 background labels
+      this paper 1953a. The third quote is the abstract of Kahneman and Tversky (1979), not
+      of Allais.
+
+  - id: ellsberg-paradox
+    topic: risk and uncertainty
+    finding: >-
+      Ellsberg (1961) showed with urn bets that many people prefer known to unknown
+      probabilities in a way that violates Savage's axioms, the standard origin of ambiguity
+      aversion; Keynes (1921) had published a version of the problem.
+    terms:
+      - Ellsberg paradox
+      - ambiguity aversion
+      - ambiguity
+      - uncertainty aversion
+      - Knightian uncertainty
+      - urn with unknown composition
+      - two-color urn
+      - three-color urn
+    original:
+      authors: ["Ellsberg, Daniel"]
+      year: 1961
+      title: Risk, Ambiguity, and the Savage Axioms
+      container: The Quarterly Journal of Economics
+      volume: "75"
+      issue: "4"
+      pages: "643-669"
+      doi: 10.2307/1884324
+    often_miscited_as:
+      - source: Knight (1921), Risk, Uncertainty and Profit
+        why: >-
+          Knight's distinction between measurable risk and unmeasurable uncertainty is the
+          conceptual background; the urn choices and the label "ambiguity" come from Ellsberg.
+        code: S4
+      - source: Models of ambiguity aversion (for example maxmin expected utility) cited as the evidence
+        why: Later models explain the Ellsberg choices; they are not the original evidence.
+        code: S4
+    rule: >-
+      Cite Ellsberg (1961) for the urn evidence of ambiguity aversion. Citing Knight (1921)
+      for the risk-uncertainty distinction, or Keynes (1921) for an early version of the
+      problem, is fine; citing Knight for the choice pattern is misattributed (S4).
+    evidence:
+      - quote: "John Maynard Keynes published a version of the paradox in 1921. ... Daniel Ellsberg popularized the paradox in his 1961 paper, \"Risk, Ambiguity, and the Savage Axioms\"."
+        url: https://en.wikipedia.org/wiki/Ellsberg_paradox
+        kind: encyclopedia
+      - quote: "who established the so-called Allais paradox (see also Ellsberg, 1961, for a related paradox)"
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2002.pdf
+        kind: review
+    status: verified
+    notes: >-
+      Crossref lists only the first page (643); the range is from RePEc/IDEAS
+      (https://ideas.repec.org/a/oup/qjecon/v75y1961i4p643-669..html).
+
+  - id: prospect-theory
+    topic: risk and uncertainty
+    finding: >-
+      Kahneman and Tversky (1979) introduced prospect theory: value defined over gains and
+      losses rather than final wealth, a value function steeper for losses than for gains,
+      decision weights in place of probabilities, and the certainty and isolation effects.
+    terms:
+      - prospect theory
+      - original prospect theory
+      - value function
+      - reference point
+      - reference dependence
+      - decision weights
+      - certainty effect
+      - isolation effect
+      - reflection effect
+      - losses loom larger than gains
+      - Kahneman and Tversky (1979)
+    original:
+      authors: ["Kahneman, Daniel", "Tversky, Amos"]
+      year: 1979
+      title: "Prospect Theory: An Analysis of Decision under Risk"
+      container: Econometrica
+      volume: "47"
+      issue: "2"
+      pages: "263-291"
+      doi: 10.2307/1914185
+    often_miscited_as:
+      - source: Tversky and Kahneman (1992), Journal of Risk and Uncertainty 5(4)
+        doi: 10.1007/BF00122574
+        why: >-
+          Cumulative prospect theory, a later version with cumulative decision weights; right
+          for that version and its parameter estimates, wrong as the introduction of prospect
+          theory.
+        code: S4
+      - source: "\"Tversky and Kahneman (1979)\" or \"Kahneman and Tversky (1992)\""
+        why: Author order swapped; the 1979 paper is Kahneman and Tversky, the 1992 paper Tversky and Kahneman.
+        code: CIT-03
+      - source: Kahneman (2011), Thinking, Fast and Slow
+        why: Popular book; secondhand for the theory.
+        code: S5
+    rule: >-
+      Cite Kahneman and Tversky (1979) for the original theory and its qualitative claims.
+      Cite Tversky and Kahneman (1992) for cumulative prospect theory, the fourfold pattern
+      and parameter estimates. Swapped author order is a metadata error (CIT-03).
+    evidence:
+      - quote: "An alternative theory of choice is developed, in which value is assigned to gains and losses rather than to final assets and in which probabilities are replaced by decision weights."
+        url: https://ideas.repec.org/a/ecm/emetrp/v47y1979i2p263-91.html
+        kind: original_abstract
+      - quote: "This version, called cumulative prospect theory, applies to uncertain as well as to risky prospects with any number of outcomes"
+        url: https://ideas.repec.org/a/kap/jrisku/v5y1992i4p297-323.html
+        kind: original_abstract
+      - quote: "These anomalies are a manifestation of an asymmetry of value that Kahneman and Tversky (1984) call loss aversion"
+        url: https://www.aeaweb.org/articles?id=10.1257/jep.5.1.193
+        kind: review
+    status: verified
+    notes: >-
+      Crossref lists only the first page (263); the range is from RePEc/IDEAS. On the label:
+      Kahneman, Knetsch and Thaler (1991) credit the term "loss aversion" to Kahneman and
+      Tversky (1984), "Choices, values, and frames", American Psychologist 39(4): 341-350,
+      doi 10.1037/0003-066X.39.4.341. Whether the 1979 paper itself uses the phrase was not
+      checked, because its full text is paywalled, so do not flag a sentence on that point
+      alone.
+
+  - id: loss-aversion-coefficient
+    topic: risk and uncertainty
+    finding: >-
+      The loss-aversion coefficient of about 2.25 (with value-function curvature 0.88) is
+      the median estimate from the experiment in Tversky and Kahneman (1992); the 1979
+      prospect theory paper describes the value function only qualitatively.
+    terms:
+      - loss aversion coefficient
+      - coefficient of loss aversion
+      - loss-aversion parameter
+      - lambda = 2.25
+      - "λ = 2.25"
+      - "λ ≈ 2"
+      - losses weigh about twice as much as gains
+      - losses hurt twice as much
+      - cumulative prospect theory parameters
+      - "0.88"
+    original:
+      authors: ["Tversky, Amos", "Kahneman, Daniel"]
+      year: 1992
+      title: "Advances in prospect theory: Cumulative representation of uncertainty"
+      container: Journal of Risk and Uncertainty
+      volume: "5"
+      issue: "4"
+      pages: "297-323"
+      doi: 10.1007/BF00122574
+    often_miscited_as:
+      - source: Kahneman and Tversky (1979), Econometrica 47(2)
+        doi: 10.2307/1914185
+        why: >-
+          The 1979 abstract states only that the value function is steeper for losses than
+          for gains; the numerical estimate comes from the 1992 experiment.
+        code: S4
+      - source: Tversky and Kahneman (1991), Quarterly Journal of Economics 106(4)
+        doi: 10.2307/2937956
+        why: >-
+          The riskless-choice paper; the 2.25 median comes from the 1992 risky-choice
+          experiment. Published papers make this slip, for example Gächter, Johnson and
+          Herrmann (2022, Theory and Decision), who write of "the popular estimate of 2.25
+          of Tversky and Kahneman (1991)".
+        code: S4
+      - source: Kahneman (2011) or textbooks
+        why: Secondhand for a number.
+        code: S5
+    rule: >-
+      A sentence attributing a numerical loss-aversion estimate of about 2 to 2.25 to
+      Kahneman and Tversky (1979) is misattributed (S4); cite Tversky and Kahneman (1992).
+      If the sentence presents 2.25 as the typical or consensus value, flag that too (S3):
+      it is a median from 25 graduate students in unincentivized choices, and the
+      meta-analysis of Brown, Imai, Vieider and Camerer (2024) puts the mean at 1.955.
+    evidence:
+      - quote: "The earliest evidence recorded in our dataset is Tversky and Kahneman’s (1992) famous 2.25."
+        url: https://biblio.ugent.be/publication/8756103/file/8756105.pdf
+        kind: review
+      - quote: "including the iconic measure of 2.25 reported by Tversky and Kahneman (1992)"
+        url: https://biblio.ugent.be/publication/8756103/file/8756105.pdf
+        kind: review
+      - quote: "Tversky and Kahneman (1992) estimated that the value attached to a moderate loss is about twice the value attached to an equally large gain."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2002.pdf
+        kind: review
+      - quote: "The value function is normally concave for gains, commonly convex for losses, and is generally steeper for losses than for gains."
+        url: https://ideas.repec.org/a/ecm/emetrp/v47y1979i2p263-91.html
+        kind: original_abstract
+    replication:
+      note: >-
+        Meta-analysis of 607 estimates from 150 articles: mean loss-aversion coefficient
+        1.955, 95 percent interval [1.820, 2.102] (Brown, Imai, Vieider and Camerer 2024,
+        Journal of Economic Literature 62(2), doi 10.1257/jel.20221698).
+      url: https://www.aeaweb.org/articles?id=10.1257/jel.20221698
+    status: verified
+    notes: >-
+      This is the S4 example in case study 1. The 1992 attribution is confirmed by Brown et
+      al. (2024), green open-access copy at Ghent University, which also describes the
+      sample (25 graduate students, three unincentivized sessions) and reports median
+      curvature 0.88. That the 1979 paper gives no numerical estimate rests on its abstract
+      and on Brown et al. treating the 1992 figure as one of the first estimates; the 1979
+      full text is paywalled and was not read page by page. The Gächter et al. quote is at
+      https://link.springer.com/article/10.1007/s11238-021-09839-8.
+
+  # ------------------------------------------------- reference dependence and mental accounting
+
+  - id: endowment-effect-term
+    topic: reference dependence and mental accounting
+    finding: >-
+      Thaler (1980) coined the term "endowment effect" for valuing a good more once one owns
+      it, and related it to loss aversion in prospect theory.
+    terms:
+      - endowment effect
+      - WTA-WTP gap
+      - willingness to accept exceeds willingness to pay
+      - ownership effect
+      - valuing what we own
+      - opportunity costs underweighted
+    original:
+      authors: ["Thaler, Richard"]
+      year: 1980
+      title: Toward a positive theory of consumer choice
+      container: Journal of Economic Behavior & Organization
+      volume: "1"
+      issue: "1"
+      pages: "39-60"
+      doi: 10.1016/0167-2681(80)90051-7
+    often_miscited_as:
+      - source: Kahneman, Knetsch and Thaler (1990), Journal of Political Economy 98(6)
+        doi: 10.1086/261737
+        why: The coffee-mug market experiments; right for the experiments, wrong for coining the term.
+        code: S4
+      - source: Kahneman, Knetsch and Thaler (1991), Journal of Economic Perspectives 5(1)
+        doi: 10.1257/jep.5.1.193
+        why: An "Anomalies" column reviewing the evidence; secondhand for the origin.
+        code: S5
+      - source: Kahneman and Tversky (1979)
+        doi: 10.2307/1914185
+        why: Prospect theory supplies the explanation (loss aversion), not the term.
+        code: S4
+    rule: >-
+      Cite Thaler (1980) for the term and the original argument, Kahneman, Knetsch and Thaler
+      (1990) for the mug experiments, and treat the 1991 column as a review (S5 if cited as
+      the origin).
+    evidence:
+      - quote: "In Thaler (1980), he coined the term endowment effect for the tendency of individuals to value items more just because they own them"
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+      - quote: "Thaler (1980) called this pattern—the fact that people often demand much more to give up an object than they would be willing to pay to acquire it—the endowment effect."
+        url: https://www.aeaweb.org/articles?id=10.1257/jep.5.1.193
+        kind: review
+      - quote: "The term endowment effect however was first explicitly coined in 1980 by the economist Richard Thaler"
+        url: https://en.wikipedia.org/wiki/Endowment_effect
+        kind: encyclopedia
+    status: verified
+
+  - id: endowment-effect-mugs
+    topic: reference dependence and mental accounting
+    finding: >-
+      Kahneman, Knetsch and Thaler (1990) showed in repeated markets with coffee mugs and pens
+      that the endowment effect persists with real stakes and learning (median WTA about
+      twice median WTP), while induced-value tokens trade as predicted.
+    terms:
+      - mug experiment
+      - coffee mugs
+      - mugs and pens
+      - undertrading
+      - Coase theorem experiment
+      - induced-value tokens
+      - endowment effect experiment
+      - WTA/WTP ratio of about 2
+    original:
+      authors: ["Kahneman, Daniel", "Knetsch, Jack L.", "Thaler, Richard H."]
+      year: 1990
+      title: Experimental Tests of the Endowment Effect and the Coase Theorem
+      container: Journal of Political Economy
+      volume: "98"
+      issue: "6"
+      pages: "1325-1348"
+      doi: 10.1086/261737
+    often_miscited_as:
+      - source: Thaler (1980), Journal of Economic Behavior & Organization 1(1)
+        doi: 10.1016/0167-2681(80)90051-7
+        why: Named the effect with hypothetical examples; the mug market experiments are from 1990.
+        code: S4
+      - source: Kahneman, Knetsch and Thaler (1991), Journal of Economic Perspectives 5(1)
+        doi: 10.1257/jep.5.1.193
+        why: Review column; secondhand for the experiments.
+        code: S5
+      - source: Plott and Zeiler (2005), American Economic Review 95(3), cited as confirming the mug gap
+        doi: 10.1257/0002828054201387
+        why: With their training procedures they found no significant WTA-WTP gap for mugs.
+        code: S2
+    rule: >-
+      Cite Kahneman, Knetsch and Thaler (1990) for the mug and pen markets. When a sentence
+      presents the mug result as settled, check whether it mentions Plott and Zeiler (2005)
+      and the reply by Isoni, Loomes and Sugden (2011) (CIT-14).
+    evidence:
+      - quote: "This paper reports several experiments that demonstrate that this \"endowment effect\" persists even in market settings with opportunities to learn. Consumption objects (e.g., coffee mugs) are randomly given to half the subjects in an experiment."
+        url: https://ideas.repec.org/a/ucp/jpolec/v98y1990i6p1325-48.html
+        kind: original_abstract
+      - quote: "For coffee mugs and pens, the median reservation selling price (the WTA) was about twice as high as the median buying price (the WTP)."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+    replication:
+      note: >-
+        Plott and Zeiler (2005) found no significant WTA-WTP gap for mugs after extensive
+        training; Isoni, Loomes and Sugden (2011) found that the same protocol still produced
+        a gap for lotteries (as summarized in the 2017 Nobel scientific background).
+      url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+    status: verified
+
+  - id: status-quo-bias
+    topic: reference dependence and mental accounting
+    finding: >-
+      Samuelson and Zeckhauser (1988) named and documented status quo bias, in decision
+      experiments and in faculty choices of health plans and retirement programs.
+    terms:
+      - status quo bias
+      - status-quo bias
+      - preference for the status quo
+      - sticking with the current option
+      - inertia in choice
+    original:
+      authors: ["Samuelson, William", "Zeckhauser, Richard"]
+      year: 1988
+      title: Status quo bias in decision making
+      container: Journal of Risk and Uncertainty
+      volume: "1"
+      issue: "1"
+      pages: "7-59"
+      doi: 10.1007/BF00055564
+    often_miscited_as:
+      - source: Kahneman, Knetsch and Thaler (1991), Journal of Economic Perspectives 5(1)
+        doi: 10.1257/jep.5.1.193
+        why: Review column that uses Samuelson and Zeckhauser's term; secondhand for the origin.
+        code: S5
+      - source: Madrian and Shea (2001), Quarterly Journal of Economics 116(4)
+        doi: 10.1162/003355301753265543
+        why: Evidence on 401(k) defaults; related, but not the origin of the concept.
+        code: S4
+      - source: Thaler and Sunstein (2008), Nudge
+        why: Popular book; secondhand.
+        code: S5
+    rule: >-
+      Cite Samuelson and Zeckhauser (1988) for the term and the original evidence. Reviews
+      and books that discuss status quo bias are secondhand for its origin (S5).
+    evidence:
+      - quote: "A series of decision-making experiments shows that individuals disproportionately stick with the status quo."
+        url: https://ideas.repec.org/a/kap/jrisku/v1y1988i1p7-59.html
+        kind: original_abstract
+      - quote: "This so-called status-quo bias was first documented by Samuelson and Zeckhauser (1988; see also Kahneman, Knetsch, and Thaler 1991)."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+      - quote: "The example also illustrates what Samuelson and Zeckhauser (1988) call a status quo bias"
+        url: https://www.aeaweb.org/articles?id=10.1257/jep.5.1.193
+        kind: review
+    status: verified
+
+  - id: mental-accounting
+    topic: reference dependence and mental accounting
+    finding: >-
+      Thaler (1985) set out mental accounting as a model of consumer choice, introducing
+      transaction utility; Thaler (1999) is a later statement of the theory, and Marketing
+      Science reprinted the 1985 article in 2008.
+    terms:
+      - mental accounting
+      - mental accounts
+      - psychological accounting
+      - transaction utility
+      - acquisition utility
+      - hedonic editing
+      - non-fungibility of money
+      - Mental accounting matters
+    original:
+      authors: ["Thaler, Richard"]
+      year: 1985
+      title: Mental Accounting and Consumer Choice
+      container: Marketing Science
+      volume: "4"
+      issue: "3"
+      pages: "199-214"
+      doi: 10.1287/mksc.4.3.199
+    often_miscited_as:
+      - source: Thaler (2008), Marketing Science 27(1), 15-25
+        doi: 10.1287/mksc.1070.0330
+        why: >-
+          The 2008 reprint of the 1985 article. A reference dated 1985 but carrying the 2008
+          volume, pages or DOI mixes the two (Wikipedia's mental accounting article does
+          this).
+        code: CIT-03
+      - source: Thaler (1999), Journal of Behavioral Decision Making 12(3)
+        doi: "10.1002/(SICI)1099-0771(199909)12:3<183::AID-BDM318>3.0.CO;2-F"
+        why: A later statement of the theory; fine for an overview, not as its introduction.
+        code: S5
+    rule: >-
+      For the introduction of mental accounting or transaction utility, cite Thaler (1985),
+      Marketing Science 4(3): 199-214. Volume 27(1), pages 15-25 or DOI
+      10.1287/mksc.1070.0330 point to the 2008 reprint; if dated 1985, the metadata are mixed
+      (CIT-03). Thaler (1999) is fine for an overview but not as the origin (S5).
+    evidence:
+      - quote: "Then the evaluation of purchases is modeled using the new concept of “transaction utility.”"
+        url: https://ideas.repec.org/a/inm/ormksc/v4y1985i3p199-214.html
+        kind: original_abstract
+      - quote: "This article was originally published in Marketing Science, Volume 4, Issue 3"
+        url: https://api.crossref.org/works/10.1287/mksc.1070.0330
+        kind: metadata_record
+      - quote: "In subsequent work, he developed the theory of mental accounting (Thaler 1985, 1999)"
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+    status: verified
+
+  # ------------------------------------------------------------------ judgment and heuristics
+
+  - id: anchoring-heuristic
+    topic: judgment and heuristics
+    finding: >-
+      Tversky and Kahneman (1974) described anchoring and adjustment as one of three judgment
+      heuristics, illustrated by estimates of the share of African countries in the United
+      Nations after a spin of a rigged wheel of fortune.
+    terms:
+      - anchoring
+      - anchoring and adjustment
+      - anchoring effect
+      - anchoring bias
+      - arbitrary anchor
+      - wheel of fortune
+      - African countries in the United Nations
+      - social security number anchor
+      - coherent arbitrariness
+    original:
+      authors: ["Tversky, Amos", "Kahneman, Daniel"]
+      year: 1974
+      title: "Judgment under Uncertainty: Heuristics and Biases"
+      container: Science
+      volume: "185"
+      issue: "4157"
+      pages: "1124-1131"
+      doi: 10.1126/science.185.4157.1124
+    often_miscited_as:
+      - source: Kahneman (2011), Thinking, Fast and Slow
+        why: Popular book; secondhand.
+        code: S5
+      - source: Ariely, Loewenstein and Prelec (2003), Quarterly Journal of Economics 118(1)
+        doi: 10.1162/00335530360535153
+        why: >-
+          The source for anchors drawn from social security numbers in valuations
+          ("coherent arbitrariness"), not for the anchoring heuristic itself.
+        code: S4
+    rule: >-
+      Cite Tversky and Kahneman (1974) for anchoring and adjustment as a judgment heuristic.
+      Ariely, Loewenstein and Prelec (2003) are the right source for social-security-number
+      anchors in valuation; Maniadis, Tufano and List (2014) for evidence that such
+      valuation anchoring is weaker on replication.
+    evidence:
+      - quote: "(iii) adjustment from an anchor, which is usually employed in numerical prediction when a relevant value is available."
+        url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=17835457&rettype=abstract&retmode=text
+        kind: original_abstract
+      - quote: "In another study by Tversky and Kahneman, participants were asked to estimate the percentage of African countries in the United Nations."
+        url: https://en.wikipedia.org/wiki/Anchoring_effect
+        kind: encyclopedia
+      - quote: "initial valuations of familiar products and simple hedonic experiences are strongly influenced by arbitrary \"anchors\" (sometimes derived from a person's social security number)"
+        url: https://ideas.repec.org/a/oup/qjecon/v118y2003i1p73-106..html
+        kind: original_abstract
+    replication:
+      note: >-
+        Maniadis, Tufano and List (2014, American Economic Review 104(1), doi
+        10.1257/aer.104.1.277) report new evidence on the strength of valuation anchoring
+        and argue for caution about initial findings. Simple numeric-estimation anchoring
+        items (Jacowitz and Kahneman 1995) were among the effects that replicated in Many
+        Labs 1 (Klein et al. 2014).
+      url: https://www.aeaweb.org/articles?id=10.1257/aer.104.1.277
+    status: verified
+    notes: >-
+      The encyclopedia passage cites Tversky and Kahneman (1974) for the wheel-of-fortune
+      study. The Many Labs list of effects is in the article's preprint
+      (doi 10.31234/osf.io/ux8ef), which was read but is a Word file, so no quote is recorded.
+
+  - id: framing-effect
+    topic: judgment and heuristics
+    finding: >-
+      Tversky and Kahneman (1981) showed that equivalent descriptions of the same choice,
+      framed as gains or as losses (the "Asian disease" problem about lives saved or lost),
+      produce predictable reversals of preference.
+    terms:
+      - framing effect
+      - framing
+      - Asian disease problem
+      - gain frame
+      - loss frame
+      - risky choice framing
+      - lives saved versus lives lost
+      - gain-loss framing
+    original:
+      authors: ["Tversky, Amos", "Kahneman, Daniel"]
+      year: 1981
+      title: The Framing of Decisions and the Psychology of Choice
+      container: Science
+      volume: "211"
+      issue: "4481"
+      pages: "453-458"
+      doi: 10.1126/science.7455683
+    often_miscited_as:
+      - source: Kahneman and Tversky (1979), Econometrica 47(2)
+        doi: 10.2307/1914185
+        why: >-
+          Prospect theory explains framing effects and names the related isolation effect,
+          but the Asian disease problem and the framing label are from 1981.
+        code: S4
+      - source: Kahneman and Tversky (1984), American Psychologist 39(4)
+        doi: 10.1037/0003-066X.39.4.341
+        why: A later overview; fine for an overview, secondhand as the origin.
+        code: S5
+    rule: >-
+      Cite Tversky and Kahneman (1981) for the framing effect and the Asian disease problem.
+      Kahneman and Tversky (1979) introduced the isolation effect and the theory used to
+      explain framing; attributing the Asian disease problem to 1979 is misattributed (S4).
+    evidence:
+      - quote: "The psychological principles that govern the perception of decision problems and the evaluation of probabilities and outcomes produce predictable shifts of preference when the same problem is framed in different ways."
+        url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=7455683&rettype=abstract&retmode=text
+        kind: original_abstract
+      - quote: "Reversals of preference are demonstrated in choices regarding monetary outcomes, both hypothetical and real, and in questions pertaining to the loss of human lives."
+        url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=7455683&rettype=abstract&retmode=text
+        kind: original_abstract
+      - quote: "This tendency, called the isolation effect, leads to inconsistent preferences when the same choice is presented in different forms."
+        url: https://ideas.repec.org/a/ecm/emetrp/v47y1979i2p263-91.html
+        kind: original_abstract
+    replication:
+      note: >-
+        The gain-versus-loss framing problem was one of 13 effects in Many Labs 1 (Klein et
+        al. 2014, Social Psychology 45(3), doi 10.1027/1864-9335/a000178). Ten effects
+        replicated; the abstract names imagined contact as weak and flag priming and currency
+        priming as failures.
+      url: https://api.crossref.org/works/10.1027/1864-9335/a000178
+    status: verified
+
+  - id: planning-fallacy
+    topic: judgment and heuristics
+    finding: >-
+      The planning fallacy, underestimating how long one's own task will take, was named by
+      Kahneman and Tversky in "Intuitive prediction: Biases and corrective procedures"
+      (technical report 1977, usually cited as 1979); Buehler, Griffin and Ross (1994) is
+      the main experimental follow-up.
+    terms:
+      - planning fallacy
+      - underestimate task completion times
+      - optimistic completion estimates
+      - optimism in time estimates
+      - intuitive prediction
+    original:
+      authors: ["Kahneman, Daniel", "Tversky, Amos"]
+      year: 1977
+      title: "Intuitive prediction: Biases and corrective procedures"
+      container: Decision Research Technical Report PTR-1042-77-6
+      volume: null
+      issue: null
+      pages: null
+      doi: null
+      note: >-
+        Reprinted in Kahneman, Slovic and Tversky (eds.), Judgment under Uncertainty:
+        Heuristics and Biases (Cambridge University Press, 1982), pp. 414-421,
+        doi 10.1017/CBO9780511809477.031, which matches Crossref.
+    often_miscited_as:
+      - source: Buehler, Griffin and Ross (1994), Journal of Personality and Social Psychology 67(3)
+        doi: 10.1037/0022-3514.67.3.366
+        why: The main experimental study; its title puts "planning fallacy" in quotation marks, an existing term.
+        code: S4
+      - source: Lovallo and Kahneman (2003), Harvard Business Review
+        why: Source for an expanded definition covering costs, risks and benefits, not for the original term.
+        code: S4
+      - source: Kahneman (2011), Thinking, Fast and Slow
+        why: Popular book; secondhand.
+        code: S5
+    rule: >-
+      Credit the term to Kahneman and Tversky (1977 report, 1979 publication or the 1982
+      reprint; all three dates occur). A sentence saying Buehler, Griffin and Ross (1994)
+      coined or discovered the planning fallacy is misattributed (S4), though citing them for
+      the experimental evidence is correct.
+    evidence:
+      - quote: "The planning fallacy was first proposed by Daniel Kahneman and Amos Tversky in 1979."
+        url: https://en.wikipedia.org/wiki/Planning_fallacy
+        kind: encyclopedia
+      - quote: "In 2003, Lovallo and Kahneman proposed an expanded definition as the tendency to underestimate the time, costs, and risks of future actions and at the same time overestimate the benefits of the same actions."
+        url: https://en.wikipedia.org/wiki/Planning_fallacy
+        kind: encyclopedia
+      - quote: "Exploring the ... planning fallacy ... Why people underestimate their task completion times."
+        url: https://api.crossref.org/works/10.1037/0022-3514.67.3.366
+        kind: metadata_record
+    status: likely
+    notes: >-
+      Likely, not verified: the original has no DOI and is not in Crossref. The 1977
+      technical report is listed by Wikipedia and on DTIC (ADA047747), but the DTIC PDF
+      refused automated access, so the term was not confirmed in the report's text. The 1979
+      journal version (often cited as TIMS Studies in Management Science 12) could not be
+      verified, so its volume and pages are left out.
+
+  - id: better-than-average-drivers
+    topic: judgment and heuristics
+    finding: >-
+      Svenson (1981) asked student samples in the United States and Sweden to compare their
+      driving skill and safety with the others in the group; most placed themselves above
+      the median, more so in the US sample.
+    terms:
+      - better-than-average effect
+      - above-average effect
+      - illusory superiority
+      - 93% of drivers
+      - drivers think they are above average
+      - overconfidence in driving
+      - self-enhancement
+    original:
+      authors: ["Svenson, Ola"]
+      year: 1981
+      title: Are we all less risky and more skillful than our fellow drivers?
+      container: Acta Psychologica
+      volume: "47"
+      issue: "2"
+      pages: "143-148"
+      doi: 10.1016/0001-6918(81)90005-6
+    often_miscited_as:
+      - source: Svenson (1981) cited for "93% of drivers" in general
+        why: >-
+          93% is the US student sample's share for skill; the Swedish share was 69%, and the
+          samples were 161 students in total. Generalizing to all drivers overreaches.
+        code: S3
+      - source: Kruger and Dunning (1999), Journal of Personality and Social Psychology 77(6)
+        doi: 10.1037/0022-3514.77.6.1121
+        why: A different finding (low performers overestimating their test scores), not the driver survey.
+        code: S4
+    rule: >-
+      Cite Svenson (1981) for the driver self-assessment result and check the number. A
+      sentence saying that 93% of drivers rate themselves above average overreaches (S3):
+      that share comes from a small US student sample.
+    evidence:
+      - quote: "Svenson (1981) surveyed 161 students in Sweden and the United States, asking them to compare their driving skills and safety to other people's. For driving skills, 93% of the U.S. sample and 69% of the Swedish sample put themselves in the top 50%"
+        url: https://en.wikipedia.org/wiki/Illusory_superiority
+        kind: encyclopedia
+    status: verified
+    notes: >-
+      The percentages and sample size come from the encyclopedia; the original's text was
+      not reachable (the publisher blocks automated access), so check exact figures against
+      the article before quoting them.
+
+  - id: dunning-kruger
+    topic: judgment and heuristics
+    finding: >-
+      Kruger and Dunning (1999) found that participants scoring in the bottom quartile on
+      tests of humor, grammar and logic greatly overestimated their performance; the effect
+      is called "Dunning-Kruger" although Kruger is the first author.
+    terms:
+      - Dunning-Kruger effect
+      - Dunning–Kruger
+      - unskilled and unaware
+      - incompetent overestimate their ability
+      - metacognitive deficit
+      - bottom quartile overestimation
+    original:
+      authors: ["Kruger, Justin", "Dunning, David"]
+      year: 1999
+      title: "Unskilled and unaware of it: How difficulties in recognizing one's own incompetence lead to inflated self-assessments."
+      container: Journal of Personality and Social Psychology
+      volume: "77"
+      issue: "6"
+      pages: "1121-1134"
+      doi: 10.1037/0022-3514.77.6.1121
+    often_miscited_as:
+      - source: "\"Dunning and Kruger (1999)\""
+        why: Author order reversed, copied from the effect's name.
+        code: CIT-03
+      - source: Kruger and Dunning (1999) cited for "people with low intelligence are overconfident"
+        why: The finding is about overestimation of one's own performance in specific domains, not general intelligence.
+        code: S2
+    rule: >-
+      The reference is Kruger and Dunning (1999); "Dunning and Kruger (1999)" reverses the
+      author order (CIT-03). A sentence describing the result as low-intelligence people
+      being overconfident misdescribes it (S2).
+    evidence:
+      - quote: "Across 4 studies, the authors found that participants scoring in the bottom quartile on tests of humor, grammar, and logic grossly overestimated their test performance and ability."
+        url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=10626367&rettype=abstract&retmode=text
+        kind: original_abstract
+      - quote: "Kruger J(1), Dunning D."
+        url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=10626367&rettype=abstract&retmode=text
+        kind: metadata_record
+      - quote: "In popular culture, the Dunning–Kruger effect is sometimes misunderstood as claiming that people with low intelligence are generally overconfident, instead of denoting specific overconfidence of people unskilled in particular areas"
+        url: https://en.wikipedia.org/wiki/Dunning%E2%80%93Kruger_effect
+        kind: encyclopedia
+    replication:
+      note: >-
+        A statistical explanation holds that much of the pattern may be a statistical effect
+        combined with a general better-than-average tendency (encyclopedia summary of the
+        critiques).
+      url: https://en.wikipedia.org/wiki/Dunning%E2%80%93Kruger_effect
+    status: verified
+
+  - id: hot-hand
+    topic: judgment and heuristics
+    finding: >-
+      Gilovich, Vallone and Tversky (1985) concluded that basketball shooting shows no hot
+      hand and that belief in it misperceives random sequences; Miller and Sanjurjo (2018)
+      showed a streak-selection bias in that test which, once corrected, reverses the
+      conclusion.
+    terms:
+      - hot hand
+      - hot-hand fallacy
+      - hot hand in basketball
+      - streak shooting
+      - misperception of random sequences
+      - streak selection bias
+    original:
+      authors: ["Gilovich, Thomas", "Vallone, Robert", "Tversky, Amos"]
+      year: 1985
+      title: "The hot hand in basketball: On the misperception of random sequences"
+      container: Cognitive Psychology
+      volume: "17"
+      issue: "3"
+      pages: "295-314"
+      doi: 10.1016/0010-0285(85)90010-6
+    often_miscited_as:
+      - source: "\"Gilovich, Tversky and Vallone (1985)\""
+        why: Author order; Crossref lists Gilovich, Vallone, Tversky (the encyclopedia text uses the other order).
+        code: CIT-03
+      - source: Gilovich, Vallone and Tversky (1985) cited as settled proof that the hot hand is a fallacy
+        why: Miller and Sanjurjo (2018) show that the original test is biased and that correcting it reverses the conclusion.
+        code: CIT-14
+    rule: >-
+      Cite Gilovich, Vallone and Tversky (1985), in that order, for the original claim. A
+      sentence presenting the hot-hand fallacy as established should acknowledge Miller and
+      Sanjurjo (2018), Econometrica 86(6), doi 10.3982/ECTA14943 (CIT-14).
+    evidence:
+      - quote: "The fallacy was first described in a 1985 paper by Thomas Gilovich, Amos Tversky, and Robert Vallone."
+        url: https://en.wikipedia.org/wiki/Hot_hand
+        kind: encyclopedia
+      - quote: "We observe that the canonical study in the influential hot hand fallacy literature, along with replications, are vulnerable to the bias. Upon correcting for the bias, we find that the longstanding conclusions of the canonical study are reversed."
+        url: https://www.econometricsociety.org/publications/econometrica/2018/11/01/surprised-hot-hand-fallacy-truth-law-small-numbers
+        kind: later_paper
+    replication:
+      note: Miller and Sanjurjo (2018) find significant evidence of streak shooting after correcting the streak-selection bias.
+      url: https://www.econometricsociety.org/publications/econometrica/2018/11/01/surprised-hot-hand-fallacy-truth-law-small-numbers
+    status: verified
+
+  # ------------------------------------------------------- bounded rationality and cognition
+
+  - id: bounded-rationality
+    topic: bounded rationality and cognition
+    finding: >-
+      Simon (1955) proposed a behavioral model of rational choice for agents with limited
+      information and computing capacity; the term "bounded rationality" first appears in his
+      book Models of Man (1957), and "satisficing" in Simon (1956).
+    terms:
+      - bounded rationality
+      - boundedly rational
+      - satisficing
+      - satisfice
+      - limited rationality
+      - procedural rationality
+      - aspiration level
+    original:
+      authors: ["Simon, Herbert A."]
+      year: 1955
+      title: A Behavioral Model of Rational Choice
+      container: The Quarterly Journal of Economics
+      volume: "69"
+      issue: "1"
+      pages: "99-118"
+      doi: 10.2307/1884852
+    often_miscited_as:
+      - source: Simon (1955) cited as coining the term "bounded rationality"
+        why: The Stanford Encyclopedia of Philosophy dates the term to Simon (1957), Models of Man, p. 198.
+        code: S4
+      - source: Kahneman (2003), "Maps of bounded rationality", American Economic Review 93(5)
+        doi: 10.1257/000282803322655392
+        why: Uses the term in its title; secondhand for the concept's origin.
+        code: S5
+    rule: >-
+      Simon (1955) is the right source for the behavioral model of rational choice and Simon
+      (1956), Psychological Review 63(2), doi 10.1037/h0042769, for "satisficing". A sentence
+      saying Simon coined "bounded rationality" in 1955 points to the wrong work (S4, minor):
+      the term dates from Models of Man (1957). Citing Kahneman (2003) or later reviews as
+      the origin is secondhand (S5).
+    evidence:
+      - quote: "Herbert Simon introduced the term ‘bounded rationality’ (Simon 1957b: 198; see also Klaes & Sent 2005) as shorthand for his proposal to replace the perfect rationality assumptions of homo economicus with a concept of rationality better suited to cognitively limited agents"
+        url: https://plato.stanford.edu/entries/bounded-rationality/
+        kind: encyclopedia
+      - quote: "Herbert Simon (1978 Laureate in Economic Sciences) explored the effects of limited cognition and analyzed the implications of individual bounded rationality on the design and performance of organizations (Simon 1955)."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+      - quote: "was introduced by Herbert A. Simon in 1956"
+        url: https://en.wikipedia.org/wiki/Satisficing
+        kind: encyclopedia
+    status: verified
+    notes: >-
+      Crossref lists only the first page (99); the range is from RePEc/IDEAS. Models of Man
+      (Wiley, 1957) reprints the 1955 paper and has no DOI. The 2002 Nobel background cites
+      Simon (1956) for bounded rationality, so both 1955 and 1956 citations are common and
+      acceptable for the concept.
+
+  - id: system-1-system-2
+    topic: bounded rationality and cognition
+    finding: >-
+      The labels "System 1" and "System 2" for fast intuitive and slow deliberate thinking
+      come from Stanovich and West (2000); Kahneman adopted them in his 2002 Nobel lecture
+      and popularized them in Thinking, Fast and Slow (2011).
+    terms:
+      - System 1
+      - System 2
+      - System 1 and System 2
+      - two systems
+      - dual-process theory
+      - dual process
+      - fast and slow thinking
+      - intuitive versus deliberative
+    original:
+      authors: ["Stanovich, Keith E.", "West, Richard F."]
+      year: 2000
+      title: "Individual differences in reasoning: Implications for the rationality debate?"
+      container: Behavioral and Brain Sciences
+      volume: "23"
+      issue: "5"
+      pages: "645-665"
+      doi: 10.1017/S0140525X00003435
+    often_miscited_as:
+      - source: Kahneman (2011), Thinking, Fast and Slow
+        why: Popularized the labels and credits Stanovich and West; secondhand for their origin.
+        code: S5
+      - source: Kahneman (2003), American Economic Review 93(5)
+        doi: 10.1257/000282803322655392
+        why: Adopts the labels from Stanovich and West; secondhand for their origin.
+        code: S5
+    rule: >-
+      For the System 1/System 2 labels, cite Stanovich and West (2000). Citing Kahneman
+      (2003, 2011) as the origin of the labels is secondhand (S5); citing Kahneman for his
+      own use of the framework is fine.
+    evidence:
+      - quote: "which Stanovich and West (2000) labeled System 1 and System 2."
+        url: https://www.nobelprize.org/uploads/2018/06/kahnemann-lecture.pdf
+        kind: later_paper
+    status: verified
+    notes: >-
+      The quote is from Kahneman's Prize Lecture of December 8, 2002, "Maps of bounded
+      rationality: a perspective on intuitive judgment and choice"; a revised version is
+      Kahneman (2003). The original's abstract does not use the labels.
+
+  - id: cognitive-reflection-test
+    topic: bounded rationality and cognition
+    finding: >-
+      Frederick (2005) introduced the three-item Cognitive Reflection Test (the bat and ball,
+      widgets and lily pads questions) as a measure of the tendency to override an intuitive
+      wrong answer.
+    terms:
+      - Cognitive Reflection Test
+      - CRT
+      - bat and ball problem
+      - bat-and-ball
+      - lily pads question
+      - widgets question
+      - cognitive reflection
+    original:
+      authors: ["Frederick, Shane"]
+      year: 2005
+      title: Cognitive Reflection and Decision Making
+      container: Journal of Economic Perspectives
+      volume: "19"
+      issue: "4"
+      pages: "25-42"
+      doi: 10.1257/089533005775196732
+    often_miscited_as:
+      - source: Kahneman (2011) or other popular retellings of the bat-and-ball question
+        why: Secondhand for the test.
+        code: S5
+    rule: >-
+      Cite Frederick (2005) for the CRT and its three items; popular retellings are
+      secondhand (S5).
+    evidence:
+      - quote: "This paper introduces a three-item “Cognitive Reflection Test” (CRT) as a simple measure of one type of cognitive ability"
+        url: https://www.aeaweb.org/articles?id=10.1257/089533005775196732
+        kind: original_abstract
+      - quote: "The original test penned by Frederick contained only the three following questions: ... A bat and a ball cost $1.10 in total."
+        url: https://en.wikipedia.org/wiki/Cognitive_reflection_test
+        kind: encyclopedia
+    status: verified
+
+  # -------------------------------------------------------- time preference and self-control
+
+  - id: time-inconsistency-strotz
+    topic: time preference and self-control
+    finding: >-
+      Strotz's "Myopia and Inconsistency in Dynamic Utility Maximization" showed that
+      non-exponential discounting makes plans time-inconsistent and discussed commitment
+      devices; the article is dated 1955 in Crossref and RePEc but is widely cited as 1956.
+    terms:
+      - time inconsistency
+      - dynamic inconsistency
+      - time-inconsistent preferences
+      - myopia
+      - consistent planning
+      - precommitment
+      - Strotz (1955)
+      - Strotz (1956)
+    original:
+      authors: ["Strotz, R. H."]
+      year: 1955
+      title: Myopia and Inconsistency in Dynamic Utility Maximization
+      container: The Review of Economic Studies
+      volume: "23"
+      issue: "3"
+      pages: "165-180"
+      doi: 10.2307/2295722
+    often_miscited_as:
+      - source: "\"Strotz (1956)\""
+        why: >-
+          The volume is dated 1955-56; Crossref and RePEc give 1955, the 2017 Nobel
+          background uses 1956. Both identify the same article; only flag a reference list and
+          text that disagree.
+        code: CIT-03
+      - source: Laibson (1997) or O'Donoghue and Rabin (1999) as the origin of time inconsistency
+        why: Later applications of the idea.
+        code: S4
+      - source: Kydland and Prescott (1977)
+        why: Time inconsistency of government policy, a different concept from individual discounting.
+        code: S4
+    rule: >-
+      Cite Strotz for the origin of time-inconsistent preferences in economics; 1955 and 1956
+      both occur for the same article. Crediting Laibson (1997) or O'Donoghue and Rabin
+      (1999) with the idea is misattributed (S4), and Kydland and Prescott (1977) concern
+      policy, not individual preferences.
+    evidence:
+      - quote: "Strotz showed that hyperbolic discounting leads to a problem of time-inconsistency"
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+      - quote: "Research on this second type of time-inconsistency was one of the motivations for the prize to the 2004 Laureates in Economic Sciences, Finn Kydland and Edward Prescott (Kydland and Prescott 1977)."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+      - quote: "R. H. Strotz, 1955. \"Myopia and Inconsistency in Dynamic Utility Maximization,\" The Review of Economic Studies"
+        url: https://ideas.repec.org/a/oup/restud/v23y1955i3p165-180..html
+        kind: metadata_record
+    status: verified
+    notes: >-
+      Crossref lists only the first page (165); the range is from RePEc/IDEAS. Wikipedia's
+      dynamic inconsistency article cites the article as "(1955-56)".
+
+  - id: hyperbolic-discounting
+    topic: time preference and self-control
+    finding: >-
+      Hyperbolic discounting, discount rates that fall with delay so that preferences
+      reverse as both rewards recede, comes from Ainslie's work on impulsiveness, building
+      on Herrnstein's matching law; Thaler (1981) gave the first experimental evidence in
+      humans.
+    terms:
+      - hyperbolic discounting
+      - hyperbolic discount function
+      - declining discount rates
+      - preference reversal over time
+      - impulsiveness
+      - matching law
+      - delay discounting
+      - Ainslie
+    original:
+      authors: ["Ainslie, George"]
+      year: 1975
+      title: "Specious reward: A behavioral theory of impulsiveness and impulse control."
+      container: Psychological Bulletin
+      volume: "82"
+      issue: "4"
+      pages: "463-496"
+      doi: 10.1037/h0076860
+    often_miscited_as:
+      - source: Laibson (1997), Quarterly Journal of Economics 112(2)
+        doi: 10.1162/003355397555253
+        why: >-
+          Applies a quasi-hyperbolic (beta-delta) function to consumption and saving; not the
+          origin of hyperbolic discounting or of the evidence for it.
+        code: S4
+      - source: Loewenstein and Prelec (1992), Quarterly Journal of Economics 107(2)
+        doi: 10.2307/2118482
+        why: Right for the generalized hyperbola and the catalogue of intertemporal anomalies, not for the origin.
+        code: S4
+    rule: >-
+      Cite Ainslie (and his 1975 review) for the origin of hyperbolic discounting and Thaler
+      (1981), Economics Letters 8(3), doi 10.1016/0165-1765(81)90067-7, for the first human
+      evidence. Laibson (1997) is the source for applying a quasi-hyperbolic function to
+      consumption and saving; crediting it with discovering hyperbolic discounting is
+      misattributed (S4).
+    evidence:
+      - quote: "He explained this in terms of hyperbolic discounting of future rewards, derived from ideas that Rachlin and others had developed from Richard Herrnstein's matching law."
+        url: https://en.wikipedia.org/wiki/George_Ainslie_(psychologist)
+        kind: encyclopedia
+      - quote: "Thaler (1981) provided the first experimental evidence of hyperbolic discounting in humans."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+      - quote: "This paper analyzes the decisions of a hyperbolic consumer who has access to an imperfect commitment technology"
+        url: https://ideas.repec.org/a/oup/qjecon/v112y1997i2p443-478..html
+        kind: original_abstract
+    status: likely
+    notes: >-
+      Likely, not verified: the quotes credit Ainslie but do not tie the idea to the 1975
+      article specifically (the encyclopedia lists it with his 1974 pigeon study, and the
+      2017 Nobel background cites Ainslie 1992, Picoeconomics). The review that dates this
+      history, Frederick, Loewenstein and O'Donoghue (2002, Journal of Economic Literature
+      40(2), doi 10.1257/jel.40.2.351), was paywalled. The third quote is from Laibson's
+      abstract.
+
+  - id: quasi-hyperbolic-discounting
+    topic: time preference and self-control
+    finding: >-
+      The quasi-hyperbolic (beta-delta) discount function was introduced by Phelps and
+      Pollak (1968) for saving across generations and became influential for individual
+      choice through Laibson (1997).
+    terms:
+      - quasi-hyperbolic discounting
+      - beta-delta
+      - "β-δ"
+      - "βδ model"
+      - present-biased discounting
+      - Phelps and Pollak
+      - (beta, delta) preferences
+    original:
+      authors: ["Phelps, E. S.", "Pollak, R. A."]
+      year: 1968
+      title: On Second-Best National Saving and Game-Equilibrium Growth
+      container: The Review of Economic Studies
+      volume: "35"
+      issue: "2"
+      pages: "185-199"
+      doi: 10.2307/2296547
+    often_miscited_as:
+      - source: Laibson (1997), Quarterly Journal of Economics 112(2)
+        doi: 10.1162/003355397555253
+        why: Made the formulation influential for individual consumption; did not introduce it.
+        code: S4
+      - source: O'Donoghue and Rabin (1999), American Economic Review 89(1)
+        doi: 10.1257/aer.89.1.103
+        why: Present bias with naive and sophisticated agents, not the origin of the functional form.
+        code: S4
+    rule: >-
+      For the beta-delta functional form, cite Phelps and Pollak (1968), noting that their
+      setting is successive generations; for its use in individual consumption and saving,
+      cite Laibson (1997). Crediting Laibson (1997) or O'Donoghue and Rabin (1999) with
+      inventing beta-delta discounting is misattributed (S4).
+    evidence:
+      - quote: "Phelps and Pollak (1968) considered what is now referred to as “quasi-hyperbolic” discounting. This formulation would later become highly influential via Laibson’s (1997) study of commitment to prudent consumption through investment in illiquid assets"
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+    status: verified
+    notes: >-
+      Crossref lists only the first page (185); the range is from RePEc/IDEAS. Laibson's
+      title calls the model "hyperbolic".
+
+  - id: present-bias
+    topic: time preference and self-control
+    finding: >-
+      O'Donoghue and Rabin (1999) modeled self-control problems as time-inconsistent,
+      present-biased preferences and analysed how naive and sophisticated agents procrastinate
+      or "preproperate".
+    terms:
+      - present bias
+      - present-biased preferences
+      - present-bias parameter
+      - naive and sophisticated agents
+      - naivete
+      - procrastination
+      - preproperation
+      - self-control problems
+    original:
+      authors: ["O'Donoghue, Ted", "Rabin, Matthew"]
+      year: 1999
+      title: Doing It Now or Later
+      container: American Economic Review
+      volume: "89"
+      issue: "1"
+      pages: "103-124"
+      doi: 10.1257/aer.89.1.103
+    often_miscited_as:
+      - source: Laibson (1997), Quarterly Journal of Economics 112(2)
+        doi: 10.1162/003355397555253
+        why: >-
+          Frames the beta-delta model as hyperbolic discounting; cite it for the consumption
+          model, not for naive-versus-sophisticated procrastination results.
+        code: S4
+      - source: Frederick, Loewenstein and O'Donoghue (2002), Journal of Economic Literature 40(2)
+        doi: 10.1257/jel.40.2.351
+        why: Review; secondhand for the origin.
+        code: S5
+    rule: >-
+      Cite O'Donoghue and Rabin (1999) for present-biased preferences with naive and
+      sophisticated agents; cite Phelps and Pollak (1968) or Laibson (1997) for the
+      beta-delta form. Who first used the phrase "present bias" was not established here, so
+      treat a claim that O'Donoghue and Rabin coined it as unverified rather than wrong.
+    evidence:
+      - quote: "The authors examine self-control problems—modeled as time-inconsistent, present-biased preferences—in a model where a person must do an activity exactly once."
+        url: https://www.aeaweb.org/articles?id=10.1257/aer.89.1.103
+        kind: original_abstract
+      - quote: "Naive people procrastinate immediate-cost activities and preproperate—do too soon—immediate-reward activities."
+        url: https://www.aeaweb.org/articles?id=10.1257/aer.89.1.103
+        kind: original_abstract
+    status: verified
+
+  - id: commitment-savings
+    topic: time preference and self-control
+    finding: >-
+      Ashraf, Karlan and Yin (2006) offered a commitment savings account to randomly chosen
+      clients of a Philippine bank; 28 percent took it up, and after twelve months average
+      balances in the treatment group rose by 81 percentage points relative to control.
+    terms:
+      - commitment savings
+      - commitment savings product
+      - commitment device
+      - restricted-access savings account
+      - demand for commitment
+      - Tying Odysseus to the mast
+      - Philippines savings experiment
+    original:
+      authors: ["Ashraf, Nava", "Karlan, Dean", "Yin, Wesley"]
+      year: 2006
+      title: "Tying Odysseus to the Mast: Evidence From a Commitment Savings Product in the Philippines"
+      container: The Quarterly Journal of Economics
+      volume: "121"
+      issue: "2"
+      pages: "635-672"
+      doi: 10.1162/qjec.2006.121.2.635
+    often_miscited_as:
+      - source: Ariely and Wertenbroch (2002), Psychological Science 13(3)
+        doi: 10.1111/1467-9280.00441
+        why: >-
+          Self-imposed deadlines, a different kind of commitment evidence; and Crossref now
+          lists a retraction of this article (notice dated September 2026).
+        code: CIT-05
+      - source: Thaler and Benartzi (2004), Journal of Political Economy 112(S1)
+        doi: 10.1086/380085
+        why: Commitment to save out of future raises, not a restricted-access account.
+        code: S4
+      - source: Laibson (1997), Quarterly Journal of Economics 112(2)
+        doi: 10.1162/003355397555253
+        why: Theory of illiquid assets as commitment, not field evidence.
+        code: S4
+    rule: >-
+      Field evidence of demand for a commitment savings account should cite Ashraf, Karlan
+      and Yin (2006). A sentence that cites Ariely and Wertenbroch (2002) as current evidence
+      on commitment should be flagged for its retraction (CIT-05).
+    evidence:
+      - quote: "We designed a commitment savings product for a Philippine bank and implemented it using a randomized control methodology."
+        url: https://ideas.repec.org/a/oup/qjecon/v121y2006i2p635-672..html
+        kind: original_abstract
+      - quote: "202 (28.4 percent) accepted the offer and opened the account."
+        url: https://ideas.repec.org/a/oup/qjecon/v121y2006i2p635-672..html
+        kind: original_abstract
+      - quote: "RETRACTED: Procrastination, Deadlines, and Performance: Self-Control by Precommitment"
+        url: https://api.crossref.org/works/10.1111/1467-9280.00441
+        kind: metadata_record
+    status: verified
+    notes: >-
+      The retraction notice is Psychological Science 37(9): 665 (2026),
+      doi 10.1177/09567976261488042, linked from the Crossref record; its text was not read.
+
+  - id: gym-contracts
+    topic: time preference and self-control
+    finding: >-
+      DellaVigna and Malmendier (2006) found that health-club members on flat monthly
+      contracts attend about 4.3 times a month, paying over $17 per expected visit when a
+      $10 per-visit pass was available, consistent with overconfidence about future
+      self-control.
+    terms:
+      - paying not to go to the gym
+      - gym attendance
+      - health club contracts
+      - gym membership
+      - flat-rate contracts
+      - overconfidence about self-control
+      - naive present bias in contracts
+    original:
+      authors: ["DellaVigna, Stefano", "Malmendier, Ulrike"]
+      year: 2006
+      title: Paying Not to Go to the Gym
+      container: American Economic Review
+      volume: "96"
+      issue: "3"
+      pages: "694-719"
+      doi: 10.1257/aer.96.3.694
+    often_miscited_as:
+      - source: DellaVigna and Malmendier (2004), Quarterly Journal of Economics 119(2)
+        doi: 10.1162/0033553041382111
+        why: Contract design for time-inconsistent consumers; not the source of the attendance data.
+        code: S4
+    rule: >-
+      Cite DellaVigna and Malmendier (2006) for the gym attendance and contract-choice
+      evidence; the 2004 Quarterly Journal of Economics paper is the contract-design theory
+      and should not be cited for the attendance numbers (S4).
+    evidence:
+      - quote: "First, members who choose a contract with a flat monthly fee of over $70 attend on average 4.3 times per month. They pay a price per expected visit of more than $17, even though they could pay $10 per visit using a 10-visit pass."
+        url: https://www.aeaweb.org/articles?id=10.1257/aer.96.3.694
+        kind: original_abstract
+      - quote: "In this paper we analyze the profit-maximizing contract design of firms if consumers have time-inconsistent preferences and are partially naive about it."
+        url: https://ideas.repec.org/a/oup/qjecon/v119y2004i2p353-402..html
+        kind: original_abstract
+    status: verified
+    notes: >-
+      Crossref spells the first author "Della Vigna" for the 2006 article and "DellaVigna"
+      for 2004; the AEA page gives "Stefano DellaVigna".
+
+  - id: marshmallow-test
+    topic: time preference and self-control
+    finding: >-
+      The link between preschool delay of gratification and adolescent outcomes such as SAT
+      scores comes from the follow-up by Shoda, Mischel and Peake (1990); Watts, Duncan and
+      Quan (2018) found the association about half as large and much reduced by background
+      controls.
+    terms:
+      - marshmallow test
+      - marshmallow experiment
+      - Stanford marshmallow experiment
+      - delay of gratification
+      - preschool delay
+      - SAT scores and delay
+      - self-control in children
+    original:
+      authors: ["Shoda, Yuichi", "Mischel, Walter", "Peake, Philip K."]
+      year: 1990
+      title: "Predicting adolescent cognitive and self-regulatory competencies from preschool delay of gratification: Identifying diagnostic conditions."
+      container: Developmental Psychology
+      volume: "26"
+      issue: "6"
+      pages: "978-986"
+      doi: 10.1037/0012-1649.26.6.978
+    often_miscited_as:
+      - source: Mischel and Ebbesen (1970), Journal of Personality and Social Psychology 16(2)
+        doi: 10.1037/h0029815
+        why: The original delay experiments, with no long-run outcomes.
+        code: S4
+      - source: Mischel, Shoda and Rodriguez (1989), Science 244(4907)
+        doi: 10.1126/science.2658056
+        why: An overview of the research program; fine for an overview, secondhand for the SAT result.
+        code: S5
+      - source: Shoda, Mischel and Peake (1990) cited as showing a strong, causal effect of self-control
+        why: The conceptual replication found a much smaller association that shrinks with controls.
+        code: CIT-14
+    rule: >-
+      For the link between preschool delay and adolescent outcomes, cite Shoda, Mischel and
+      Peake (1990). Citing Mischel and Ebbesen (1970) for long-run outcomes is misattributed
+      (S4). A sentence presenting the link as strong or causal should note Watts, Duncan and
+      Quan (2018) (CIT-14).
+    evidence:
+      - quote: "We replicated and extended Shoda, Mischel, and Peake's (1990) famous marshmallow study, which showed strong bivariate correlations between a child's ability to delay gratification just before entering school and both adolescent achievement and socioemotional behaviors."
+        url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=29799765&rettype=abstract&retmode=text
+        kind: later_paper
+      - quote: "In 1990, a second follow-up study showed that the ability to delay gratification also correlated with higher SAT scores."
+        url: https://en.wikipedia.org/wiki/Stanford_marshmallow_experiment
+        kind: encyclopedia
+    replication:
+      note: >-
+        Watts, Duncan and Quan (2018, Psychological Science 29(7), doi
+        10.1177/0956797618761661): the bivariate correlation was about half the original size
+        and fell by two thirds with controls for family background, early cognitive ability
+        and the home environment.
+      url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=29799765&rettype=abstract&retmode=text
+    status: verified
+
+  # ------------------------------------------------------- defaults and choice architecture
+
+  - id: default-401k
+    topic: defaults and choice architecture
+    finding: >-
+      Madrian and Shea (2001) showed that automatic enrollment sharply raised 401(k)
+      participation at one firm and that many automatically enrolled employees kept the
+      default contribution rate and fund.
+    terms:
+      - automatic enrollment
+      - auto-enrollment
+      - default effect
+      - 401(k) default
+      - opt-out enrollment
+      - retirement savings defaults
+      - power of suggestion
+      - inertia in savings
+    original:
+      authors: ["Madrian, Brigitte C.", "Shea, Dennis F."]
+      year: 2001
+      title: "The Power of Suggestion: Inertia in 401(k) Participation and Savings Behavior"
+      container: The Quarterly Journal of Economics
+      volume: "116"
+      issue: "4"
+      pages: "1149-1187"
+      doi: 10.1162/003355301753265543
+    often_miscited_as:
+      - source: Thaler and Sunstein (2008), Nudge
+        why: Popular book; secondhand.
+        code: S5
+      - source: Choi, Laibson, Madrian and Metrick (2004) and other follow-ups
+        why: Corroborating studies across firms; not the original finding.
+        code: S4
+      - source: Samuelson and Zeckhauser (1988), Journal of Risk and Uncertainty 1(1)
+        doi: 10.1007/BF00055564
+        why: Status quo bias in plan choices, not automatic enrollment.
+        code: S4
+    rule: >-
+      Cite Madrian and Shea (2001) for the original automatic-enrollment evidence. Check
+      reported participation rates against the paper's own tables: secondary accounts differ
+      in which cohorts they compare (the 2017 Nobel background reports a rise from 49% to
+      86%).
+    evidence:
+      - quote: "First, 401(k) participation is significantly higher under automatic enrollment. Second, a substantial fraction of 401(k) participants hired under automatic enrollment retain both the default contribution rate and fund allocation"
+        url: https://ideas.repec.org/a/oup/qjecon/v116y2001i4p1149-1187..html
+        kind: original_abstract
+      - quote: "In a pioneering study, Madrian and Shea (2001) found that automatic enrolment increased the participation rate in a 401(k) savings plan from 49% to 86%."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+    status: verified
+
+  - id: default-organ-donation
+    topic: defaults and choice architecture
+    finding: >-
+      Johnson and Goldstein (2003) showed that default rules, presumed consent (opt-out)
+      versus explicit consent (opt-in), strongly affect organ-donor consent.
+    terms:
+      - organ donation default
+      - presumed consent
+      - opt-out organ donation
+      - opt-in versus opt-out
+      - do defaults save lives
+      - donor registration rates
+    original:
+      authors: ["Johnson, Eric J.", "Goldstein, Daniel"]
+      year: 2003
+      title: Do Defaults Save Lives?
+      container: Science
+      volume: "302"
+      issue: "5649"
+      pages: "1338-1339"
+      doi: 10.1126/science.1091721
+    often_miscited_as:
+      - source: Thaler and Sunstein (2008), Nudge, or later reviews of defaults
+        why: Secondhand for the original evidence.
+        code: S5
+    rule: >-
+      Cite Johnson and Goldstein (2003) for the organ-donation default effect. The article is
+      two pages long, so check that any specific statistic attributed to it appears there.
+    evidence:
+      - quote: "Two highly important areas where the default option has been shown to be crucial are organ donations (Johnson and Goldstein 2003, van Dalen and Henkens 2014) and retirement savings (Madrian and Shea 2001, Choi et al. 2004)."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+    status: verified
+    notes: >-
+      The article has no abstract in Crossref or PubMed and the publisher page blocks
+      automated access; OpenAlex lists an SSRN submitted version, which was not read.
+
+  - id: libertarian-paternalism-nudge
+    topic: defaults and choice architecture
+    finding: >-
+      Thaler and Sunstein introduced "libertarian paternalism" in 2003 (American Economic
+      Review Papers and Proceedings, and a longer University of Chicago Law Review article);
+      their 2008 book Nudge popularized the nudge concept.
+    terms:
+      - nudge
+      - nudging
+      - nudge theory
+      - libertarian paternalism
+      - choice architecture
+      - soft paternalism
+    original:
+      authors: ["Thaler, Richard H.", "Sunstein, Cass R."]
+      year: 2003
+      title: Libertarian Paternalism
+      container: American Economic Review
+      volume: "93"
+      issue: "2"
+      pages: "175-179"
+      doi: 10.1257/000282803321947001
+    often_miscited_as:
+      - source: Thaler and Sunstein (2008), Nudge, as the origin of libertarian paternalism
+        why: The term dates from the 2003 papers; the book popularized the approach.
+        code: CIT-03
+      - source: Camerer, Issacharoff, Loewenstein, O'Donoghue and Rabin (2003), "asymmetric paternalism"
+        why: A related but distinct proposal.
+        code: S4
+      - source: Kahneman (2011) or Thaler (2015), Misbehaving
+        why: Popular books; secondhand.
+        code: S5
+    rule: >-
+      Cite Thaler and Sunstein (2003) or Sunstein and Thaler (2003), University of Chicago
+      Law Review 70(4), doi 10.2307/1600573, for libertarian paternalism, and Thaler and
+      Sunstein (2008) for the nudge framing. Dating libertarian paternalism to the 2008 book
+      is a year error; citing popular books as the origin is secondhand (S5).
+    evidence:
+      - quote: "The term was coined by behavioral economist Richard Thaler and legal scholar Cass Sunstein in a 2003 article in the American Economic Review."
+        url: https://en.wikipedia.org/wiki/Libertarian_paternalism
+        kind: encyclopedia
+      - quote: "The nudge concept was popularized in the 2008 book Nudge: Improving Decisions About Health, Wealth, and Happiness"
+        url: https://en.wikipedia.org/wiki/Nudge_theory
+        kind: encyclopedia
+      - quote: "libertarian paternalists should attempt to steer people's choices in welfare-promoting directions without eliminating freedom of choice."
+        url: https://chicagounbound.uchicago.edu/uclrev/vol70/iss4/1/
+        kind: original_abstract
+      - quote: "as well as the more general perspective of libertarian paternalism (Thaler and Sunstein 2003), which recommends minimally invasive policies that “nudge” people into making better economic decisions."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+    status: verified
+    notes: >-
+      The 2008 book has no DOI. The third quote is the abstract of the Law Review article
+      (Sunstein and Thaler 2003). Whether the 2003 papers already use the word "nudge" was
+      not checked (the Law Review PDF refused automated access).
+
+  - id: save-more-tomorrow
+    topic: defaults and choice architecture
+    finding: >-
+      Thaler and Benartzi (2004) designed Save More Tomorrow (SMarT), in which employees
+      commit in advance to raising contributions at future pay increases; in the first
+      implementation average saving rates rose from 3.5 to 13.6 percent over 40 months.
+    terms:
+      - Save More Tomorrow
+      - SMarT
+      - SMarT program
+      - automatic escalation
+      - auto-escalation
+      - commit future raises to saving
+    original:
+      authors: ["Thaler, Richard H.", "Benartzi, Shlomo"]
+      year: 2004
+      title: "Save More Tomorrow™: Using Behavioral Economics to Increase Employee Saving"
+      container: Journal of Political Economy
+      volume: "112"
+      issue: "S1"
+      pages: "S164-S187"
+      doi: 10.1086/380085
+    often_miscited_as:
+      - source: "\"Benartzi and Thaler (2004)\""
+        why: Author order reversed; Thaler is first author.
+        code: CIT-03
+      - source: Thaler and Sunstein (2008), Nudge
+        why: Popular book; secondhand.
+        code: S5
+      - source: Madrian and Shea (2001), Quarterly Journal of Economics 116(4)
+        doi: 10.1162/003355301753265543
+        why: Automatic enrollment, a different intervention.
+        code: S4
+    rule: >-
+      Cite Thaler and Benartzi (2004), Thaler first, for SMarT and its results; automatic
+      enrollment results belong to Madrian and Shea (2001) (S4 if mixed up).
+    evidence:
+      - quote: "The essence of the program is straightforward: people commit in advance to allocating a portion of their future salary increases toward retirement savings."
+        url: https://ideas.repec.org/a/ucp/jpolec/v112y2004is1ps164-s187.html
+        kind: original_abstract
+      - quote: "the average saving rates for SMarT program participants increased from 3.5 percent to 13.6 percent over the course of 40 months"
+        url: https://ideas.repec.org/a/ucp/jpolec/v112y2004is1ps164-s187.html
+        kind: original_abstract
+      - quote: "Thaler and Benartzi (2004) design and implement a mechanism that increases pension savings by overcoming self-control problems and other behavioral biases."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+    status: verified
+
+  - id: choice-overload-jam
+    topic: defaults and choice architecture
+    finding: >-
+      Iyengar and Lepper (2000) found that people were more likely to buy jams or chocolates,
+      or to write an optional essay, when offered 6 options rather than 24 or 30; the
+      meta-analysis of Scheibehenne, Greifeneder and Todd (2010) found a mean choice-overload
+      effect of virtually zero.
+    terms:
+      - choice overload
+      - too much choice
+      - jam study
+      - jam experiment
+      - overchoice
+      - paradox of choice
+      - 24 jams versus 6 jams
+      - choice is demotivating
+    original:
+      authors: ["Iyengar, Sheena S.", "Lepper, Mark R."]
+      year: 2000
+      title: "When choice is demotivating: Can one desire too much of a good thing?"
+      container: Journal of Personality and Social Psychology
+      volume: "79"
+      issue: "6"
+      pages: "995-1006"
+      doi: 10.1037/0022-3514.79.6.995
+    often_miscited_as:
+      - source: Schwartz (2004), The Paradox of Choice
+        why: Popular book; secondhand.
+        code: S5
+      - source: Iyengar and Lepper (2000) cited for a general law that more options reduce choice
+        why: The meta-analytic mean effect is about zero with large variation across studies.
+        code: CIT-14
+    rule: >-
+      Cite Iyengar and Lepper (2000) for the jam and chocolate studies. A sentence that
+      treats choice overload as a general, reliable effect should mention the meta-analysis
+      of Scheibehenne, Greifeneder and Todd (2010), Journal of Consumer Research 37(3),
+      doi 10.1086/651235 (CIT-14).
+    evidence:
+      - quote: "people are more likely to purchase gourmet jams or chocolates or to undertake optional class essay assignments when offered a limited array of 6 choices rather than a more extensive array of 24 or 30 choices."
+        url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=11138768&rettype=abstract&retmode=text
+        kind: original_abstract
+    replication:
+      note: >-
+        Meta-analysis of 63 conditions from 50 experiments (N = 5,036): "a mean effect size of
+        virtually zero but considerable variance between studies" (Scheibehenne, Greifeneder
+        and Todd 2010).
+      url: https://archive-ouverte.unige.ch/unige:76440
+    status: verified
+
+  - id: naive-diversification-1n
+    topic: defaults and choice architecture
+    finding: >-
+      Benartzi and Thaler (2001) showed that some defined-contribution plan participants
+      follow a "1/n" rule, splitting contributions evenly across the funds offered, so that
+      their stock share depends on the share of stock funds in the menu.
+    terms:
+      - 1/n heuristic
+      - 1/N rule
+      - 1/n strategy
+      - naive diversification
+      - equal allocation across funds
+      - menu effects in retirement plans
+    original:
+      authors: ["Benartzi, Shlomo", "Thaler, Richard H."]
+      year: 2001
+      title: Naive Diversification Strategies in Defined Contribution Saving Plans
+      container: American Economic Review
+      volume: "91"
+      issue: "1"
+      pages: "79-98"
+      doi: 10.1257/aer.91.1.79
+    often_miscited_as:
+      - source: DeMiguel, Garlappi and Uppal (2009), Review of Financial Studies 22(5)
+        doi: 10.1093/rfs/hhm075
+        why: Evaluates how the 1/N portfolio rule performs; not evidence that investors use it.
+        code: S4
+    rule: >-
+      Cite Benartzi and Thaler (2001) for 1/n behavior by plan participants. DeMiguel,
+      Garlappi and Uppal (2009) evaluate the 1/N rule's portfolio performance and are not
+      evidence about investor behavior (S4).
+    evidence:
+      - quote: "We show that some investors follow the \"1/n strategy\": they divide their contributions evenly across the funds offered in the plan."
+        url: https://www.aeaweb.org/articles?id=10.1257/aer.91.1.79
+        kind: original_abstract
+      - quote: "Benartzi and Thaler (2001) show that when individuals are faced with a number of possible funds to which they can allocate their pension savings, they tend to follow a naïve “1/N” diversification strategy"
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+    status: verified
+    notes: >-
+      Crossref dates DeMiguel, Garlappi and Uppal to 2007 online and 2009 in print.
+
+  # --------------------------------------------------------------------- behavioral finance
+
+  - id: equity-premium-puzzle
+    topic: behavioral finance
+    finding: >-
+      Mehra and Prescott (1985) named the equity premium puzzle: the historical return on
+      stocks over bonds is too large to reconcile with standard consumption-based models.
+    terms:
+      - equity premium puzzle
+      - equity premium
+      - Mehra-Prescott puzzle
+      - risk premium puzzle
+    original:
+      authors: ["Mehra, Rajnish", "Prescott, Edward C."]
+      year: 1985
+      title: "The equity premium: A puzzle"
+      container: Journal of Monetary Economics
+      volume: "15"
+      issue: "2"
+      pages: "145-161"
+      doi: 10.1016/0304-3932(85)90061-3
+    often_miscited_as:
+      - source: Benartzi and Thaler (1995), Quarterly Journal of Economics 110(1)
+        doi: 10.2307/2118511
+        why: Proposed myopic loss aversion as an explanation; did not identify the puzzle.
+        code: S4
+    rule: >-
+      Cite Mehra and Prescott (1985) for the puzzle and Benartzi and Thaler (1995) for the
+      myopic-loss-aversion explanation; swapping them is misattributed (S4).
+    evidence:
+      - quote: "The term was coined by Rajnish Mehra and Edward C. Prescott in a study published in 1985 titled \"The Equity Premium: A Puzzle\"."
+        url: https://en.wikipedia.org/wiki/Equity_premium_puzzle
+        kind: encyclopedia
+      - quote: "the so-called equity premium puzzle: the finding that the historical return on stocks relative to bonds appears to be too large to be consistent with standard expected utility models (Mehra and Prescott 1985)."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+    status: verified
+
+  - id: myopic-loss-aversion
+    topic: behavioral finance
+    finding: >-
+      Benartzi and Thaler (1995) combined loss aversion with frequent evaluation of
+      portfolios, "myopic loss aversion", and showed that annual evaluation can explain the
+      equity premium; Gneezy and Potters (1997) found experimentally that more frequent
+      evaluation reduces risk taking.
+    terms:
+      - myopic loss aversion
+      - MLA
+      - evaluation period
+      - frequency of evaluation
+      - narrow framing of returns
+      - narrow bracketing
+      - investment horizon and risk taking
+    original:
+      authors: ["Benartzi, Shlomo", "Thaler, Richard H."]
+      year: 1995
+      title: Myopic Loss Aversion and the Equity Premium Puzzle
+      container: The Quarterly Journal of Economics
+      volume: "110"
+      issue: "1"
+      pages: "73-92"
+      doi: 10.2307/2118511
+    often_miscited_as:
+      - source: Mehra and Prescott (1985), Journal of Monetary Economics 15(2)
+        doi: 10.1016/0304-3932(85)90061-3
+        why: The puzzle, not the explanation.
+        code: S4
+      - source: Gneezy and Potters (1997), Quarterly Journal of Economics 112(2)
+        doi: 10.1162/003355397555217
+        why: Laboratory test of the hypothesis, not its origin.
+        code: S4
+      - source: Benartzi and Thaler (1995) with pages 75-92
+        why: Crossref and RePEc give 73-92; the 2017 Nobel background prints 75-92.
+        code: CIT-03
+    rule: >-
+      Cite Benartzi and Thaler (1995), pp. 73-92, for the term and the equity-premium
+      explanation, and Gneezy and Potters (1997) or Thaler, Tversky, Kahneman and Schwartz
+      (1997) for laboratory tests (S4 if the roles are swapped).
+    evidence:
+      - quote: "We dub this combination \"myopic loss aversion.\""
+        url: https://ideas.repec.org/a/oup/qjecon/v110y1995i1p73-92..html
+        kind: original_abstract
+      - quote: "Results from this study show that the more frequently returns are evaluated, the more risk averse investors will be."
+        url: https://ideas.repec.org/a/oup/qjecon/v112y1997i2p631-645..html
+        kind: later_paper
+    status: verified
+
+  - id: disposition-effect
+    topic: behavioral finance
+    finding: >-
+      Shefrin and Statman (1985) named the disposition effect, the tendency to sell winners
+      too early and hold losers too long, and gave the first evidence; Odean (1998) confirmed
+      it with 10,000 discount-brokerage accounts.
+    terms:
+      - disposition effect
+      - sell winners too early
+      - ride losers too long
+      - reluctance to realize losses
+      - realization of gains and losses
+    original:
+      authors: ["Shefrin, Hersh", "Statman, Meir"]
+      year: 1985
+      title: "The Disposition to Sell Winners Too Early and Ride Losers Too Long: Theory and Evidence"
+      container: The Journal of Finance
+      volume: "40"
+      issue: "3"
+      pages: "777-790"
+      doi: 10.1111/j.1540-6261.1985.tb05002.x
+    often_miscited_as:
+      - source: Odean (1998), Journal of Finance 53(5)
+        doi: 10.1111/0022-1082.00072
+        why: The large account-level test; did not name the effect.
+        code: S4
+      - source: Kahneman and Tversky (1979)
+        doi: 10.2307/1914185
+        why: Supplies the theory (loss aversion and reference points), not the effect or its name.
+        code: S4
+    rule: >-
+      Cite Shefrin and Statman (1985) for the term and the first evidence, and Odean (1998)
+      for the large account-level test. Crediting Odean (1998) with naming the disposition
+      effect is misattributed (S4).
+    evidence:
+      - quote: "Shefrin and Statman (1985) provided the first empirical evidence for this effect, which they labeled the disposition effect. The disposition effect was confirmed by Odean (1998), using a large dataset from a discount brokerage firm."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+      - quote: "we place this behavior pattern into a wider theoretical framework concerning a general disposition to sell winners too early and hold losers too long."
+        url: https://api.crossref.org/works/10.1111/j.1540-6261.1985.tb05002.x
+        kind: original_abstract
+      - quote: "I test the disposition effect, the tendency of investors to hold losing investments too long and sell winning investments too soon, by analyzing trading records for 10,000 accounts at a large discount brokerage house."
+        url: https://api.crossref.org/works/10.1111/0022-1082.00072
+        kind: later_paper
+    status: verified
+
+  - id: overconfidence-trading
+    topic: behavioral finance
+    finding: >-
+      Barber and Odean (2000) showed that the households that trade most earn much lower
+      returns and attributed excessive trading to overconfidence; Barber and Odean (2001)
+      tested that explanation by gender and found men trade 45 percent more than women.
+    terms:
+      - overconfidence and trading
+      - excessive trading
+      - trading is hazardous to your wealth
+      - boys will be boys
+      - gender and trading
+      - individual investor performance
+      - portfolio turnover
+    original:
+      authors: ["Barber, Brad M.", "Odean, Terrance"]
+      year: 2000
+      title: "Trading Is Hazardous to Your Wealth: The Common Stock Investment Performance of Individual Investors"
+      container: The Journal of Finance
+      volume: "55"
+      issue: "2"
+      pages: "773-806"
+      doi: 10.1111/0022-1082.00226
+    often_miscited_as:
+      - source: Barber and Odean (2001), Quarterly Journal of Economics 116(1), cited for the overall cost of active trading
+        doi: 10.1162/003355301556400
+        why: The 2001 paper is the gender test; the overall return penalty is in the 2000 paper.
+        code: S4
+      - source: Barber and Odean (2000) cited for gender differences in trading
+        why: The gender comparison is in the 2001 paper.
+        code: S4
+    rule: >-
+      Cite Barber and Odean (2000) for the return penalty of active trading and Barber and
+      Odean (2001) for the gender test; swapping them is misattributed (S4).
+    evidence:
+      - quote: "Of 66,465 households with accounts at a large discount broker during 1991 to 1996, those that trade most earn an annual return of 11.4 percent, while the market returns 17.9 percent."
+        url: https://ideas.repec.org/a/bla/jfinan/v55y2000i2p773-806.html
+        kind: original_abstract
+      - quote: "Overconfidence can explain high trading levels and the resulting poor performance of individual investors."
+        url: https://ideas.repec.org/a/bla/jfinan/v55y2000i2p773-806.html
+        kind: original_abstract
+      - quote: "We document that men trade 45 percent more than women."
+        url: https://ideas.repec.org/a/oup/qjecon/v116y2001i1p261-292..html
+        kind: later_paper
+    status: verified
+
+  # ---------------------------------------------------------- social preferences and games
+
+  - id: ultimatum-game
+    topic: social preferences and games
+    finding: >-
+      Güth, Schmittberger and Schwarze (1982) reported the first experimental analysis of the
+      ultimatum game.
+    terms:
+      - ultimatum game
+      - ultimatum bargaining
+      - proposer and responder
+      - rejection of unfair offers
+      - take-it-or-leave-it offer
+    original:
+      authors: ["Güth, Werner", "Schmittberger, Rolf", "Schwarze, Bernd"]
+      year: 1982
+      title: An experimental analysis of ultimatum bargaining
+      container: Journal of Economic Behavior & Organization
+      volume: "3"
+      issue: "4"
+      pages: "367-388"
+      doi: 10.1016/0167-2681(82)90011-7
+    often_miscited_as:
+      - source: "Thaler (1988), \"Anomalies: The Ultimatum Game\", Journal of Economic Perspectives 2(4)"
+        doi: 10.1257/jep.2.4.195
+        why: Review column; secondhand.
+        code: S5
+      - source: Kahneman, Knetsch and Thaler (1986), Journal of Business 59(S4)
+        doi: 10.1086/296367
+        why: Later ultimatum experiments; not the first.
+        code: S4
+    rule: >-
+      Cite Güth, Schmittberger and Schwarze (1982) for the first ultimatum-game experiments.
+      Kahneman, Knetsch and Thaler (1986) and Thaler's 1988 column are later work (S4 or S5
+      if cited as the origin).
+    evidence:
+      - quote: "The first experimental analysis of the ultimatum game was by Werner Güth, Rolf Schmittberger, and Bernd Schwarze"
+        url: https://en.wikipedia.org/wiki/Ultimatum_game
+        kind: encyclopedia
+      - quote: "Prior to this, economists had experimentally verified only the second of these manifestations, in the work of Güth et al. (1982) on the ultimatum game."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+      - quote: "also included experiments involving the (now well-known) ultimatum game."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+    status: verified
+
+  - id: dictator-game
+    topic: social preferences and games
+    finding: >-
+      The dictator game originates in an allocation experiment in Kahneman, Knetsch and
+      Thaler (1986), where students chose between an equal and an unequal split of $20 with
+      an anonymous classmate; Forsythe, Horowitz, Savin and Sefton (1994) introduced the
+      now-standard free-allocation version.
+    terms:
+      - dictator game
+      - dictator
+      - allocation game
+      - giving in the dictator game
+      - anonymous allocation experiment
+    original:
+      authors: ["Kahneman, Daniel", "Knetsch, Jack L.", "Thaler, Richard H."]
+      year: 1986
+      title: Fairness and the Assumptions of Economics
+      container: The Journal of Business
+      volume: "59"
+      issue: "S4"
+      pages: "S285-S300"
+      doi: 10.1086/296367
+    often_miscited_as:
+      - source: Forsythe, Horowitz, Savin and Sefton (1994), Games and Economic Behavior 6(3)
+        doi: 10.1006/game.1994.1021
+        why: Right for the standard unrestricted dictator game; calling it the first dictator experiment is a mild misattribution.
+        code: S4
+      - source: Kahneman, Knetsch and Thaler (1986), "Fairness as a constraint on profit seeking", American Economic Review 76(4)
+        why: The other 1986 fairness paper, on fairness judgments in markets; not the dictator experiment.
+        code: S4
+    rule: >-
+      For the first dictator-type experiment, cite Kahneman, Knetsch and Thaler (1986),
+      "Fairness and the Assumptions of Economics", Journal of Business, not their 1986
+      American Economic Review paper. Forsythe et al. (1994) is the right source for the
+      standard dictator game; calling it the first dictator experiment is a mild
+      misattribution (S4).
+    evidence:
+      - quote: "Kahneman, Knetsch and Thaler (1986a) introduced an experiment, subsequently known as the dictator game. Students in an undergraduate psychology class at Cornell University were asked to divide an endowment of $20"
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+      - quote: "1986a. Fairness and the Assumptions of Economics. Journal of Business 59, S285-S300."
+        url: https://www.nobelprize.org/uploads/2018/06/advanced-economicsciences2017.pdf
+        kind: review
+      - quote: "However, it was only in 1994 that a paper by Forsythe et al. simplified this to the contemporary form of this game with one decision-maker (the dictator) and one passive participant (the recipient)."
+        url: https://en.wikipedia.org/wiki/Dictator_game
+        kind: encyclopedia
+    status: verified
+    notes: >-
+      Crossref gives issue "S4" and only the first page (S285); RePEc gives issue 4, pages
+      S285-S300 (the issue's supplement, part 2). The second quote is the 2017 Nobel
+      background's reference list, which shows that its "1986a" is the Journal of Business
+      paper.
+
+  - id: gift-exchange
+    topic: social preferences and games
+    finding: >-
+      Akerlof (1982) modeled labor contracts as partial gift exchange, with firms paying above
+      the market-clearing wage to raise effort norms; Fehr, Kirchsteiger and Riedl (1993)
+      gave laboratory support, and Gneezy and List (2006) found field effects that fade
+      within hours.
+    terms:
+      - gift exchange
+      - gift-exchange game
+      - fair wage-effort hypothesis
+      - efficiency wages and fairness
+      - reciprocity in labor markets
+      - above-market wages and effort
+      - partial gift exchange
+    original:
+      authors: ["Akerlof, George A."]
+      year: 1982
+      title: Labor Contracts as Partial Gift Exchange
+      container: The Quarterly Journal of Economics
+      volume: "97"
+      issue: "4"
+      pages: "543-569"
+      doi: 10.2307/1885099
+    often_miscited_as:
+      - source: Fehr, Kirchsteiger and Riedl (1993), Quarterly Journal of Economics 108(2)
+        doi: 10.2307/2118338
+        why: The experimental test, not the gift-exchange idea.
+        code: S4
+      - source: Gneezy and List (2006), Econometrica 74(5), cited as showing lasting gift exchange in the field
+        doi: 10.1111/j.1468-0262.2006.00707.x
+        why: Effort was higher only in the first hours, and the gift lowered output per dollar overall.
+        code: S2
+    rule: >-
+      Cite Akerlof (1982) for the theory and Fehr, Kirchsteiger and Riedl (1993) for the
+      laboratory evidence. A sentence implying that above-market wages produce lasting effort
+      gains in the field should note Gneezy and List (2006) (CIT-14).
+    evidence:
+      - quote: "Workers' effort depends upon the norms determining a fair day's work. In order to affect those norms, firms may pay more than the market-clearing wage."
+        url: https://ideas.repec.org/a/oup/qjecon/v97y1982i4p543-569..html
+        kind: original_abstract
+      - quote: "These results provide, therefore, experimental support for the fair wage-effort theory of involuntary unemployment."
+        url: https://ideas.repec.org/a/oup/qjecon/v108y1993i2p437-459..html
+        kind: later_paper
+    replication:
+      note: >-
+        Gneezy and List (2006): effort was higher in the "gift" treatment in the first few
+        hours, after which no difference was observed.
+      url: https://ideas.repec.org/a/ecm/emetrp/v74y2006i5p1365-1384.html
+    status: verified
+    notes: >-
+      Crossref lists only the first page (543); the range is from RePEc/IDEAS.
+
+  - id: inequity-aversion
+    topic: social preferences and games
+    finding: >-
+      Fehr and Schmidt (1999) modeled inequity aversion to reconcile behavior in bargaining,
+      market and cooperation games; Bolton and Ockenfels (2000) proposed the related ERC
+      model based on relative payoff standing.
+    terms:
+      - inequity aversion
+      - inequality aversion
+      - Fehr-Schmidt model
+      - Fehr–Schmidt
+      - disadvantageous inequality
+      - advantageous inequality
+      - ERC model
+      - equity, reciprocity and competition
+      - relative payoff
+    original:
+      authors: ["Fehr, Ernst", "Schmidt, Klaus M."]
+      year: 1999
+      title: A Theory of Fairness, Competition, and Cooperation
+      container: The Quarterly Journal of Economics
+      volume: "114"
+      issue: "3"
+      pages: "817-868"
+      doi: 10.1162/003355399556151
+    often_miscited_as:
+      - source: Bolton and Ockenfels (2000), American Economic Review 90(1), cited for the Fehr-Schmidt specification
+        doi: 10.1257/aer.90.1.166
+        why: Their model is ERC, built on relative payoff standing.
+        code: S4
+      - source: Fehr and Schmidt (1999) cited for ERC
+        why: ERC is Bolton and Ockenfels's model.
+        code: S4
+    rule: >-
+      Cite Fehr and Schmidt (1999) for inequity aversion in its two-parameter form and Bolton
+      and Ockenfels (2000) for ERC; attributing one model's specification to the other is
+      misattributed (S4). Citing both for inequality-averse preferences in general is fine.
+    evidence:
+      - quote: "We show that if some people care about equity the puzzles can be resolved."
+        url: https://ideas.repec.org/a/oup/qjecon/v114y1999i3p817-868..html
+        kind: original_abstract
+      - quote: "A more recent definition of inequity aversion (resistance to inequitable outcomes) was developed in 1999 by Fehr and Schmidt."
+        url: https://en.wikipedia.org/wiki/Inequity_aversion
+        kind: encyclopedia
+      - quote: "Gary E Bolton and Axel Ockenfels provided a more general model called ERC (equity, reciprocity, and competition) in 2000."
+        url: https://en.wikipedia.org/wiki/Inequity_aversion
+        kind: encyclopedia
+      - quote: "We demonstrate that a simple model, constructed on the premise that people are motivated by both their pecuniary payoff and their relative payoff standing"
+        url: https://www.aeaweb.org/articles?id=10.1257/aer.90.1.166
+        kind: later_paper
+    status: verified
+
+  - id: conditional-cooperation
+    topic: social preferences and games
+    finding: >-
+      Fischbacher, Gächter and Fehr (2001) used a strategy-method public goods experiment to
+      classify contribution schedules: about half the subjects were conditional cooperators
+      and about a third free riders.
+    terms:
+      - conditional cooperation
+      - conditional cooperators
+      - strategy method
+      - contribution schedule
+      - public goods game
+      - free riders share
+      - decline of cooperation in public goods games
+    original:
+      authors: ["Fischbacher, Urs", "Gächter, Simon", "Fehr, Ernst"]
+      year: 2001
+      title: "Are people conditionally cooperative? Evidence from a public goods experiment"
+      container: Economics Letters
+      volume: "71"
+      issue: "3"
+      pages: "397-404"
+      doi: 10.1016/S0165-1765(01)00394-9
+    often_miscited_as:
+      - source: Fehr and Gächter (2000), American Economic Review 90(4)
+        doi: 10.1257/aer.90.4.980
+        why: About punishment in public goods games, not the classification of conditional cooperators.
+        code: S4
+    rule: >-
+      Cite Fischbacher, Gächter and Fehr (2001) for the shares of conditional cooperators
+      (about 50 percent) and free riders (about a third) under the strategy method; Fehr and
+      Gächter (2000) is about punishment (S4 if cited for this).
+    evidence:
+      - quote: "We find that about a third of subjects' contribution schedules is characterized by complete free-riding. However, a majority of 50 percent of the subjects displays conditional cooperation."
+        url: https://ideas.repec.org/a/eee/ecolet/v71y2001i3p397-404.html
+        kind: original_abstract
+    status: verified
+    notes: >-
+      RePEc notes that this abstract was borrowed from another version of the item (the
+      working paper).
+
+  - id: altruistic-punishment
+    topic: social preferences and games
+    finding: >-
+      Fehr and Gächter (2000, American Economic Review) showed that the opportunity for
+      costly punishment sustains high cooperation in public goods experiments; Fehr and
+      Gächter (2002, Nature) introduced the label "altruistic punishment" for punishment that
+      is costly and yields no material gain.
+    terms:
+      - altruistic punishment
+      - costly punishment
+      - punishment in public goods games
+      - peer punishment
+      - punishing free riders
+    original:
+      authors: ["Fehr, Ernst", "Gächter, Simon"]
+      year: 2002
+      title: Altruistic punishment in humans
+      container: Nature
+      volume: "415"
+      issue: "6868"
+      pages: "137-140"
+      doi: 10.1038/415137a
+    often_miscited_as:
+      - source: Fehr and Gächter (2000), American Economic Review 90(4), cited for the term "altruistic punishment"
+        doi: 10.1257/aer.90.4.980
+        why: The 2000 paper documents costly punishment; the label is from the 2002 Nature paper.
+        code: S4
+      - source: "\"Gächter and Fehr (2000)\""
+        why: RePEc lists the 2000 paper in this order; the article and Crossref give Fehr and Gächter.
+        code: CIT-03
+    rule: >-
+      Cite Fehr and Gächter (2000) for costly punishment raising contributions in public
+      goods games and Fehr and Gächter (2002) for the term altruistic punishment. Both are
+      Fehr and Gächter, in that order.
+    evidence:
+      - quote: "Altruistic punishment means that individuals punish, although the punishment is costly for them and yields no material gain."
+        url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=11805825&rettype=abstract&retmode=text
+        kind: original_abstract
+      - quote: "As a consequence, the existence of an opportunity for costly punishment causes a large increase in cooperation levels because potential free riders face a credible threat."
+        url: https://ideas.repec.org/a/aea/aecrev/v90y2000i4p980-994.html
+        kind: original_abstract
+      - quote: "Simon Gachter & Ernst Fehr, 2000."
+        url: https://ideas.repec.org/a/aea/aecrev/v90y2000i4p980-994.html
+        kind: metadata_record
+    status: verified
+    notes: >-
+      The second quote is the abstract of the 2000 paper. The Crossref record for the 2002
+      paper links an update (doi 10.1038/nature03256, labelled erratum), which PubMed lists as
+      a 2005 comment and reply; check it under CIT-05 before relying on specific numbers.
+
+  # -------------------------------------------------------------- markets, labor and the field
+
+  - id: winners-curse
+    topic: markets, labor and the field
+    finding: >-
+      Capen, Clapp and Campbell (1971), petroleum engineers, argued that the winners of
+      competitive lease auctions tend to be the bidders who most overestimate value, so
+      "successful" bidders earn low returns: the winner's curse.
+    terms:
+      - winner's curse
+      - winners curse
+      - common value auction overbidding
+      - competitive bidding in high-risk situations
+      - jar of coins auction
+      - lease bidding
+    original:
+      authors: ["Capen, E. C.", "Clapp, R. V.", "Campbell, W. M."]
+      year: 1971
+      title: Competitive Bidding in High-Risk Situations
+      container: Journal of Petroleum Technology
+      volume: "23"
+      issue: "06"
+      pages: "641-653"
+      doi: 10.2118/2993-PA
+    often_miscited_as:
+      - source: "Thaler (1988), \"Anomalies: The Winner's Curse\", Journal of Economic Perspectives 2(1)"
+        doi: 10.1257/jep.2.1.191
+        why: Review column; secondhand for the origin.
+        code: S5
+    rule: >-
+      Cite Capen, Clapp and Campbell (1971) for the origin of the winner's curse; Thaler
+      (1988) is a review (S5 if cited as the origin).
+    evidence:
+      - quote: "If it is true, as common sense tells us, that a lease winner tends to be the bidder who most overestimates reserves potential"
+        url: https://api.crossref.org/works/10.2118/2993-PA
+        kind: original_abstract
+      - quote: "The winner's curse phenomenon was first addressed in 1971 by three Atlantic Richfield petroleum engineers"
+        url: https://en.wikipedia.org/wiki/Winner%27s_curse
+        kind: encyclopedia
+      - quote: "you will have money for lunch, and your students will have learned first-hand about the \"winner's curse.\""
+        url: https://www.aeaweb.org/articles?id=10.1257/jep.2.1.191
+        kind: review
+    status: verified
+
+  - id: cab-driver-labor-supply
+    topic: markets, labor and the field
+    finding: >-
+      Camerer, Babcock, Loewenstein and Thaler (1997) estimated negative daily wage
+      elasticities for New York City cab drivers and read them as daily income targeting;
+      Farber (2005, 2008) and Crawford and Meng (2011) contested and refined that reading.
+    terms:
+      - cab drivers
+      - taxi drivers
+      - income targeting
+      - daily income target
+      - negative wage elasticity
+      - one day at a time
+      - reference-dependent labor supply
+    original:
+      authors: ["Camerer, Colin", "Babcock, Linda", "Loewenstein, George", "Thaler, Richard"]
+      year: 1997
+      title: "Labor Supply of New York City Cabdrivers: One Day at a Time"
+      container: The Quarterly Journal of Economics
+      volume: "112"
+      issue: "2"
+      pages: "407-441"
+      doi: 10.1162/003355397555244
+    often_miscited_as:
+      - source: Farber (2005), Journal of Political Economy 113(1), or Farber (2008), American Economic Review 98(3), cited as support for income targeting
+        doi: 10.1257/aer.98.3.1069
+        why: Farber finds his data inconsistent with an important role for daily income targets.
+        code: S2
+      - source: Camerer et al. (1997) with pages 407-442
+        why: Crossref and RePEc give 407-441; the 2017 Nobel background prints 407-442.
+        code: CIT-03
+    rule: >-
+      Cite Camerer et al. (1997) for the original negative-elasticity and income-targeting
+      evidence. A sentence presenting income targeting as established should note Farber
+      (2005, 2008) and Crawford and Meng (2011) (CIT-14); citing Farber as support for
+      income targeting reverses his conclusion (S2).
+    evidence:
+      - quote: "Estimated wage elasticities are significantly negative in two out of three samples."
+        url: https://ideas.repec.org/a/oup/qjecon/v112y1997i2p407-441..html
+        kind: original_abstract
+      - quote: "set a loose daily income target and quit working once they reach that target."
+        url: https://ideas.repec.org/a/oup/qjecon/v112y1997i2p407-441..html
+        kind: original_abstract
+      - quote: "This pattern is inconsistent with an important role for reference-dependent preferences."
+        url: https://www.aeaweb.org/articles?id=10.1257/aer.98.3.1069
+        kind: later_paper
+    replication:
+      note: >-
+        Crawford and Meng (2011, American Economic Review 101(5), doi 10.1257/aer.101.5.1912)
+        reconcile Farber's stopping results with Camerer et al.'s negative elasticity using
+        rational-expectations targets for hours and income.
+      url: https://www.aeaweb.org/articles?id=10.1257/aer.101.5.1912
+    status: verified
+    notes: >-
+      Farber (2005) is doi 10.1086/426040; its abstract was not available, so the evidence
+      quote is from Farber (2008).
+
+  # ------------------------------------------------------------- contested psychology findings
+
+  - id: ego-depletion
+    topic: contested psychology findings
+    finding: >-
+      Baumeister, Bratslavsky, Muraven and Tice (1998) proposed that self-control draws on a
+      limited resource ("ego depletion"), using experiments such as eating radishes instead of
+      chocolates; a 23-lab preregistered replication found an effect near zero.
+    terms:
+      - ego depletion
+      - self-control as a limited resource
+      - willpower depletion
+      - strength model of self-control
+      - resource depletion
+      - radishes and chocolates
+    original:
+      authors: ["Baumeister, Roy F.", "Bratslavsky, Ellen", "Muraven, Mark", "Tice, Dianne M."]
+      year: 1998
+      title: "Ego depletion: Is the active self a limited resource?"
+      container: Journal of Personality and Social Psychology
+      volume: "74"
+      issue: "5"
+      pages: "1252-1265"
+      doi: 10.1037/0022-3514.74.5.1252
+    often_miscited_as:
+      - source: Muraven, Tice and Baumeister (1998), Journal of Personality and Social Psychology 74(3)
+        doi: 10.1037/0022-3514.74.3.774
+        why: The companion paper on regulatory depletion; check which of the two contains the experiment cited.
+        code: S4
+      - source: Baumeister et al. (1998) cited as an established effect
+        why: The multilab replication found d = 0.04 with a confidence interval including zero.
+        code: CIT-14
+    rule: >-
+      Cite Baumeister et al. (1998) for the ego-depletion hypothesis and the radish and
+      chocolate experiment. A sentence that treats ego depletion as established should note
+      the multilab replication of Hagger et al. (2016) (CIT-14).
+    evidence:
+      - quote: "In Experiment 1, people who forced themselves to eat radishes instead of tempting chocolates subsequently quit faster on unsolvable puzzles than people who had not had to exert self-control over eating."
+        url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=9599441&rettype=abstract&retmode=text
+        kind: original_abstract
+    replication:
+      note: >-
+        Hagger et al. (2016, Perspectives on Psychological Science 11(4), doi
+        10.1177/1745691616652873), 23 laboratories, N = 2,141: ego-depletion effect d = 0.04,
+        95% CI [-0.07, 0.15].
+      url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=27474142&rettype=abstract&retmode=text
+    status: verified
+
+  - id: money-priming
+    topic: contested psychology findings
+    finding: >-
+      Vohs, Mead and Goode (2006) reported nine experiments in which reminders of money made
+      people more self-sufficient and less helpful; later direct replications of related
+      money-priming effects failed, and a meta-analysis found likely publication bias.
+    terms:
+      - money priming
+      - money prime
+      - reminders of money
+      - psychological consequences of money
+      - currency priming
+      - self-sufficiency and money
+    original:
+      authors: ["Vohs, Kathleen D.", "Mead, Nicole L.", "Goode, Miranda R."]
+      year: 2006
+      title: The Psychological Consequences of Money
+      container: Science
+      volume: "314"
+      issue: "5802"
+      pages: "1154-1156"
+      doi: 10.1126/science.1132491
+    often_miscited_as:
+      - source: Caruso, Vohs, Baxter and Waytz (2013), Journal of Experimental Psychology General 142(2)
+        doi: 10.1037/a0029288
+        why: >-
+          A different money-priming claim (endorsement of free markets and inequality), the
+          one that failed in Many Labs 1 and in Rohrer, Pashler and Harris (2015); do not
+          conflate it with the 2006 helping results.
+        code: S4
+      - source: Vohs et al. (2006) cited as an established effect
+        why: Replications of money-priming effects largely failed and the published literature shows likely publication bias.
+        code: CIT-14
+    rule: >-
+      Cite Vohs, Mead and Goode (2006) for the original money-priming claims, and flag any
+      sentence that presents money priming as established (CIT-14): currency priming did not
+      replicate in Many Labs 1, Rohrer, Pashler and Harris (2015) found no evidence for four
+      Caruso et al. (2013) effects (d = 0.03), and Lodder et al. (2019) found likely
+      publication bias across 246 experiments.
+    evidence:
+      - quote: "Reminders of money, relative to nonmoney reminders, led to reduced requests for help and reduced helpfulness toward others."
+        url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=17110581&rettype=abstract&retmode=text
+        kind: original_abstract
+      - quote: "We conducted high-powered replication attempts of these 4 money priming effects and found no evidence of priming (weighted Cohen's d = 0.03)."
+        url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=26214168&rettype=abstract&retmode=text
+        kind: later_paper
+      - quote: "two effects ... flag priming influencing conservatism and currency priming influencing system justification ... did not replicate."
+        url: https://api.crossref.org/works/10.1027/1864-9335/a000178
+        kind: later_paper
+    replication:
+      note: >-
+        Lodder, Ong, Grasman and Wicherts (2019, Journal of Experimental Psychology General
+        148(4), doi 10.1037/xge0000570): overall g = .31 across 246 experiments, but
+        "publication bias and related biases are likely".
+      url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=30973262&rettype=abstract&retmode=text
+    status: verified
+    notes: >-
+      PubMed lists a 2015 erratum for Vohs, Mead and Goode (2006): Science 349(6246):
+      aac9679, doi 10.1126/science.aac9679.

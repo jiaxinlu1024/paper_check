@@ -23,16 +23,12 @@ from typing import Optional
 from ..model import Anchor, Evidence, Fix
 from ..textutil import word_count
 from . import register
-from .format import (PROSE_KINDS, add_location, block_quote, compact, doc_anchor, input_format, is_hidden, note_coverage,
-                     pdf_facts, prose, quote_at, related, review_type, rule_caveat, rule_confirmed, rule_evidence,
-                     rule_status, sentence_bounds, sentence_quote, setting, venue_name, venue_other, venue_rule,
-                     venue_steps)
+from .format import (PROSE_KINDS, add_location, block_quote, compact, doc_anchor, in_appendix, input_format, is_hidden,
+                     note_coverage, pdf_facts, prose, quote_at, related, review_type, rule_caveat, rule_confirmed,
+                     rule_evidence, rule_status, sentence_bounds, sentence_quote, setting, venue_name, venue_other,
+                     venue_rule, venue_steps)
 
 SCRIPT = "checks/venue.py"
-
-
-def _plural(n: int, word: str, many: Optional[str] = None) -> str:
-    return f"{n} {word if n == 1 else (many or word + 's')}"
 
 
 def _ws_words(text: str) -> int:
@@ -110,7 +106,7 @@ def _manuscript_words(pm, scope: str) -> tuple:
     for b in pm.blocks:
         if b.kind not in kinds or is_hidden(b) or b.attrs.get("generated") and b.kind == "heading":
             continue
-        if not parts["appendices"] and any(s and re.match(r"\s*(?:[A-Z]\s|appendix)", s, re.I) for s in b.section[:1]):
+        if not parts["appendices"] and in_appendix(pm, b):
             continue
         if _online_appendix(pm, b):
             continue
@@ -376,10 +372,16 @@ _ETHICS = re.compile(r"\bIRB\b|institutional review board|ethics (?:committee|bo
                      r"(?:approval|clearance|review)|research ethics|human subjects? (?:committee|review|protection)|"
                      r"approved by the [^.]{0,80}(?:board|committee)|exempt(?:ion)? (?:from|by|under) [^.]{0,60}"
                      r"(?:review|board|committee|IRB)", re.I)
-_HUMAN = re.compile(r"\b(?:participants?|respondents?|subjects? (?:were|in|of the)|experimental subjects|interviewees|"
-                    r"(?:lab(?:oratory)?|field|online|survey|natural field|lab-in-the-field) experiments?|randomi[sz]ed "
-                    r"controlled trial|\bRCT\b|we (?:recruited|surveyed|interviewed|randomi[sz]ed)|sessions? (?:at|in|of) "
-                    r"the (?:lab|laboratory)|Prolific|MTurk|Mechanical Turk|z-?Tree|oTree|ORSEE|Qualtrics)", re.I)
+# Human-subjects research the paper ran itself, not a literature review mentioning experiments,
+# "seminar participants" or "market participants".
+_HUMAN = re.compile(
+    r"\bwe (?:ran|run|conduct(?:ed)?|carr(?:y|ied) out|recruit(?:ed)?|survey(?:ed)?|interview(?:ed)?|randomi[sz]e(?:d)?|"
+    r"invite(?:d)?|pa(?:y|id)|elicit(?:ed)?)\b"
+    r"|\bour (?:lab(?:oratory)? |field |online |survey )?(?:experiments?|survey|participants|subjects|respondents|trial|"
+    r"sessions?|intervention|sample of (?:participants|employees|students|workers|respondents))\b"
+    r"|\b(?:participants|subjects|respondents|employees|students|workers) (?:were|was) (?:paid|told|randomly|recruited|"
+    r"assigned|asked|invited|informed|shown|given|randomi[sz]ed)\b"
+    r"|\b(?:Prolific|MTurk|Mechanical Turk|z-?Tree|oTree|ORSEE|hroot|Qualtrics)\b", re.I)
 _EMPIRICAL = re.compile(r"\b(?:data(?:set)?s?|sample|survey|experiment|regression|observations|administrative records|"
                         r"participants)\b", re.I)
 
@@ -469,7 +471,7 @@ def required_statements(pm, ctx):
         return
     vname = venue_name(ctx)
     steps = venue_steps(ctx)
-    text_all = " ".join(b.text for b in prose(pm, PROSE_KINDS + ("acknowledgment",)))
+    text_all = " ".join(b.text for b in prose(pm, PROSE_KINDS))
     human = bool(_HUMAN.search(text_all))
     empirical = bool(_EMPIRICAL.search(text_all))
     found, outside, results = [], [], []
@@ -569,6 +571,8 @@ _REG_ID = re.compile(
 _FIELD_RCT = re.compile(r"\bfield experiments?\b|\brandomi[sz]ed controlled trials?\b|\bRCTs?\b|\bnatural field experiment",
                         re.I)
 _LAB = re.compile(r"\blab(?:oratory)? experiments?\b|\bexperimental (?:lab|laboratory)\b|\bz-?Tree\b|\bORSEE\b", re.I)
+_OWN_FIELD = re.compile(r"\b(?:we|our|this paper|this study|this article)\b[^.]{0,100}?\b(?:field experiments?|"
+                        r"randomi[sz]ed controlled trials?|RCTs?|natural field experiments?)\b", re.I)
 _OSF_ONLY = re.compile(r"osf\.io|aspredicted|10\.17605/OSF", re.I)
 
 
@@ -596,7 +600,7 @@ def registration(pm, ctx):
     aea = bool(trial) and re.search(r"AEA RCT Registry", compact(trial.get("value"), 600), re.I)
     text_all = " ".join(b.text for b in prose(pm))
     study_type = str(setting(ctx, "study_type") or "").lower()
-    field = ("field" in study_type or "rct" in study_type) or (bool(_FIELD_RCT.search(text_all)) and "lab" not in study_type)
+    field = ("field" in study_type or "rct" in study_type) or (bool(_OWN_FIELD.search(text_all)) and "lab" not in study_type)
     evidence_rules = [rule_evidence(ctx, "trial_registration", trial)] if trial else []
 
     if claims and not ids:
@@ -626,8 +630,8 @@ def registration(pm, ctx):
             script=SCRIPT, extra={"claim": m.group(0)})
         return
     if aea and field and not claims and not ids and not _LAB.search(text_all):
-        target = next((b for b in prose(pm) if _FIELD_RCT.search(b.text)), None)
-        m = _FIELD_RCT.search(target.text) if target else None
+        target = next((b for b in prose(pm) if _OWN_FIELD.search(b.text)), None)
+        m = _OWN_FIELD.search(target.text) if target else None
         quote = sentence_quote(target, m.start(), 30) if target else None
         yield ctx.finding(
             "BEH-06", "Field experiment without an AEA RCT Registry entry", "major",
@@ -667,8 +671,8 @@ def registration(pm, ctx):
 # =============================================================== BEH-12 ethics approval placement
 _APPROVAL_NUMBER = re.compile(r"(?:protocol|approval|reference|ref\.|number|no\.|#|ID|IRB)\s*(?:no\.?|number|#|:)?\s*"
                               r"[A-Z]{0,8}[-/ ]?\d[\w/.-]{2,}|\b\d{2,4}-\d{2,}\b|#\s?\d{3,}", re.I)
-_BOARD_NAME = re.compile(r"(?:of|at|from)\s+(?:the\s+)?[A-Z][\w&.'’-]+|[A-Z][\w&.'’-]+\s+(?:University|College|Institute)|"
-                         r"\b[A-Z]{2,}\b\s+(?:IRB|Ethics)", re.I)
+_BOARD_NAME = re.compile(r"\b(?:of|at|from)\s+(?:the\s+)?[A-Z][\w&.'’-]+|[A-Z][\w&.'’-]+\s+(?:University|College|"
+                         r"Institute)|\b[A-Z]{2,}\b\s+(?:IRB|[Ee]thics)")
 
 
 def _ethics_place(ctx, r) -> str:
@@ -695,7 +699,7 @@ def ethics_placement(pm, ctx):
     if not r or not _required(r):
         ctx.skip("BEH-12", f"the {venue_name(ctx)} profile does not require an ethics statement")
         return
-    text_all = " ".join(b.text for b in prose(pm, PROSE_KINDS + ("acknowledgment",)))
+    text_all = " ".join(b.text for b in prose(pm, PROSE_KINDS))
     if not _HUMAN.search(text_all):
         note_coverage(ctx, "BEH-12", "no human-subjects research detected")
         return
@@ -823,6 +827,9 @@ def journal_requirements(pm, ctx):
             continue
         b = blocks[0]
         items = _front_items(b)
+        if kind == "jel":
+            body = re.sub(r"\([^)]*\)", " ", re.sub(r"^\s*JEL[^:]*:\s*", "", b.text, flags=re.I))
+            items = [t for t in re.split(r"[;,\s·•]+", body) if t and t.lower() not in ("and", "&")]
         codes = _JEL_CODE.findall(b.text) if kind == "jel" else items
         n = len(codes)
         compared.append(f"{label}: {n}")

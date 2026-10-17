@@ -46,6 +46,7 @@ class Context:
     producer: str = "script"
     coverage: dict = field(default_factory=dict)
     notes: dict = field(default_factory=dict)
+    current: Optional[str] = None  # name of the check function running now
 
     def finding(self, check_id: str, title: str, severity: str, problem: str, *,
                 block=None, quote: Optional[str] = None, related=None, evidence=None,
@@ -67,10 +68,10 @@ class Context:
         self.notes[check_id] = text
 
     def skip(self, check_id: str, reason: str) -> None:
-        self.coverage[check_id] = Coverage(check_id, "skipped", reason, self.producer)
+        self.coverage[check_id] = Coverage(check_id, "skipped", reason, self.current or self.producer)
 
     def not_applicable(self, check_id: str, reason: str) -> None:
-        self.coverage[check_id] = Coverage(check_id, "not_applicable", reason, self.producer)
+        self.coverage[check_id] = Coverage(check_id, "not_applicable", reason, self.current or self.producer)
 
 
 def load_modules(names: Iterable[str] = MODULES) -> list:
@@ -94,6 +95,7 @@ def run_checks(pm: PaperMap, ctx: Context, only: Optional[set] = None) -> Findin
     for check_ids, func, name in _REGISTRY:
         if only and not (set(check_ids) & only):
             continue
+        ctx.current = name
         try:
             found = [f for f in (func(pm, ctx) or []) if f is not None]
         except Exception as exc:

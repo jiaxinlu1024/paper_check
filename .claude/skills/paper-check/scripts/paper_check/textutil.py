@@ -87,6 +87,26 @@ _ABBREVIATIONS = {
 _BOUNDARY = re.compile(r"([.!?])(['\")\]]*)(\s+)(?=[\"'(\[]?[A-Z0-9])")
 
 
+_LABEL_WORDS = {"appendix", "table", "figure", "section", "panel", "column", "model", "treatment", "group",
+                "study", "experiment", "part", "wave", "phase", "option", "condition", "arm", "type", "category",
+                "class", "grade", "plan", "sample", "stage", "round", "game", "lottery", "item", "question",
+                "scenario", "version", "variant", "list", "box", "exhibit", "chapter", "step", "case"}
+
+
+def _is_initial(before: str) -> bool:
+    """A lone capital before ". " is an initial when it follows a name or another initial, as in
+    "Richard H. Thaler" or "J. Smith", not a label or a lowercase word, as in "Appendix A." or "chose C."."""
+    m = re.search(r"(?:^|[\s(\[])(?P<prev>[^\s]*)\s+[A-Z]$", before)
+    if not m:
+        return bool(re.fullmatch(r"\s*[A-Z]", before))  # an initial at the very start
+    prev = m.group("prev").strip("(),;[")
+    if not prev:
+        return True
+    if re.fullmatch(r"[A-Z]\.", prev) or prev.lower() in ("and", "&", "von", "van", "de", "der", "di", "da", "le"):
+        return True
+    return prev[:1].isupper() and prev.lower().rstrip(".,") not in _LABEL_WORDS
+
+
 def split_sentences(text: str) -> list[tuple[int, int]]:
     """Split text into sentence spans, avoiding common abbreviations and initials."""
     spans, start = [], 0
@@ -96,7 +116,7 @@ def split_sentences(text: str) -> list[tuple[int, int]]:
         if m.group(1) == ".":
             if token:
                 word = token.group(1).lower().rstrip(".")
-                if word in _ABBREVIATIONS or (len(word) == 1 and word.isalpha()):
+                if word in _ABBREVIATIONS or (len(word) == 1 and word.isalpha() and _is_initial(before)):
                     continue
             if re.search(r"\d$", before) and re.match(r"\s*\d", text[m.end(3):]):
                 continue  # decimal number split across a space is not a boundary

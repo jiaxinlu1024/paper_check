@@ -7,8 +7,8 @@ CIT-10  an informational summary of reference ages.
 FMT-08  reference list consistency: duplicate keys and entries, required fields,
         acronyms that BibTeX may lowercase, venue name variants, DOI format,
         author name format, title capitalization style.
-BEH-11  oTree, z-Tree and ORSEE used without citing Chen, Schonger and Wickens (2016),
-        Fischbacher (2007) and Greiner (2015).
+BEH-11  oTree, z-Tree, ORSEE and hroot used without citing Chen, Schonger and Wickens
+        (2016), Fischbacher (2007), Greiner (2015) and Bock, Baetge and Nicklisch (2014).
 """
 
 from __future__ import annotations
@@ -22,8 +22,8 @@ from typing import Optional
 from ..model import Anchor, Evidence, Fix
 from ..textutil import find_quote, normalize
 from . import register
-from .format import (PROSE_KINDS, add_location, block_quote, doc_anchor, input_format, note_coverage, prose, quote_at,
-                     related, sentence_quote)
+from .format import (PROSE_KINDS, add_location, block_quote, doc_anchor, input_format, note_coverage, prose, related,
+                     sentence_quote)
 
 SCRIPT = "checks/references_local.py"
 
@@ -61,6 +61,9 @@ def _citations(pm) -> dict:
 
 
 # =============================================================== CIT-01
+MAX_UNCITED = 5  # more uncited entries than this are reported in one finding
+
+
 @register("CIT-01")
 def citations_have_entries(pm, ctx):
     md = pm.metadata or {}
@@ -128,6 +131,35 @@ def citations_have_entries(pm, ctx):
     else:
         uncited = [r for r in pm.references if r.id not in cited_ids and (not r.key or r.key not in cited_ids)]
     status = "confirmed" if input_format(pm) == "latex" else "likely"
+    if len(uncited) > MAX_UNCITED:
+        # many at once: report them together; from a PDF or Word file this many usually means some citation
+        # formats were not recognized, so a person should check
+        share = len(uncited) / max(1, len(pm.references))
+        status = status if status == "confirmed" or share <= 0.5 else "needs_human"
+        located = [(r, *_ref_quote(pm, r)) for r in uncited]
+        first = next(((r, b, q) for r, b, q in located if b is not None), (uncited[0], None, None))
+        names = ", ".join(r.key or r.id for r in uncited)
+        f = ctx.finding(
+            "CIT-01", f"{len(uncited)} references never cited", "minor",
+            f"{len(uncited)} of {len(pm.references)} entries of the reference list match no in-text citation: "
+            f"{names[:400]}{'...' if len(names) > 400 else ''}."
+            + ("" if status == "confirmed" else
+               " So many unmatched entries can also mean that some citations were not recognized in the text, so "
+               "check a few by hand before deleting anything." if status == "needs_human" else
+               " (as far as the in-text citations could be matched)"),
+            block=first[1], quote=first[2], status=status,
+            confidence="high" if status == "confirmed" else "medium" if status == "likely" else "low",
+            related=[related(b, q) for _, b, q in located if b is not None and b is not first[1]][:6],
+            evidence=[Evidence(type="checked_absence", text=names[:300],
+                               data={"scope": "every in-text citation", "terms": {r.key or r.id: 0 for r in uncited}})],
+            trajectory=steps + [f"No citation points to {len(uncited)} entries."],
+            fix=Fix(action="investigate", detail="Cite each work where it is used, or delete its entry.",
+                    resolved_when="Every entry in the reference list is cited at least once."),
+            script=SCRIPT, extra={"keys": [r.key or r.id for r in uncited]})
+        if first[1] is None:
+            add_location(f, _ref_anchor(first[0]))
+        yield f
+        return
     for r in uncited:
         b, quote = _ref_quote(pm, r)
         f = ctx.finding(
@@ -572,7 +604,9 @@ def reference_list(pm, ctx):
         b, quote = _ref_quote(pm, r, (r.fields or {}).get("title"))
         f = ctx.finding(
             "FMT-08", "Titles in two capitalization styles", "minor",
-            f"{len(styles['title case'])} titles are in title case and {len(styles['sentence case'])} in sentence case.",
+            f"{len(styles['title case'])} titles are in title case and {len(styles['sentence case'])} in sentence case."
+            + (" Unless the bibliography style recases titles, the printed list mixes the two."
+               if r.source == "bibtex" else ""),
             block=b, quote=quote, status="likely", confidence="medium",
             evidence=[Evidence(type="script_output", text=", ".join(x.key or x.id for x in minority[:10]),
                                data={"script": SCRIPT})],
@@ -597,6 +631,10 @@ _SOFTWARE = [
     ("ORSEE", re.compile(r"\bORSEE\b"), ("greiner",), (), "2015", re.compile(r"ORSEE|subject pool recruitment", re.I),
      "Greiner (2015), \"Subject pool recruitment procedures: organizing experiments with ORSEE\", Journal of the "
      "Economic Science Association 1: 114-125", "minor", "ORSEE's license requires users to cite this article"),
+    ("hroot", re.compile(r"\bhroot\b", re.I), ("bock",), ("baetge", "nicklisch"), "2014", re.compile(r"\bhroot\b", re.I),
+     "Bock, Baetge and Nicklisch (2014), \"hroot: Hamburg registration and organization online tool\", European "
+     "Economic Review 71: 117-120", "suggestion",
+     "citing it is customary; whether hroot's terms require it is unconfirmed"),
 ]
 
 
@@ -640,4 +678,4 @@ def software_citations(pm, ctx):
                     resolved_when=f"The reference list contains the {name} citation and the text cites it."),
             script=SCRIPT, extra={"software": name})
     note_coverage(ctx, "BEH-11", ("software mentioned: " + ", ".join(checked)) if checked else
-                  "no oTree, z-Tree or ORSEE mention found")
+                  "no oTree, z-Tree, ORSEE or hroot mention found")

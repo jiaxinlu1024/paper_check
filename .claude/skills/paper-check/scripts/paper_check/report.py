@@ -222,7 +222,8 @@ def _absorb(keep, other, note: str) -> None:
     keep.trajectory.extend(t for t in other.trajectory if t not in keep.trajectory)
     keep.extra.setdefault("also", []).append({
         "check_id": other.check_id, "title": other.title, "severity": other.severity, "status": other.status,
-        "producer": other.producer.get("name"), "problem": other.problem, "note": note})
+        "producer": other.producer.get("name"), "source": list(_source(other)), "problem": other.problem,
+        "note": note})
     if STATUS_RANK.get(other.status, 9) < STATUS_RANK.get(keep.status, 9):
         keep.status = other.status
     if CONF_RANK.get(other.confidence, 9) < CONF_RANK.get(keep.confidence, 9):
@@ -250,6 +251,8 @@ def _merge_root_causes(findings: list, pm=None) -> list:
         if sf:
             for k in kept:
                 sk = _span(k)
+                if _source(k) == _source(f) or _source(f) in {tuple(a.get("source") or ()) for a in k.extra.get("also", [])}:
+                    continue
                 if not sk or sk[0] != sf[0] or not (_related(k.check_id, f.check_id) or any(
                         _related(a.get("check_id", ""), f.check_id) for a in k.extra.get("also", []))):
                     continue
@@ -268,12 +271,20 @@ def _merge_root_causes(findings: list, pm=None) -> list:
     return kept
 
 
+def _source(f) -> tuple:
+    """Who produced a finding: the producer and, for scripts, the check function."""
+    return (f.producer.get("name"), f.producer.get("check"))
+
+
 def _dedupe(findings: list, pm=None) -> list:
+    """Collapse exact repeats from one producer, then merge what different producers found
+    about the same passage. Two findings from the same producer are never merged here,
+    because a producer that reports two findings means two problems."""
     merged: dict = {}
     for f in findings:
         block = f.locations[0].block if f.locations else None
-        key = (f.check_id, block, normalize(f.quote or "").lower()[:200],
-               normalize(f.problem).lower()[:80] if not f.quote else "")
+        key = (_source(f), f.check_id, block, normalize(f.quote or "").lower()[:200],
+               normalize(f.problem).lower()[:200])
         if key not in merged:
             merged[key] = f
             continue

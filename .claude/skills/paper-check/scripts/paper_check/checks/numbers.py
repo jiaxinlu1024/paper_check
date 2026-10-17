@@ -208,10 +208,28 @@ class Sent:
         return self.start + self.starts[s], self.start + self.ends[e - 1]
 
     def quote(self, s: Optional[int] = None, e: Optional[int] = None) -> str:
+        """Verbatim text of norm[s:e] (the whole sentence by default), extended to close a
+        parenthesis it opens, such as "0.12 (SE 0.08; p < 0.05)"."""
         if s is None:
             return self.block.text[self.start:self.end].strip()
+        seg = self.norm[s:e]
+        while e < len(self.norm) and seg.count("(") > seg.count(")"):
+            nxt = self.norm.find(")", e)
+            if nxt < 0 or nxt - e > 40:
+                break
+            e = nxt + 1
+            seg = self.norm[s:e]
         a, b = self.span(s, e)
         return self.block.text[a:b].strip()
+
+    def clause(self, s: int, e: int) -> str:
+        """Verbatim clause around norm[s:e], between ", " or "; " boundaries, so that several
+        findings in one sentence get different quotes (the report merges identical ones)."""
+        left = max(self.norm.rfind(", ", 0, s), self.norm.rfind("; ", 0, s), self.norm.rfind(": ", 0, s))
+        left = left + 2 if left >= 0 else 0
+        rights = [x for x in (self.norm.find(", ", e), self.norm.find("; ", e), self.norm.find(": ", e)) if x >= 0]
+        right = min(rights) if rights else len(self.norm)
+        return self.quote(left, right).rstrip(".")
 
     def where(self) -> str:
         if self.role == "abstract":
@@ -278,12 +296,16 @@ def _tokens(norm: str) -> list:
 
 
 def _role(block: Block) -> str:
-    if block.kind == "abstract":
+    """abstract, intro, conclusion or body. A PDF or Word reader may give the abstract as a
+    paragraph under an "Abstract" heading; "Summary statistics" is not a conclusion."""
+    heading = (block.section[0] if block.section else "").strip().lower()
+    heading = re.sub(r"^(?:[a-z]|[ivx]+|\d+(?:\.\d+)*)[.)]?\s+", "", heading)
+    if block.kind == "abstract" or heading in ("abstract", "summary", "executive summary"):
         return "abstract"
-    sec = " ".join(block.section).lower()
-    if re.search(r"\bintroduction\b", sec):
+    if re.match(r"introduction\b", heading):
         return "intro"
-    if re.search(r"conclu|final\s+remarks|\bsummary\b|closing\s+remarks", sec):
+    if re.match(r"(?:conclu\w*|final\s+remarks|closing\s+remarks|summary\s+and\s+conclu\w*|discussion\s+and\s+conclu\w*)",
+                heading):
         return "conclusion"
     return "body"
 
@@ -617,8 +639,9 @@ def parse_table(table, block: Optional[Block]) -> ParsedTable:
             kinds.append("text" if seen_values else "header")
             continue
         ints = [int(c.num.value) for c in nonempty if c.kind == "brack" and c.num and c.num.decimals == 0]
-        if (len(ints) == len(nonempty) and _consecutive(ints) and not label
-                and (not seen_values or (i > 0 and kinds[-1] not in ("values",)))):
+        header_area = not seen_values
+        if (len(ints) == len(nonempty) and not label and (_consecutive(ints) or (header_area and len(ints) == 1))
+                and (header_area or (i > 0 and kinds[-1] not in ("values",)))):
             kinds.append("colnums")
             continue
         if all(c.kind in ("brack", "pair") for c in nonempty):
@@ -818,6 +841,7 @@ class TextStat:
     p_span: Optional[tuple] = None
     claim: Optional[dict] = None
     stat_text: str = ""
+    linked: Optional[tuple] = None  # (table, estimate) for a p-value quoted next to a table coefficient
 
 
 _SNUM = r"[-+]?(?:\d+(?:\.\d+)?|\.\d+)"
@@ -837,7 +861,7 @@ _STAT_RES_TEXT = [
 ]
 _BSE = [
     re.compile(rf"(?P<b>{_NUM})\s*(?:%|percentage\s+points?|percent|pp|p\.p\.)?\s*\(\s*(?:standard\s+error|std\.?\s*err(?:or)?\.?|"
-               rf"s\.\s?e\.|SE|se)\s*(?:=|:|of|is)?\s*(?P<se>{_NUM})\s*\)"),
+               rf"s\.\s?e\.|SE|se)\s*(?:=|:|of|is)?\s*(?P<se>{_NUM})\s*(?:\)|[;,])"),
     re.compile(rf"(?:coefficient|estimate|effect|\u03b2|beta|\bb)\s*(?:of|is|was|=|:|equals)\s*(?P<b>{_NUM})[^.;()]{{0,60}}?"
                rf"(?:standard\s+error|s\.\s?e\.|\bSE\b)\s*(?:of|is|was|=|:)?\s*(?P<se>{_NUM})", re.I),
 ]
@@ -958,6 +982,35 @@ def _find_text_stats(sents: list) -> list:
     return out
 
 
+def _table_linked_stats(paper) -> list:
+    """A p-value quoted right after a coefficient that matches exactly one table estimate,
+    as in "the coefficient (0.120, p < 0.01)": checked against that estimate's standard error."""
+    out = []
+    regs = paper.reg_tables()
+    for sent in paper.sents:
+        tables = [pt for pt in paper.tables_for(sent) if pt.estimates] or (regs if len(regs) == 1 else [])
+        if not tables:
+            continue
+        taken = [ts.span for ts in paper.text_stats if ts.sent is sent]
+        for s0, e0, rep in _p_reports(sent):
+            toks = [t for t in sent.tokens if t.kind == "result" and t.rep.decimals >= 2 and t.e <= s0
+                    and s0 - t.e <= 30 and not any(a <= t.s < b for a, b in taken)]
+            if not toks:
+                continue
+            tok = toks[-1]
+            if re.search(r"\d", sent.norm[tok.e:s0]):
+                continue
+            hits = [(pt, e) for pt in tables for e in pt.estimates if e.coef.num is not None and e.se.num is not None
+                    and e.se.kind == "brack" and pt.paren == "se" and abs(e.coef.num.exact) == abs(tok.rep.exact)]
+            if len(hits) != 1:
+                continue
+            pt, est = hits[0]
+            out.append(TextStat(sent, "b_se", (tok.s, tok.e), est.coef.num, est.se.num, p=rep, p_span=(s0, e0),
+                                stat_text=f"{tok.raw} (with standard error {est.se.num.raw} in {pt.name})",
+                                linked=(pt, est)))
+    return out
+
+
 # ================================================================ the paper, analysed once
 class _Paper:
     def __init__(self, pm):
@@ -971,15 +1024,23 @@ class _Paper:
                 if tid:
                     blocks[tid] = b
         self.tables = []
+        used = set()
         for t in pm.tables:
             block = blocks.get(t.id)
             if block is None:
                 block = next((b for b in pm.blocks if b.kind == "table" and t.caption_block and b.parent == t.caption_block), None)
+            if block is None:  # a reader that does not link tables to blocks: find the block by its rows
+                rows = [" | ".join(r).strip() for r in (t.rows or []) if any(c.strip() for c in r)][:3]
+                block = next((b for b in pm.blocks if b.kind == "table" and b.id not in used and rows
+                              and all(find_quote(r, b.text) for r in rows)), None)
+            if block is not None:
+                used.add(block.id)
             self.tables.append(parse_table(t, block))
         self.table_by_number = {pt.number: pt for pt in self.tables if pt.number}
         self.sents = _sentences(pm, self.table_by_label, self.table_numbers)
         self.changes = _find_changes(self.sents)
         self.text_stats = _find_text_stats(self.sents)
+        self.text_stats += _table_linked_stats(self)
         self.body_text = " ".join(s.norm for s in self.sents)
 
     def reg_tables(self) -> list:
@@ -1488,7 +1549,9 @@ def _text_stat_findings(paper: _Paper, ctx, counts: dict, covered: set):
         else:
             status, confidence = "confirmed", "high"
         severity = "major" if strong else "minor"
-        quote = sent.quote()
+        end = max([ts.span[1]] + ([ts.p_span[1]] if ts.p_span and kind_of_issue == "p" else []) +
+                  ([claim_span[1]] if claim_span else []))
+        quote = sent.quote(ts.span[0], end)
         related, extra_ev = [], []
         if match is not None:
             pt, est = match
@@ -1557,6 +1620,8 @@ def _correct_symbol_text(p_rng: tuple) -> str:
 
 
 def _matching_estimate(paper: _Paper, ts: TextStat) -> Optional[tuple]:
+    if ts.linked:
+        return ts.linked
     if ts.kind != "b_se":
         return None
     hits = []
@@ -1643,8 +1708,10 @@ def significance_claims(pm, ctx):
             before = [(c["start"] - p[1], p) for p in ps if p[1] <= c["start"] and c["start"] - p[1] <= 25
                       and not any(p[1] <= x["start"] < c["start"] for x in others)]
             near = [min(after)[1]] if after else ([min(before)[1]] if before else [])
+            q_span = (c["start"], c["end"])
             if near:
                 rep = near[0][2]
+                q_span = (min(c["start"], near[0][0]), max(c["end"], near[0][1]))
                 p_rng = rep.interval
                 evidence_desc = f"the reported {rep}"
                 source = ("p", rep)
@@ -1696,7 +1763,7 @@ def significance_claims(pm, ctx):
                 ctx, "NUM-08", "Significance claim contradicts the reported statistics",
                 "major" if strong else "minor",
                 f"The sentence {verdict} (p range {st.fmt_range(p_rng, p=True)}).",
-                block=sent.block, quote=sent.quote(),
+                block=sent.block, quote=sent.clause(*q_span),
                 evidence=[_cr("claim of significance at alpha against the p range of the cited statistic",
                               {"claim": claim_text, "alpha": alpha, "statistic": evidence_desc},
                               {"p range": st.fmt_range(p_rng, p=True), "consistent": False},
@@ -2013,7 +2080,7 @@ def headline_numbers(pm, ctx):
                         f"{'The abstract' if sent.role == 'abstract' else 'The conclusion'} reports \"{shown}\", "
                         f"but no sentence or table cell elsewhere reports this number, even allowing for rounding. "
                         f"Figures were not searched.",
-                        block=sent.block, quote=sent.quote(),
+                        block=sent.block, quote=sent.clause(tok.s, tok.e),
                         evidence=[_cr("search for the same value in every other sentence and table cell",
                                       {"value": tok.text(), "context": phrase},
                                       "no match", "half a unit in the last printed digit; percent and share scales"),
@@ -2037,6 +2104,10 @@ def _eval_change(ch: Change) -> Optional[dict]:
     a, b = ch.a.rep, ch.b.rep
     pct_ab = ch.a.unit in ("%", "pp") or ch.b.unit in ("%", "pp")
     diff = st.magnitude(st.diff_range(a, b))
+    if not pct_ab and ch.c is not None and ch.c.unit in ("%", "pp") and max(a.decimals, b.decimals) > 0 and (
+            0 <= a.value <= 1 and 0 <= b.value <= 1):
+        pct_ab = True  # shares written as proportions: a change of 0.05 is 5 percentage points
+        diff = (100 * diff[0], 100 * diff[1])
     rel = st.rel_range(a, b)
     rel_pct = st.magnitude((100 * rel[0], 100 * rel[1])) if rel else None
     out = {"diff": diff, "rel": rel_pct, "pct_ab": pct_ab}
@@ -2098,6 +2169,8 @@ def _change_findings(paper: _Paper, ctx, which: str):
         c_t = ch.c.text() if ch.c else f"{ch.multiplier:g} times"
         orig = sent.quote(*ch.c_span) if ch.c_span else c_t
         diff_mid = float(ch.b.rep.exact - ch.a.rep.exact)
+        if not ({ch.a.unit, ch.b.unit} & {"%", "pp"}) and res.get("pct_ab"):
+            diff_mid *= 100  # proportions
         rel_mid = float((ch.b.rep.exact - ch.a.rep.exact) / ch.a.rep.exact) * 100 if ch.a.rep.exact else None
         places = max(ch.c.rep.places, 0) if ch.c else 1
         diff_txt = f"{abs(diff_mid):.{places}f}"
@@ -2563,7 +2636,7 @@ def grim_debit_bounds(pm, ctx):
             yield _emit(ctx, "NUM-04", f"Percentage impossible for {n} people (GRIM)", "major",
                         f"{p.raw}% of {n} is {p.value * n / 100:.2f} people. No whole number of people out of {n} "
                         f"gives a share that rounds to {p.raw}%; the nearest possible shares are {', '.join(res.nearest)}.",
-                        block=sent.block, quote=sent.quote(),
+                        block=sent.block, quote=sent.clause(m.start(), m.end()),
                         evidence=[_cr("an integer count k with 100 k / N within [p - half unit, p + half unit]",
                                       {"share": p.raw + "%", "N": n},
                                       f"N x interval = {st.fmt_range(res.sum_interval, 3)}: no integer",
@@ -2673,9 +2746,50 @@ _BINARY_LABEL = re.compile(r"\(\s*=\s*1\b|\bdummy\b|\bindicator\b|\bbinary\b|\b(
                            r"^(?:female|male|married|employed|unemployed|white|black|college|treated|yes)\b|\b0/1\b", re.I)
 
 
+def _debit_finding(ctx, pt: ParsedTable, row: int, label: str, mean: st.Reported, sd: st.Reported, n: int, res,
+                   layout: str):
+    quote = pt.row_quote(row)
+    if not quote:
+        return None
+    sds = ", ".join(f"{c[1]:.3f}" for c in res.candidates[:3])
+    return _emit(ctx, "NUM-04", f"Mean and SD inconsistent for a binary variable in {pt.name} (DEBIT)", "major",
+                 f"{pt.name}, row \"{label}\": a 0/1 variable with mean {mean.raw} and N = {n} "
+                 + (f"has SD {sds}, not {sd.raw}." if res.grim_consistent else "cannot have this mean: no count of "
+                                                                                "ones gives it."),
+                 block=pt.block, quote=quote,
+                 evidence=[_cr("SD = sqrt(k (N - k) / (N (N - 1))) for k ones among N (or the population formula)",
+                               {"mean": mean.raw, "SD": sd.raw, "N": n, "layout": layout},
+                               {"admissible SDs": sds or "none"}, "rounding intervals of the mean and SD")],
+                 trajectory=[f"Read {layout} in {pt.name}.", f"Row \"{label}\" is a binary variable.", "Ran DEBIT."],
+                 fix=Fix("investigate", detail="Recompute the mean and SD of the binary variable.",
+                         resolved_when="The SD equals sqrt(m (1 - m) N / (N - 1)) for the reported mean, within rounding."),
+                 status="likely", confidence="medium", extra={"table": pt.table.label, "row": label, "test": "DEBIT"})
+
+
 def _table_summary_checks(pt: ParsedTable, ctx):
-    """DEBIT for binary rows of a table with Mean, SD and N columns."""
-    if pt.block is None or pt.estimates:
+    """DEBIT for binary rows of a summary table: Mean, SD and N columns, or a mean with its SD
+    in parentheses below (when the note says so) and N in an Observations row."""
+    if pt.block is None:
+        return
+    if pt.estimates and pt.paren == "sd":
+        for est in pt.estimates:
+            label = est.label
+            n_cell = pt.column_values("observations", est.col)
+            if (not _BINARY_LABEL.search(label or "") or est.se.kind != "brack" or n_cell is None or n_cell.num is None
+                    or n_cell.num.decimals or est.coef.num is None or not (0 <= est.coef.num.value <= 1)):
+                continue
+            n = int(n_cell.num.value)
+            res = st.debit(est.coef.num.raw, est.se.num.raw, n)
+            if not res.testable:
+                continue
+            yield None
+            if not res.consistent:
+                f = _debit_finding(ctx, pt, est.row, label, est.coef.num, est.se.num, n, res,
+                                   "means with standard deviations in parentheses")
+                if f is not None:
+                    yield f
+        return
+    if pt.estimates:
         return
     header_rows = [i for i, k in enumerate(pt.row_kinds) if k in ("header", "colnums")]
     cols = {}
@@ -2707,25 +2821,10 @@ def _table_summary_checks(pt: ParsedTable, ctx):
         if not res.testable:
             continue
         yield None
-        if res.consistent:
-            continue
-        quote = pt.row_quote(i)
-        if not quote:
-            continue
-        sds = ", ".join(f"{c[1]:.3f}" for c in res.candidates[:3])
-        yield _emit(ctx, "NUM-04", f"Mean and SD inconsistent for a binary variable in {pt.name} (DEBIT)", "major",
-                    f"{pt.name}, row \"{label}\": a 0/1 variable with mean {mean.num.raw} and N = {int(n.num.value)} "
-                    + (f"has SD {sds}, not {sd.num.raw}." if res.grim_consistent else
-                       f"cannot have this mean: no count of ones gives it."),
-                    block=pt.block, quote=quote,
-                    evidence=[_cr("SD = sqrt(k (N - k) / (N (N - 1))) for k ones among N (or the population formula)",
-                                  {"mean": mean.num.raw, "SD": sd.num.raw, "N": int(n.num.value)},
-                                  {"admissible SDs": sds or "none"}, "rounding intervals of the mean and SD")],
-                    trajectory=[f"Found Mean, SD and N columns in {pt.name}.", f"Row \"{label}\" is a binary variable.",
-                                "Ran DEBIT."],
-                    fix=Fix("investigate", detail="Recompute the mean and SD of the binary variable.",
-                            resolved_when="The SD equals sqrt(m (1 - m) N / (N - 1)) for the reported mean, within rounding."),
-                    status="likely", confidence="medium", extra={"table": pt.table.label, "row": label, "test": "DEBIT"})
+        if not res.consistent:
+            f = _debit_finding(ctx, pt, i, label, mean.num, sd.num, int(n.num.value), res, "Mean, SD and N columns")
+            if f is not None:
+                yield f
 
 
 # ================================================================ NUM-05: sample sizes and flow
@@ -2796,8 +2895,7 @@ def sample_sizes(pm, ctx):
             if c.num is not None and c.num.decimals == 0:
                 row = next((i for i, k in enumerate(pt.row_kinds) if k == "stat:observations"), None)
                 obs.append({"value": int(c.num.value), "pt": pt, "row": row, "col": col})
-    candidates = len(mentions) + len(obs)
-    evaluated = 0
+    candidates = evaluated = len(mentions) + len(obs)  # every count is examined, even if none is comparable
     by_group: dict = {}
     multi_study = any(m["study"] for m in mentions)
     for mnt in mentions:
@@ -2805,7 +2903,6 @@ def sample_sizes(pm, ctx):
             by_group.setdefault((mnt["group"], mnt["study"]), []).append(mnt)
     for (group, _study), ms in by_group.items():
         values = sorted({m["value"] for m in ms})
-        evaluated += len(ms)
         if len(values) < 2:
             continue
         support = {v: sum(1 for m in ms if m["value"] == v) + (1 if any(o["value"] == v for o in obs) else 0)
@@ -2831,7 +2928,7 @@ def sample_sizes(pm, ctx):
             yield _emit(ctx, "NUM-05", f"Sample size of {group} disagrees across the paper", "major",
                         f"{_cap(sent.where())} gives {m['raw']} {group}, but {' and '.join(where_best)} "
                         f"give{'s' if len(where_best) == 1 else ''} {best:,}.",
-                        block=sent.block, quote=sent.quote(),
+                        block=sent.block, quote=sent.clause(*m["span"]),
                         evidence=[_cr("total sample sizes of the same unit stated in the paper",
                                       {"this mention": m["raw"], "elsewhere": {w: f"{best:,}" for w in where_best}},
                                       f"{m['raw']} differs from {best:,}, which has more support", "exact (counts)")],
@@ -2852,7 +2949,8 @@ def sample_sizes(pm, ctx):
             evaluated += 1
         else:
             yield f
-    _coverage(ctx, "NUM-05", evaluated, candidates, "sample sizes",
+    totals = sum(len(ms) for ms in by_group.values())
+    _coverage(ctx, "NUM-05", evaluated, candidates, f"head counts and Observations entries ({totals} totals compared)",
               "no head counts or Observations rows", [])
 
 
@@ -2929,42 +3027,51 @@ def _table_numbers(pt: ParsedTable) -> list:
     return out
 
 
-def _derived(pt: ParsedTable) -> list:
-    """Numbers a sentence may quote that are computed from cells: t = b/SE, b/control mean,
-    control mean + b, b +/- 1.96 SE."""
+def _derived(pt: ParsedTable, percent: bool) -> list:
+    """Numbers a sentence may quote that are computed from cells. Without a unit: t = b/SE,
+    b +/- 1.96 SE, b / control mean and control mean + b. In percent or points: the same
+    shares times 100, and 100 (exp(b) - 1) for log outcomes. A t statistic never stands
+    for a percentage."""
     out = []
     for e in pt.estimates:
         b, se = e.coef.num, e.se.num
         if b is None or se is None:
             continue
-        if e.se.kind == "brack" and pt.paren == "se":
-            t = st.t_range(b, se)
-            out.append(t)
-            out.append((b.lo - 1.96 * se.hi, b.hi - 1.96 * se.lo))
-            out.append((b.lo + 1.96 * se.lo, b.hi + 1.96 * se.hi))
         cm = pt.column_values("control_mean", e.col)
+        share = cm is not None and cm.num is not None and 0 < cm.num.value < 1
+        if e.se.kind == "brack" and pt.paren == "se":
+            ci = [(b.lo - 1.96 * se.hi, b.hi - 1.96 * se.lo), (b.lo + 1.96 * se.lo, b.hi + 1.96 * se.hi)]
+            if percent:
+                out += [(100 * lo, 100 * hi) for lo, hi in ci] if share else []
+            else:
+                out += [st.t_range(b, se)] + ci
+        if percent and _LOG_COL.search(pt.columns.get(e.col, "") + " " + (pt.table.caption or "")):
+            out.append(st.log_points_to_percent(b))
         if cm is not None and cm.num is not None:
             q = st.quotient_range(b, cm.num)
-            if q:
-                out.append((100 * q[0], 100 * q[1]))
-                out.append(q)
-            out.append((cm.num.lo + b.lo, cm.num.hi + b.hi))
-            out.append((100 * (cm.num.lo + b.lo), 100 * (cm.num.hi + b.hi)))
+            level = (cm.num.lo + b.lo, cm.num.hi + b.hi)
+            if percent:
+                out += ([(100 * q[0], 100 * q[1])] if q else []) + ([(100 * level[0], 100 * level[1])] if share else [])
+            else:
+                out += ([q] if q else []) + [level]
     return out
 
 
-def _in_table(tok: Tok, pt: ParsedTable) -> bool:
+def _in_cells(tok: Tok, pt: ParsedTable) -> bool:
     for r, pct in _table_numbers(pt):
         if _number_matches(tok.rep, tok.unit, r, pct):
             return True
         if tok.unit in ("%", "pp") and abs(r.value) < 1.5 and st.overlaps(tok.rep.abs_interval,
                                                                             (100 * r.abs_interval[0], 100 * r.abs_interval[1])):
             return True
-    for rng in _derived(pt):
-        mag = st.magnitude(rng)
-        if st.overlaps(tok.rep.abs_interval, mag):
-            return True
-        if tok.unit in ("%", "pp") and st.overlaps(tok.rep.abs_interval, (100 * mag[0], 100 * mag[1])):
+    return False
+
+
+def _in_table(tok: Tok, pt: ParsedTable) -> bool:
+    if _in_cells(tok, pt):
+        return True
+    for rng in _derived(pt, percent=tok.unit in ("%", "pp")):
+        if st.overlaps(tok.rep.abs_interval, st.magnitude(rng)):
             return True
     return False
 
@@ -2995,7 +3102,7 @@ def text_against_tables(pm, ctx):
             evaluated += 1
             if any(_in_table(tok, pt) for pt in tables):
                 continue
-            others = [pt for pt in paper.tables if pt not in tables and _in_table(tok, pt)]
+            others = [pt for pt in paper.tables if pt not in tables and _in_cells(tok, pt)]
             names = " and ".join(pt.name for pt in tables)
             near = _near_miss(tok, tables)
             problem = f"The sentence cites {names} and quotes {tok.text()}, but {names} has no such number"
@@ -3007,7 +3114,7 @@ def text_against_tables(pm, ctx):
             status = "likely" if (others or (near and not minor)) else "needs_human"
             yield _emit(ctx, "NUM-06", f"Number quoted from {names} not found there", "minor" if minor else "major",
                         problem,
-                        block=sent.block, quote=sent.quote(),
+                        block=sent.block, quote=sent.clause(tok.s, tok.e),
                         evidence=[_cr("search of every cell and derived value of the cited table",
                                       {"value": tok.text(), "tables": [pt.name for pt in tables]},
                                       {"found in cited table": False, "found in": [pt.name for pt in others]},
@@ -3138,9 +3245,12 @@ def _bold_best(pt: ParsedTable, ctx):
 
 
 # ================================================================ NUM-07: precision and units
+_COMPARATIVE = (r"(?!\s*(?:%|percent)?\s*(?:times|fold|higher|lower|more|less|larger|smaller|greater|above|below|"
+                r"bigger|of\s+the|of\s+its|relative|compared|points?|percentage))")
 _SHARE_LEVEL = re.compile(rf"\b(?:share|fraction|proportion|percentage)\s+of\s+[^.;\d]{{0,60}}?\b(?:is|was|are|were|equals|of|=|"
-                          rf"reached|stood\s+at)\s+(?P<v>{_NUM})\s*(?:%|percent)", re.I)
-_PROB_LEVEL = re.compile(rf"\bprobability\s+(?:of\s+[^.;\d]{{0,60}}?\s+)?(?:is|was|of|=|equals)\s+(?P<v>{_NUM})(?!\s*%)", re.I)
+                          rf"reached|stood\s+at)\s+(?P<v>{_NUM})\s*(?:%|percent){_COMPARATIVE}", re.I)
+_PROB_LEVEL = re.compile(rf"\bprobability\s+(?:of\s+[^.;\d]{{0,60}}?\s+)?(?:is|was|of|=|equals)\s+(?P<v>{_NUM})(?!\s*%)"
+                         rf"{_COMPARATIVE}", re.I)
 _TIME_CONV = re.compile(rf"(?P<a>{_NUM})\s*(?P<ua>minutes?|hours?|days?|weeks?|months?|years?)\s*\(\s*(?:about\s+|approximately\s+|"
                         rf"i\.e\.,?\s+|or\s+|roughly\s+)?(?P<b>{_NUM})\s*(?P<ub>minutes?|hours?|days?|weeks?|months?|years?)\s*\)", re.I)
 _TIME_UNITS = {"minute": 1, "hour": 60, "day": 1440, "week": 10080, "month": 43830, "year": 525960}
@@ -3175,7 +3285,7 @@ def precision_and_units(pm, ctx):
                     rounded = st.round_half_up(tok.rep.exact, places)
                     yield _emit(ctx, "NUM-07", "False precision", "minor",
                                 f"{tok.text()} reports {sig} significant digits, more than the data can support.",
-                                block=sent.block, quote=sent.quote(),
+                                block=sent.block, quote=sent.clause(tok.s, tok.e),
                                 evidence=[_cr("count of significant digits", {"value": tok.text()}, sig,
                                               "flag at 5 or more for percentages, 6 or more otherwise")],
                                 trajectory=[f"Listed the result numbers in {sent.where()}.", "Counted significant digits."],
@@ -3191,7 +3301,7 @@ def precision_and_units(pm, ctx):
             if rep.comparator == "=" and rep.value.exact == 0:
                 yield _emit(ctx, "NUM-07", "p-value reported as zero", "minor",
                             f"\"{sent.quote(s, e)}\" cannot be exact: a p-value is never zero. Report p < 0.001.",
-                            block=sent.block, quote=sent.quote(),
+                            block=sent.block, quote=sent.quote(s, e),
                             evidence=[_cr("p > 0 for any finite test statistic", {"reported": str(rep)},
                                           "p printed as zero", "exact")],
                             trajectory=[f"Found {rep} in {sent.where()}."],
@@ -3211,7 +3321,7 @@ def precision_and_units(pm, ctx):
                     yield _emit(ctx, "NUM-07", f"Impossible {what}", "major",
                                 f"A {what} of {v.raw}{'%' if what == 'share' else ''} is above the maximum of "
                                 f"{limit:g}{'%' if what == 'share' else ''}.",
-                                block=sent.block, quote=sent.quote(),
+                                block=sent.block, quote=sent.clause(m.start(), m.end()),
                                 evidence=[_cr(f"{what} <= {limit:g}", {"value": v.raw}, "above the maximum", "exact")],
                                 trajectory=[f"Found a {what} level in {sent.where()}.", "Compared it with its maximum."],
                                 fix=Fix("investigate", detail="Correct the value or say what it is a share of.",
@@ -3229,7 +3339,7 @@ def precision_and_units(pm, ctx):
                 continue
             yield _emit(ctx, "NUM-07", "Unit conversion is wrong", "minor",
                         f"{a.raw} {m.group('ua')} is {conv[0]:.3g} to {conv[1]:.3g} {m.group('ub')}, not {b.raw}.",
-                        block=sent.block, quote=sent.quote(),
+                        block=sent.block, quote=sent.clause(m.start(), m.end()),
                         evidence=[_cr("value x unit factor", {"value": f"{a.raw} {m.group('ua')}", "stated": f"{b.raw} {m.group('ub')}"},
                                       f"{conv[0]:.4g} to {conv[1]:.4g}", "rounding interval, plus 10% for loose conversions")],
                         trajectory=[f"Found a conversion in {sent.where()}.", "Recomputed it."],
@@ -3341,7 +3451,8 @@ def standard_error_notes(pm, ctx):
     Misses: the unit of assignment when the text does not say "randomized at the X level" or
     similar, and statements about standard errors made only in the text far from the table."""
     paper = _paper(pm)
-    regs = [pt for pt in paper.tables if pt.block is not None and (pt.estimates or pt.has_stars)]
+    regs = [pt for pt in paper.tables if pt.block is not None and pt.paren not in ("sd", "ci") and (
+        pt.has_stars or (pt.estimates and re.search(r"standard\s+errors?|std\.?\s*err", pt.notes or "", re.I)))]
     if not pm.tables:
         ctx.not_applicable("BEH-09", "the paper has no tables")
         return

@@ -342,7 +342,9 @@ K = 8               # words per shingle
 MIN_RUN = 15        # words repeated across sections
 MIN_RUN_SAME = 20   # words repeated within one section
 _TOKEN = re.compile(r"\w+(?:[-']\w+)*")
-_SKIP_SECTION = re.compile(r"instruction|questionnaire|survey|screen|script|protocol|materials|consent", re.I)
+_SKIP_SECTION = re.compile(r"\binstructions?\b|\bquestionnaires?\b|\bsurvey (?:items|questions|instruments?|text)\b|"
+                           r"\bscreens?\b|\bscreenshots?\b|\bscripts?\b|\bprotocols?\b|"
+                           r"\bmaterials?\b(?! and methods)|\bconsent\b", re.I)
 
 
 @register("COH-09")

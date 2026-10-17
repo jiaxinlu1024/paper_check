@@ -40,16 +40,40 @@ key is the first author's family name plus the year ("laibson1998"), which is
 also the key of a citation that matches it or, when none does, of the
 unresolved citation; labels are "table:1", "figure:2", "section:3",
 "appendix:A" and "equation:1".
+
+Known limits:
+  - Display maths keeps the text layer's characters, so fractions, sums and
+    matrices come out flattened; only an equation's number is used.
+  - Run-in headings (bold first words of a paragraph) stay in the paragraph.
+  - Citations are found in author-year and numbered "[n]" styles only, not in
+    superscript-number styles.
+  - Tables need a "Table n" caption. A header cell that wraps onto two lines
+    gives an extra row, and sideways tables are kept as blocks of kind "other",
+    like other rotated text.
+  - A float wider than one column of a two-column page is found from its
+    caption, and pages with little text take the document's column layout.
+  - Vector figures are found heuristically (curves, slanted lines, many
+    rectangles); text inside them is left out of paragraphs.
+  - Hidden text is white or near-white text, or text under 2 points. Invisible
+    text (render mode 3, as in OCR layers), clipped text, and text covered by
+    an image or drawn in the colour of a coloured background are not found.
+  - Reference fields are parsed heuristically; raw always has the printed entry.
+  - A hyphen at a line break is kept only when the paper uses the compound
+    elsewhere or the word is a common compound ("self-", "-based").
+  - There is no OCR: a PDF without a text layer gets a warning and no blocks. A
+    PDF that needs a password to open is refused.
 """
 
 from __future__ import annotations
 
 import bisect
+import logging
 import math
 import re
 import statistics
 import unicodedata
 from collections import Counter, defaultdict
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -99,12 +123,12 @@ LIST_START = re.compile(r"^(?:[\u2022\u25cf\u25aa\u2013\u2014-]\s|\(?(?:[ivx]{1,
 URL_TAIL = re.compile(r"(?:https?://|www\.|doi\.org/|doi:|\b10\.\d{4,9}/)\S*$", re.I)
 
 # Line breaks after the hyphen of these words are kept as compounds.
-COMPOUND_HEADS = {"self", "non", "cross", "long", "short", "well", "high", "low", "two", "three", "four", "five",
-                  "six", "ten", "first", "second", "third", "within", "between", "half", "multi", "quasi", "semi",
-                  "risk", "loss", "time", "present"}
-COMPOUND_TAILS = {"based", "level", "specific", "related", "wide", "free", "like", "run", "term", "scale", "up",
-                  "off", "averse", "neutral", "seeking", "taking", "making", "sectional", "dependent", "invariant",
-                  "year", "class", "group", "biased", "control", "reported", "selection", "sample"}
+# The paper's own compounds come first (see PdfReader._keep_hyphen); these lists only
+# hold heads and tails that syllable breaks rarely produce.
+COMPOUND_HEADS = {"self", "non", "well", "two", "three", "four", "five", "six", "ten", "first", "second", "third",
+                  "within", "between", "half", "quasi"}
+COMPOUND_TAILS = {"based", "level", "specific", "related", "wide", "free", "run", "term", "scale", "up", "off",
+                  "averse", "neutral", "seeking", "taking", "making", "sectional", "year", "class", "sample"}
 PARTICLES = {"van", "von", "de", "der", "den", "del", "della", "di", "da", "du", "dos", "das", "la", "le", "ten",
              "ter", "bin", "ibn", "al", "el", "st", "st."}
 
@@ -402,6 +426,7 @@ def _tokens(chars: list, spaces: list) -> list:
     size = statistics.median(c["size"] for c in chars)
     gaps = sorted((s["x0"] + s["x1"]) / 2 for s in spaces
                   if top <= (s["top"] + s["bottom"]) / 2 <= bottom and 0.5 <= s["size"] / size <= 2.0)
+    writes_spaces = len(gaps) >= 2
     toks, cur, cur_chars = [], None, []
 
     def close():
@@ -420,7 +445,7 @@ def _tokens(chars: list, spaces: list) -> list:
             explicit = i < len(gaps) and gaps[i] <= c["x0"] + 0.3 * ref
             # When the PDF writes its word spaces, trust them: in tiny or tightly set
             # text, gaps between letters can be as wide as a space.
-            spaced = explicit or gap > (0.45 if gaps else 0.18) * ref
+            spaced = explicit or gap > (0.45 if writes_spaces else 0.18) * ref
             same = (c["hidden"] == cur.hidden and 0.85 <= c["size"] / max(cur.size, 0.01) <= 1.18)
             if not spaced and same and gap > -0.6 * ref:
                 cur.text += c["text"]
@@ -502,8 +527,8 @@ NOT_AUTHORS = {"Table", "Tables", "Figure", "Figures", "Section", "Sections", "A
                "In", "From", "Before", "After", "During", "The", "This", "We", "Our", "Census", "Survey",
                "Protocol", "Version", "Draft", "Page", "Note", "Notes", "Source", "Sources"} | set(MONTHS.replace("\\.?", "").split("|"))
 XREF = re.compile(
-    r"\b(?P<kind>Tables?|TABLES?|Figures?|FIGURES?|Figs?\.|Sections?|Sects?\.|Secs?\.|\u00a7|Appendix|Appendices|"
-    r"Equations?|Eqs?\.)(?:~|\s)*"
+    r"\b(?P<kind>(?i:tables?|figures?|figs?\.|sections?|sects?\.|secs?\.|appendix|appendices|equations?|eqs?\.)|"
+    r"\u00a7)(?:~|\s)*"
     r"(?P<nums>\(?(?:[A-Z]?\d+(?:\.\d+)*[a-z]?|[A-Z](?:\.\d+)*\b|\?\?)\)?"
     r"(?:\s*(?:,|and|&|\u2013|-|to)\s*\(?(?:[A-Z]?\d+(?:\.\d+)*[a-z]?|[A-Z](?:\.\d+)*\b|\?\?)\)?)*)")
 XREF_KIND = {"table": "table", "figure": "figure", "fig": "figure", "section": "section", "sect": "section",
@@ -684,7 +709,16 @@ def _name_prefix(prefix: str) -> bool:
     if not re.fullmatch(r"(?:[^\W\d_]|[\s,.;&'\u2019\-])*(?:\bet\s+al\.?)?[\s,(\[]*", p):
         return False
     # a period, then a capitalised word and lowercase words: a title, not names
-    return not re.search(r"[a-z\u00df-\u024f]{3,}\.\s+[A-Z\u00c0-\u00de][a-z\u00df-\u024f]+\s+[a-z\u00df-\u024f]{2,}", p)
+    if re.search(r"[a-z\u00df-\u024f]{3,}\.\s+[A-Z\u00c0-\u00de][a-z\u00df-\u024f]+\s+[a-z\u00df-\u024f]{2,}", p):
+        return False
+    if re.search(r"\.\s+(?:The|A|An|On|In|Why|How|What|When|Do|Does|Is|Are|Can|Toward|Towards|Evidence)\s", p):
+        return False
+    lower = [w for w in re.findall(r"[^\W\d_]+", p) if w.islower() and w not in PARTICLES and w not in ("and", "et", "al")]
+    run = best = 0
+    for w in re.findall(r"[^\W\d_]+", p):
+        run = run + 1 if (w.islower() and w not in PARTICLES and w not in ("and", "et", "al")) else 0
+        best = max(best, run)
+    return best < 3 and len(lower) < 5
 
 
 SAME_AUTHORS = re.compile(r"^\s*(?:[\u2014\u2013_-]{2,}\s*[.,]?\s*)?\(?\s*(?:1[5-9]\d\d|20\d\d)[a-z]?\s*\)?[.,:]?(?:\s|$)")
@@ -732,7 +766,11 @@ def parse_reference(text: str, italic: Optional[list] = None) -> dict:
         fields["year"] = year.lower() if ym.group("word") else year
         if ym.group("suffix"):
             fields["year_suffix"] = ym.group("suffix")
-    if authors_text:
+    if authors_text and ym is not None and authors_text == text[:ym.start()] and "," not in authors_text \
+            and not re.search(r"\band\b|&", authors_text) and len(authors_text.split()) >= 2 \
+            and not any(_INITIAL.fullmatch(w) for w in authors_text.replace(".", ". ").split()):
+        fields["authors"] = [{"family": authors_text.strip(" .,(["), "given": ""}]  # "World Economic Forum (2020)"
+    elif authors_text:
         authors, et_al = parse_names(authors_text)
         fields["authors"] = authors
         if et_al:
@@ -840,7 +878,14 @@ class PdfReader:
         import pdfplumber
 
         self._read_pypdf()
-        with pdfplumber.open(str(self.path)) as pdf:
+        try:
+            pdf = pdfplumber.open(str(self.path))
+        except Exception as exc:
+            inner = exc.args[0] if exc.args and isinstance(exc.args[0], Exception) else exc
+            if "password" in type(inner).__name__.lower():
+                raise SystemExit(f"{self.path.name} is password-protected. Remove the password and run again.")
+            raise SystemExit(f"Could not read {self.path.name} as a PDF ({type(inner).__name__}: {inner}).")
+        with pdf:
             for page in pdf.pages:
                 self.pages.append(self._read_page(page))
         self.pm.metadata["page_count"] = len(self.pages)
@@ -861,6 +906,7 @@ class PdfReader:
         self._classify()
         self._find_tables()
         self._find_figures()
+        self._match_markers()
         self._build_blocks()
         self._place_footnotes()
         self._finalize_ids()
@@ -1060,14 +1106,7 @@ class PdfReader:
         if straddle:
             b.col = -1
             return [b]
-        out = []
-        for col, toks in ((0, left), (1, right)):
-            if toks:
-                line = Line(page=b.page, toks=list(toks), col=col, role=b.role)
-                if toks[0] is not b.toks[0] and toks is right:
-                    toks[0].space = False
-                out.append(line)
-        return out
+        return [Line(page=b.page, toks=list(toks), col=col, role=b.role) for col, toks in ((0, left), (1, right)) if toks]
 
     def _make_lines(self) -> None:
         for p in self.pages:
@@ -1281,10 +1320,15 @@ class PdfReader:
                 else:
                     last = {"marker": None, "lines": [l], "page": p.number, "anchor": None}
                     self.footnotes.append(last)
+
+    def _match_markers(self) -> None:
+        """Find each footnote's marker in the text above it: a raised token with the same
+        text on the footnote's page (or the page before or after), outside tables,
+        equations and figures. The marker is then left out of the text."""
         by_page = defaultdict(list)
         for p in self.pages:
             for l in p.lines:
-                if l.role == "body":
+                if l.role == "body" and l.tag not in ("table", "equation", "figure_text", "rotated"):
                     by_page[p.number].append(l)
         for fn in self.footnotes:
             m = fn["marker"]
@@ -1447,9 +1491,10 @@ class PdfReader:
         text = l.text.strip()
         if not text or len(text) > 120 or len(text.split()) > 16 or l.hidden_only:
             return None
-        if text.endswith((",", ";")) or re.search(r"[.:]\s*$", text) and not re.match(r"^[\dA-Z.]+\.?\s", text):
-            if not SECTION_NAMES.match(text.rstrip(".:")):
-                return None
+        if text.endswith((",", ";")):
+            return None
+        if text.endswith((".", ":")) and not NUMBERED_HEADING.match(text) and not SECTION_NAMES.match(text.rstrip(".:")):
+            return None
         larger = l.size >= self.body_size + 1.0
         bold = l.bold >= 0.85
         caps = text.isupper() and len(re.sub(r"[^A-Z]", "", text)) >= 4
@@ -1465,11 +1510,11 @@ class PdfReader:
                 if abs(nxt.size - l.size) < 0.3 and abs(nxt.bold - l.bold) < 0.2 and abs(nxt.italic - l.italic) < 0.2:
                     if len(nxt.text) > 60 and not NUMBERED_HEADING.match(nxt.text):
                         return None  # a paragraph in the same style
-        number, title, appendix = None, text, False
+        number, appendix = None, False
         am = APPENDIX_HEADING.match(text)
         nm = NUMBERED_HEADING.match(text)
         if am and (am.group("num") or not am.group("title")):
-            number, title, appendix = am.group("num"), text, True
+            number, appendix = am.group("num"), True
         elif nm:
             num = nm.group("num")
             if re.fullmatch(r"[A-Z](?:\.\d+)*", num):
@@ -1536,7 +1581,7 @@ class PdfReader:
         core = re.sub(r"[\s*\u2020\u2021,.%$()\[\]\u2212\u2013\-+<>=]", "", text)
         return bool(core) and (core.isdigit() or bool(re.fullmatch(r"[\d]+[A-Za-z]?", core)))
 
-    def _table_like(self, l: Line, region_w: float) -> bool:
+    def _table_like(self, l: Line) -> bool:
         cells = self._cells(l.toks, l.size)
         if len(cells) >= 2:
             return True
@@ -1563,7 +1608,7 @@ class PdfReader:
             cap_lines = [l]
             j = i + 1
             while j < len(flow) and flow[j].page == l.page and flow[j].tag == "" and flow[j] in same and \
-                    abs(flow[j].size - l.size) < 0.3 and not self._table_like(flow[j], region[1] - region[0]) and \
+                    abs(flow[j].size - l.size) < 0.3 and not self._table_like(flow[j]) and \
                     flow[j].top - flow[j - 1].bottom < self.typical_gap(l.size) + 0.3 * l.size and \
                     len(cap_lines) < 4:
                 cap_lines.append(flow[j])
@@ -1594,23 +1639,32 @@ class PdfReader:
         xs = [x for x in p.lines if x.tag != "rotated"]
         return (min(x.x0 for x in xs), max(x.x1 for x in xs))
 
+    def _prose(self, l: Line, width: float) -> bool:
+        """A line of running text: wide, body size, many words, no cell gaps."""
+        return (l.x1 - l.x0 >= 0.75 * width and l.size >= self.body_size - 0.5 and len(l.text.split()) >= 8
+                and len(self._cells(l.toks, l.size)) == 1)
+
     def _table_rows_from(self, cand: list, p: PageInfo, region: tuple, cap: Line, upward: bool = False) -> dict:
+        """Table rows next to a table caption, and the notes under them.
+
+        Rows are lines with cell gaps or mostly numbers; between the table's horizontal
+        rules, any line that is not running text counts too."""
         width = region[1] - region[0]
-        rules = [r for r in p.rules if r[1] - r[0] >= 0.25 * width and region[0] - 5 <= r[0] and r[1] <= region[1] + 5]
+        rules = sorted(r[2] for r in p.rules
+                       if r[1] - r[0] >= 0.25 * width and region[0] - 5 <= r[0] and r[1] <= region[1] + 5
+                       and ((r[2] >= cap.bottom - 2) if not upward else (r[2] <= cap.top + 2)))
+        inside = (lambda x: rules[0] - 2 <= x.center <= rules[-1] + 2) if len(rules) >= 2 else (lambda x: False)
         lines, notes = [], []
         prev = cap
         for x in cand:
             gap = (x.top - prev.bottom) if not upward else (prev.top - x.bottom)
-            if gap > 4 * max(x.size, prev.size) and lines:
+            if lines and gap > 4 * max(x.size, prev.size):
+                break
+            if not lines and gap > 6 * max(x.size, prev.size):
                 break
             if not upward and lines and NOTES_START.match(x.text):
                 break
-            if self._table_like(x, width) or (not upward and not lines and gap < 3 * x.size and len(x.text) < 0.5 * width / max(x.size * 0.5, 1)
-                                                 and self._between_rules(x, cap, rules)):
-                lines.append(x)
-                prev = x
-                continue
-            if lines and self._between_rules(x, lines[0] if not upward else cap, rules, upto=lines[-1]):
+            if self._table_like(x) or (inside(x) and not self._prose(x, width)):
                 lines.append(x)
                 prev = x
                 continue
@@ -1619,30 +1673,21 @@ class PdfReader:
             return {"lines": [], "notes": [], "rules": rules}
         if upward:
             lines.reverse()
-        else:
-            last = lines[-1]
-            after = [x for x in cand if x.top > last.bottom - 1 and x not in lines]
-            for x in after:
-                gap = x.top - (notes[-1].bottom if notes else last.bottom)
-                if not notes:
-                    if not (NOTES_START.match(x.text) or (x.size < self.body_size - 0.4 and gap < 2.5 * x.size)):
-                        break
-                    if gap > 3 * x.size:
-                        break
-                else:
-                    if abs(x.size - notes[0].size) > 0.4 or gap > self.typical_gap(x.size) + 0.5 * x.size:
-                        break
-                    if x.x0 - notes[0].x0 > 1.5 * x.size and x.size >= self.body_size - 0.4:
-                        break
-                notes.append(x)
+            return {"lines": lines, "notes": notes, "rules": rules}
+        last = lines[-1]
+        for x in (x for x in cand if x.top > last.bottom - 1 and x not in lines):
+            gap = x.top - (notes[-1].bottom if notes else last.bottom)
+            if not notes:
+                if not (NOTES_START.match(x.text) or (x.size < self.body_size - 0.4 and gap < 2.5 * x.size)):
+                    break
+                if gap > 3 * x.size:
+                    break
+            elif abs(x.size - notes[0].size) > 0.4 or gap > self.typical_gap(x.size) + 0.5 * x.size:
+                break
+            elif x.x0 - notes[0].x0 > 1.5 * x.size and x.size >= self.body_size - 0.4:
+                break
+            notes.append(x)
         return {"lines": lines, "notes": notes, "rules": rules}
-
-    @staticmethod
-    def _between_rules(x: Line, start: Line, rules: list, upto: Optional[Line] = None) -> bool:
-        ys = sorted(r[2] for r in rules if r[2] >= start.top - 2)
-        if len(ys) < 2:
-            return False
-        return ys[0] - 2 <= x.center <= ys[-1] + 2
 
     def _table_cells(self, info: dict) -> list:
         """Rows of cell text, columns aligned across rows."""
@@ -1653,7 +1698,6 @@ class PdfReader:
                 rows.append(cells)
         if not rows:
             return []
-        n = Counter(len(r) for r in rows if len(r) > 1)
         width = max(len(r) for r in rows)
         template = [r for r in rows if len(r) == width]
         cols = [[min(r[k]["x0"] for r in template), max(r[k]["x1"] for r in template)] for k in range(width)]
@@ -1824,46 +1868,64 @@ class PdfReader:
         return block
 
     # -- front matter ---------------------------------------------------------
-    def _front_end(self, flow: list) -> int:
-        """Index of the first line after the front matter of the first pages."""
-        for i, l in enumerate(flow):
+    def _title_lines(self, flow: list) -> list:
+        """The most prominent lines at the top of page 1 (size, plus weight), when they
+        stand out from the body text. Labels, dates and section headings are left out."""
+        label = re.compile(rf"(?i)^(?:abstract|keywords?|key words|jel\b)|{DATE_LINE.pattern[1:]}")
+        first_page = [l for l in flow if l.page == flow[0].page and l.tag != "rotated"] if flow else []
+        cands = [l for l in first_page if not l.hidden_only and not label.match(l.text.strip())
+                 and not SECTION_NAMES.match(l.text.strip().rstrip(".:")) and not NUMBERED_HEADING.match(l.text)
+                 and not CAPTION.match(l.text)]
+        if not cands:
+            return []
+        top = max(self._prominence(l) for l in cands)
+        if top < self.body_size + 1.0:
+            return []
+        first = next(l for l in cands if self._prominence(l) >= top - 0.6)
+        out = []
+        for l in first_page[first_page.index(first):]:
+            if self._prominence(l) < top - 0.6 or label.match(l.text.strip()) or len(out) >= 5:
+                break
+            out.append(l)
+        return out
+
+    def _front_end(self, flow: list, title: list) -> int:
+        """Index of the first line after the front matter, at the latest the start of page 3.
+
+        The front matter ends at the first heading that is numbered or has a usual section
+        name ("Introduction"), or at any heading once the abstract, keyword or JEL lines
+        are behind. Large author lines and an "Abstract" label do not end it."""
+        after = flow.index(title[-1]) + 1 if title else 0
+        passed = False
+        for i in range(after, len(flow)):
+            l = flow[i]
             if l.page > 2:
                 return i
-            if l.tag == "heading":
-                info = self._heading_info(l, flow[i - 1] if i else None, flow[i + 1] if i + 1 < len(flow) else None)
-                if info and (info["number"] or (SECTION_NAMES.match(info["text"].rstrip(".:"))
-                                                 and not info["text"].lower().startswith("abstract"))):
-                    return i
-        return 0
+            text = l.text.strip()
+            if re.match(r"(?i)(abstract\b|keywords?\b|key words|jel\b)", text):
+                passed = True
+                continue
+            if l.tag != "heading":
+                continue
+            info = self._heading_info(l, None, None, loose=True)
+            named = SECTION_NAMES.match(text.rstrip(".:"))
+            if passed or (info and info["number"] and not info["appendix"]) or named:
+                return i
+        return len(flow)
 
     @staticmethod
     def _prominence(l: Line) -> float:
         return l.size + (2.0 if l.bold >= 0.6 else 0.0) + (0.5 if l.text.isupper() else 0.0)
 
-    def _front_matter(self, lines: list) -> None:
+    def _front_matter(self, lines: list, title_lines: list) -> None:
         rotated = [l for l in lines if l.tag == "rotated"]
         lines = [l for l in lines if l.tag != "rotated"]
-        if not lines:
-            for l in rotated:
-                self._text_block("other", [l], attrs={"rotated": True})
-            return
-        label = re.compile(rf"(?i)^(?:abstract|keywords?|key words|jel\b)|{DATE_LINE.pattern[1:]}")
-        first_page = [l for l in lines if l.page == lines[0].page and not l.hidden_only and not label.match(l.text.strip())
-                      and not SECTION_NAMES.match(l.text.strip().rstrip(".:"))]
-        title_lines = []
         i = 0
-        if first_page:
-            top = max(self._prominence(l) for l in first_page)
-            if top >= self.body_size + 1.0:
-                first = next(l for l in first_page if self._prominence(l) >= top - 0.6)
-                i = lines.index(first)
-                for l in lines[:i]:
-                    self._text_block("front_matter", [l])
-                while i < len(lines) and lines[i].page == first.page and self._prominence(lines[i]) >= top - 0.6 \
-                        and not label.match(lines[i].text.strip()) and len(title_lines) < 5:
-                    title_lines.append(lines[i])
-                    i += 1
         if title_lines:
+            i = lines.index(title_lines[0])
+            for l in lines[:i]:
+                self._text_block("front_matter", [l])
+            i += len(title_lines)
             block = self._text_block("title", title_lines)
             if block:
                 self.pm.title = block.text
@@ -1954,7 +2016,8 @@ class PdfReader:
             return False
         names = [w for w in re.split(r"[\s,;\u00b7|\u2022]+", text) if w and w.lower() not in ("and", "&")]
         caps = sum(1 for w in names if w[:1].isupper())
-        return bool(names) and caps >= 0.8 * len(names) and l.size >= self.body_size - 0.6
+        return (bool(names) and caps >= 0.8 * len(names) and l.size >= self.body_size - 0.6
+                and bool(re.search(r"[a-z\u00df-\u024f]", text)))  # "USA." ending an address is no name
 
     def _author_blocks(self, l: Line) -> None:
         """One author block per name. Names are split at wide gaps, commas, "and" and "&";
@@ -2062,9 +2125,10 @@ class PdfReader:
 
     def _build_blocks(self) -> None:
         flow = self._flow()
-        end = self._front_end(flow)
+        title = self._title_lines(flow)
+        end = self._front_end(flow, title)
         if end:
-            self._front_matter(flow[:end])
+            self._front_matter(flow[:end], title)
         refs_mode = False
         i = end
         while i < len(flow):
@@ -2096,13 +2160,15 @@ class PdfReader:
                 i += len(group)
                 continue
             if refs_mode:
-                group = []
+                group, rotated = [], []
                 j = i
                 while j < len(flow) and flow[j].tag != "heading":
                     if not flow[j].used:
-                        group.append(flow[j])
+                        (rotated if flow[j].tag == "rotated" else group).append(flow[j])
                     j += 1
                 self._references(group)
+                for r in rotated:
+                    self._text_block("other", [r], attrs={"rotated": True})
                 i = j
                 continue
             if l.tag == "caption":
@@ -2215,15 +2281,21 @@ class PdfReader:
         indents = [l.x0 - lefts[(l.page, l.col)] for l in lines]
         hanging = sum(1 for d, l in zip(indents, lines) if 0.5 * l.size <= d <= 5 * l.size) >= 0.15 * len(lines)
         number_re = re.compile(r"^\s*(?:\[(\d+)\]|(\d{1,3})\.)\s")
-        numbered_list = bool(number_re.match(lines[0].text))
+        first = number_re.match(lines[0].text)
+        numbered_list = bool(first)
+        last_label = int(first.group(1) or first.group(2)) if first else 0
         entries = []
         for l, d in zip(lines, indents):
             new = not entries
             if not new:
                 prev = entries[-1][-1]
-                numbered = numbered_list and number_re.match(l.text) and d < 0.5 * l.size
+                nm = number_re.match(l.text) if numbered_list else None
+                numbered = bool(nm) and int(nm.group(1) or nm.group(2)) == last_label + 1
                 if numbered:
+                    last_label += 1
                     new = True
+                elif numbered_list:
+                    new = False
                 elif SAME_AUTHORS.match(l.text) and re.search(r"[.)]\s*$", prev.text):
                     new = True  # "(1982) ..." or "---. 1982." for another work by the same authors
                 elif hanging:
@@ -2250,15 +2322,16 @@ class PdfReader:
                     italic.append([k, k + 1])
                 elif t is None and italic and italic[-1][1] == k and k + 1 < len(owners) and owners[k + 1] is not None and owners[k + 1].italic:
                     italic[-1][1] = k + 1
-            fields = parse_reference(text, [tuple(s) for s in italic])
+            label_m = number_re.match(text) if numbered_list else None
+            cut = label_m.end() if label_m else 0
+            fields = parse_reference(text[cut:], [(a - cut, b - cut) for a, b in italic if a >= cut])
             if not fields.get("authors") and SAME_AUTHORS.match(text) and self.pm.references:
                 previous = self.pm.references[-1].fields
                 if previous.get("authors"):
                     fields["authors"] = [dict(a) for a in previous["authors"]]
                     fields["authors_from_previous_entry"] = True
-            nm = number_re.match(text) if numbered_list else None
-            if nm:
-                fields["label"] = nm.group(1) or nm.group(2)
+            if label_m:
+                fields["label"] = label_m.group(1) or label_m.group(2)
             idx = len(self.pm.references) + 1
             ref = Reference(id=f"r{idx:03d}", raw=text, anchor=None, source="pdf", fields=fields)
             block = self._new_block("reference", text, group, offsets=starts, attrs={"ref": ref.id})
@@ -2467,6 +2540,13 @@ class PdfReader:
             second = _fold(names[1].split()[-1])
             cands = [r for r in cands if len(r.fields.get("authors", [])) > 1
                      and _fold(r.fields["authors"][1]["family"]) == second] or cands
+        if len(cands) > 1:
+            # "Smith et al. (2019)" names three or more authors, "Smith (2019)" one
+            n_authors = (lambda r: len(r.fields.get("authors", [])))
+            if et_al:
+                cands = [r for r in cands if n_authors(r) >= 3] or [r for r in cands if n_authors(r) >= 2] or cands
+            elif len(names) == 1:
+                cands = [r for r in cands if n_authors(r) == 1] or cands
         return cands[0] if cands else None
 
     # -- hidden text ------------------------------------------------------------
@@ -2508,12 +2588,12 @@ class PdfReader:
                 size = statistics.median(t.size for t in toks)
                 colors = {str(tuple(round(float(v), 2) for v in t.color)) if isinstance(t.color, (tuple, list)) else str(t.color)
                           for t in toks}
-                line_no = b.anchor.page_line
+                page_no, line_no = b.anchor.page, b.anchor.page_line
                 for o, page, no in b.attrs.get("lines", []):
                     if o <= run["start"]:
-                        line_no = no
+                        page_no, line_no = page, no
                 self.pm.notes.append(Note(kind="hidden_text", text=text,
-                                          anchor=Anchor(page=b.anchor.page, page_line=line_no, bbox=_bbox(toks)),
+                                          anchor=Anchor(page=page_no, page_line=line_no, bbox=_bbox(toks)),
                                           detail=f"{label}: {size:.1f} pt, colour {', '.join(sorted(colors))}; block {b.id}"))
 
     # -- pypdf: metadata, fonts, annotations ----------------------------------------
@@ -2528,10 +2608,12 @@ class PdfReader:
             if reader.is_encrypted:
                 self.pm.metadata["encrypted"] = True
                 try:
-                    reader.decrypt("")
+                    decrypted = reader.decrypt("")
                 except Exception:
                     self.pm.warnings.append("The PDF is encrypted; document properties could not be read.")
                     return
+                if not decrypted:
+                    raise SystemExit(f"{self.path.name} is password-protected. Remove the password and run again.")
         except Exception as exc:
             self.pm.warnings.append(f"pypdf could not open the PDF ({type(exc).__name__}: {exc}).")
             return
@@ -2672,7 +2754,7 @@ class PdfReader:
             page = self.pages[a["page"] - 1] if 0 < a["page"] <= len(self.pages) else None
             line_no = None
             if page is not None and a["bbox"]:
-                x0, top, x1, bottom = a["bbox"]
+                x0, top, _x1, bottom = a["bbox"]
                 cy = (top + bottom) / 2
                 visible = [l for l in page.lines if not l.hidden_only]
                 near = [l for l in visible if l.top - 2 <= cy <= l.bottom + 2 and l.x0 - 20 <= x0 <= l.x1 + 20] or visible
@@ -2690,7 +2772,7 @@ class PdfReader:
                 author, date = m.group(1).strip(), date if date and not set(date) <= set("D:0Z'") else m.group(2)
             if date and set(date) <= set("D:0Z'"):
                 date = None
-            self.pm.notes.append(Note(kind="pdf_comment", text=text or detail,
+            self.pm.notes.append(Note(kind="comment", text=text or detail,
                                       anchor=Anchor(page=a["page"], page_line=line_no, bbox=a["bbox"]),
                                       author=author, date=date, detail=f"{detail} annotation"))
 
@@ -2716,8 +2798,15 @@ class PdfReader:
             used = set().union(*(p.fonts for p in self.pages))
             for f in fonts:
                 f["used"] = f["base_font"] in used or f["name"] in used or f["type3"] and bool(used)
-            not_embedded = sorted({f["name"] for f in fonts if f["used"] and not f["embedded"]})
-            type3 = sorted({f["name"] for f in fonts if f["used"] and f["type3"]})
+            # Fonts that only sit in resource dictionaries print nothing; list them apart, so
+            # that font checks judge the fonts the reader sees.
+            unused = sorted({f["name"] for f in fonts if not f["used"]})
+            fonts = [f for f in fonts if f["used"]]
+            self.pm.metadata["fonts"] = fonts
+            if unused:
+                self.pm.metadata["fonts_unused"] = unused
+            not_embedded = sorted({f["name"] for f in fonts if not f["embedded"]})
+            type3 = sorted({f["name"] for f in fonts if f["type3"]})
             for key, value in (("fonts_not_embedded", not_embedded), ("type3_fonts", type3)):
                 if value:
                     self.pm.metadata[key] = value
@@ -2730,5 +2819,20 @@ class PdfReader:
             self.pm.figures.append(Figure(id=fid, anchor=Anchor(page=page, bbox=[_rnd(v) for v in im])))
 
 
+@contextmanager
+def _quiet_pdf_logs():
+    """Keep pypdf and pdfminer warnings about minor file defects out of the ingest output."""
+    loggers = [logging.getLogger(name) for name in ("pypdf", "pdfminer", "pdfplumber")]
+    levels = [lg.level for lg in loggers]
+    for lg in loggers:
+        lg.setLevel(logging.ERROR)
+    try:
+        yield
+    finally:
+        for lg, level in zip(loggers, levels):
+            lg.setLevel(level)
+
+
 def read_pdf(path: Path) -> PaperMap:
-    return PdfReader(Path(path)).read()
+    with _quiet_pdf_logs():
+        return PdfReader(Path(path)).read()
