@@ -62,15 +62,20 @@ paper-check-work/
   findings/       one FindingSet per producer: scripts.json, refs.json, agent_<dimension>.json,
                   agent_citations_<n>.json, orchestrator.json
   runs/           second runs, agent_<dimension>_run2.json, renamed .merged after merge-runs
-  references/     cards.json, one evidence card per reference
+  references/     cards.json, one evidence card per reference; web_checks_<n>.json from web-check agents
   citations/      propositions.jsonl, by_ref.json, status.json, sources/<ref>.txt and .json,
                   scans/<ref>.jsonl, digests, verdicts_<n>.json
-  agents/         claim_map.json from the logic agent
+  agents/         claim_map.json from the logic agent, fact_checks.json, related_work.json
+  consolidation.json  groups of findings with one root cause, written by the consolidator agent
   images/         page renders and image crops used as evidence
   cache/          HTTP cache for lookups
 ```
 
 Parallel agents never share an output file: each reading agent writes its own `agent_<dimension>.json`, judge n writes `agent_citations_<n>.json` and `verdicts_<n>.json`, second runs write to `runs/`, and each refuter is given whole findings files that no other refuter edits. The report merges everything.
+
+The cited works' texts come from the cascade in `citations/fulltext.py`, best source first. Its `entry_url` step reads the URL printed in a reference entry, or the page a web-check agent recorded as `dedicated_page`, for reports, news, posts and laws that no database holds. A page is kept only if it shows the reference's title; journal articles and reports take only a PDF there, and a report page gives its longest linked PDF, so that a landing page or a summary is never read as the work.
+
+The report merges in four steps: exact repeats from one producer; the two runs' copies of one problem; findings of related checks that quote the same sentence; and, last, the groups in `consolidation.json`. Every finding carries a stable `key` (its check, a hash of producer, check function, block and quote) in `paper-check-findings.json`, so the consolidator can name findings across builds. A merged finding keeps the most severe member as its head and lists the others under "Also reported by".
 
 ## The paper map
 
