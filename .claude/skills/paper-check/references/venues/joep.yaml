@@ -1,0 +1,330 @@
+id: joep
+name: Journal of Economic Psychology
+abbreviation: JoEP
+publisher: Elsevier
+group: field
+checked_on: "2026-10-17"
+notes: >-
+  Main source is the editors' Guide for Authors (version August 2025) by Co-Editor in Chief Carlos
+  Alós-Ferrer. It is hosted on his own site, but Elsevier's journal page links to it as the "JOEP
+  Policies and Guidelines set forth by the Editors", and it says it "is the authoritative source and
+  takes precedence over all other materials". Elsevier's general guide for authors and the JoEP
+  policies page are on ScienceDirect, which returned HTTP 403; rules found only there are unconfirmed.
+  Rules marked Elsevier-wide come from Elsevier policy pages that apply to all its journals.
+  IAREP's journal page still names Eldad Yechiam as co-editor; the August 2025 guide names Yaniv
+  Hanoch (since 2025) as the other Co-Editor in Chief.
+sources:
+  - id: joep_guide
+    url: https://alosferrer.github.io/joep.html
+    title: Guide for Authors, Journal of Economic Psychology (editors' policies, version August 2025)
+    access: read
+    note: >-
+      Written by the Co-Editor in Chief and linked from Elsevier's journal page (source shop).
+      States that non-complying submissions are returned and may be desk-rejected.
+  - id: shop
+    url: https://shop.elsevier.com/journals/journal-of-economic-psychology/0167-4870
+    title: Journal of Economic Psychology, Elsevier journal page
+    access: read
+    note: Links to joep_guide as the editors' policies; points to ScienceDirect for the general guide.
+  - id: guide
+    url: https://www.sciencedirect.com/journal/journal-of-economic-psychology/publish/guide-for-authors
+    title: Guide for authors, Journal of Economic Psychology (ScienceDirect)
+    access: blocked
+    note: HTTP 403 ("There was a problem providing the content you requested"). Page blocked automated access; verify in a browser.
+  - id: guide_search
+    url: https://www.sciencedirect.com/journal/journal-of-economic-psychology/publish/guide-for-authors
+    title: Guide for authors, Journal of Economic Psychology (web search summary)
+    access: search_summary
+    note: Summary text returned by the web search tool for this URL on 2026-10-17; not the page's own wording.
+  - id: sd_policies
+    url: https://www.sciencedirect.com/journal/journal-of-economic-psychology/about/policies-and-guidelines
+    title: Policies and Guidelines, Journal of Economic Psychology (ScienceDirect)
+    access: blocked
+    note: HTTP 403. Page blocked automated access; verify in a browser.
+  - id: iarep
+    url: https://www.iarep.org/index.php/activities/journal-of-economic-psychology
+    title: Journal of Economic Psychology, IAREP
+    access: read
+    note: Says the journal was founded by IAREP, which selects the editors. No submission rules.
+  - id: em
+    url: https://www.editorialmanager.com/joep/default.aspx
+    title: Editorial Manager, Journal of Economic Psychology
+    access: read
+    note: Login page; links to the Elsevier guide only and gives no instructions of its own.
+  - id: el_genai
+    url: https://www.elsevier.com/about/policies-and-standards/generative-ai-policies-for-journals
+    title: Generative AI policies for journals (Elsevier-wide)
+    access: read
+  - id: el_ethics
+    url: https://www.elsevier.com/about/policies-and-standards/publishing-ethics
+    title: Publishing ethics (Elsevier-wide)
+    access: read
+  - id: el_research_ethics
+    url: https://www.elsevier.com/about/policies-and-standards/research-ethics
+    title: Research ethics (Elsevier-wide)
+    access: read
+  - id: el_credit
+    url: https://www.elsevier.com/researcher/author/policies-and-guidelines/credit-author-statement
+    title: CRediT author statement (Elsevier-wide)
+    access: read
+rules:
+  abstract_max_words:
+    status: unconfirmed
+    value: 250
+    source: guide_search
+    note: >-
+      The editors' guide (read in full) sets no abstract limit. Search summary of the Elsevier guide
+      (https://www.sciencedirect.com/journal/journal-of-economic-psychology/publish/guide-for-authors):
+      "Abstract: The abstract must not exceed 250 words." That page blocked automated access; verify in a browser.
+  manuscript_limit:
+    status: confirmed
+    value: {amount: 12000, unit: words, scope: "Research Articles; total text including abstract, references, tables, figures, captions and any appendix, excluding the Online Appendix"}
+    source: joep_guide
+    quote: "all word counts refer to the total text (abstract, main text, references, tables and figures, captions, appendix if any), but not the Online Appendix (supplementary online materials). Research Articles should not exceed 12,000 words in length."
+    note: Review Articles and invited pieces may exceed 12,000 words. Brief Reports and Replications have their own limit (see other).
+  keywords:
+    status: confirmed
+    value: {required: true, min: null, max: null}
+    source: joep_guide
+    quote: "Please also include abstract and keywords on this page."
+    note: >-
+      Keywords go on the first page. The editors' guide gives no count; a search summary of the blocked
+      Elsevier guide says "Authors provide 1 to 7 English keywords for indexing."
+  jel_codes:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Not addressed in the editors' guide (read in full). The Elsevier guide blocked automated access;
+      verify in a browser. Its search summary said: "The guide excerpt I saw doesn't mention JEL classification codes."
+  highlights:
+    status: confirmed
+    value: {required: false, count_min: 3, count_max: 5, max_chars_each: 85}
+    source: joep_guide
+    quote: "Highlights are not required on initial submission. They will be requested later on. Include 3-5 highlights only after revision is solicited. Highlights are limited to 85 characters each, including spaces."
+    note: Do not upload highlights with the first submission; supply them once a revision is requested.
+  review_type:
+    status: unconfirmed
+    value: single_anonymous
+    source: guide_search
+    note: >-
+      Search summary of the blocked Elsevier guide (https://www.sciencedirect.com/journal/journal-of-economic-psychology/publish/guide-for-authors):
+      "Peer review: The journal's guide describes a
+      single-anonymized process." Consistent with the editors' guide, which puts author names and
+      affiliations on the manuscript's first page (see other: title_page), so do not anonymize.
+      Page blocked automated access; verify in a browser.
+  disclosure_statement:
+    status: confirmed
+    value: {required: true, detail: "Any Declaration of Interest statement goes on the first page, in the footnotes to the title or author names; competing interests must also be detailed in a cover letter."}
+    source: joep_guide
+    quote: "If any of the authors has competing interests to declare, please detail them in a cover letter ... and any Declaration of Interest statement"
+    note: Elsevier-wide policy also asks all authors to disclose financial and personal relationships that could bias the work (source el_ethics).
+  data_availability_statement:
+    status: confirmed
+    value: {required: true, detail: "In the explicit footnote to the title. Third-party survey data need full access instructions with URLs at first submission; own data need a public repository URL before acceptance."}
+    source: joep_guide
+    quote: "The explicit footnote to the title (with footnote symbol; where acknowledgments, etc. also go) includes your data availability statement"
+    note: Data need not be public at first submission.
+  data_code_policy:
+    status: confirmed
+    value:
+      summary: >-
+        Accepted empirical papers must make data, analysis code (if not straightforward) and study
+        materials public (osf, Mendeley Data or a domain repository) with a link in the title footnote;
+        this is a prerequisite for acceptance. Closed datasets are generally desk-rejected, and
+        "available upon request" is banned.
+      url: https://alosferrer.github.io/joep.html
+    source: joep_guide
+    quote: "it is currently expected that authors will make their data, the codes of their statistical analyses (if not straightforward), and the materials of their study publicly available."
+    note: If data cannot be shared (e.g., third-party rights), explain in a cover letter; the guide warns the likely answer is a decline.
+  ethics_approval:
+    status: confirmed
+    value: {required: true, detail: "Studies with human participants need a statement in the manuscript that the appropriate institutional committee approved them, with the date and reference number of the approval; exempt studies must explain why."}
+    source: el_research_ethics
+    quote: "The authors should include a statement in the manuscript that confirms these requirements have been met. The statement should contain the date and reference number of the ethical approval(s) obtained"
+    note: Elsevier-wide research ethics policy; the editors' guide does not address ethics approval.
+  trial_registration:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Not addressed in the editors' guide (read in full). The Elsevier guide blocked automated access;
+      verify in a browser.
+  deception:
+    status: confirmed
+    value: allowed_with_justification
+    source: joep_guide
+    quote: "The Journal of Economic Psychology will only publish empirical research using deception if the authors can and do explain in their manuscript why the use of deception was strictly necessary for the purposes of their research."
+    note: The reasons must also be given in a cover letter at first submission; undisclosed deception found later ends the process with rejection.
+  experiment_materials:
+    status: confirmed
+    value: {detail: "One Online Appendix (single PDF, uploaded as Supporting File) with complete translated experimental instructions; survey papers include a transcript of the survey questions."}
+    source: joep_guide
+    quote: "For experimental papers, this file must contain complete (translated) experimental instructions"
+  ai_use:
+    status: confirmed
+    value: {detail: "Declare any use of AI tools in manuscript preparation in a separate AI declaration statement in the manuscript at submission (tool, purpose, extent of oversight). AI tools cannot be authors. Basic grammar and spelling checks need no declaration."}
+    source: el_genai
+    quote: "Authors should disclose the use of AI tools for manuscript preparation in a separate AI declaration statement included in their manuscript upon submission."
+    note: >-
+      Elsevier-wide policy; the editors' guide does not address AI. A search summary of the blocked
+      Elsevier guide says the statement is "placed before the references".
+  citation_style:
+    status: unconfirmed
+    source: guide
+    note: >-
+      The editors' guide names no style; it requires a reference list that matches the citations,
+      consistent journal-name capitalization, and recommends BibTeX or BibLaTeX under LaTeX. The
+      Elsevier guide blocked automated access; verify in a browser.
+  submission_fee:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Not mentioned in the editors' guide (read in full). The Elsevier guide blocked automated access;
+      verify in a browser. A search summary mentioned only the open access charge ("an article
+      publishing charge of $3,710 for gold open access"), not a submission fee.
+  file_format:
+    status: confirmed
+    value: "Manuscript preferably as PDF; Online Appendix as a single PDF uploaded as Supporting File (doc/docx not accepted); no source files on first submission"
+    source: joep_guide
+    quote: "Manuscript, preferably in PDF format ... Online Appendix (must be a PDF file, uploaded as \"Supporting File\")"
+    note: "The guide also says: \"Please do not provide source files (.tex, .docx, etc) on initial submission.\""
+  other:
+    - name: files_at_submission
+      status: confirmed
+      value: {detail: "Upload only the manuscript and one Online Appendix"}
+      source: joep_guide
+      quote: "No other files have been uploaded. No cover letter, no highlights, no separate graphics files, no other supporting files."
+    - name: cover_letter
+      status: confirmed
+      value: {required: false, detail: "Only to explain exceptions: data cannot be public, deception was used, or experiments were not incentivized"}
+      source: joep_guide
+      quote: "Please do not upload a Cover letter."
+    - name: graphical_abstract
+      status: confirmed
+      value: {required: false}
+      source: joep_guide
+      quote: "Graphical Abstracts are not required at JoEP"
+    - name: title_page
+      status: confirmed
+      value: {detail: "First page: title, author names, affiliations and abstract (plus keywords); acknowledgements, Declaration of Interest, data statement and corresponding-author address go in footnotes to the title or author names"}
+      source: joep_guide
+      quote: "Please refrain from adding additional fields: the title page contains only title, author names and affiliations, and abstract, plus footnotes to those elements."
+    - name: online_appendix
+      status: confirmed
+      value: {detail: "One PDF with its own pagination, titled \"Online Appendix:\" plus the paper title, followed by author names"}
+      source: joep_guide
+      quote: "The title of the Online Appendix should be \"Online Appendix:\" followed by the title of your paper."
+    - name: brief_report_and_replication_length
+      status: confirmed
+      value: {amount: 4000, unit: words, scope: "Brief Reports and Replications, excluding abstract and references"}
+      source: joep_guide
+      quote: "limited to 4,000 words in length (excluding abstract and references)"
+      note: The guide says Replications "in general" should not exceed 4,000 words, excluding abstract and references.
+    - name: replication_title
+      status: confirmed
+      value: {detail: "Titles of replication articles start with \"Replication:\""}
+      source: joep_guide
+      quote: "The title of such contributions must start with \"Replication:"
+    - name: out_of_scope
+      status: confirmed
+      value: {detail: "Desk-rejected types: pure theory, opinion pieces, bibliometric surveys or systematic reviews, country studies"}
+      source: joep_guide
+      quote: "We do not publish pure theory contributions. ... We do not publish opinion pieces, position papers, or commentaries. ... We do not publish bibliometric surveys/reviews. ... We do not publish country studies."
+    - name: one_study_one_paper
+      status: confirmed
+      value: {detail: "No multiple manuscripts from one study or data collection; report all conditions and measured variables"}
+      source: joep_guide
+      quote: "We do not support the practice of writing multiple manuscripts on a single study or data collection event."
+    - name: disclosure_of_conditions_and_variables
+      status: confirmed
+      value: {detail: "Report all experimental conditions and all measured variables, and all studies run on the question; explain omissions in a cover letter"}
+      source: joep_guide
+      quote: "Authors are required to report all implemented experimental conditions (if the study is experimental) and disclose all measured variables"
+    - name: significance_threshold
+      status: confirmed
+      value: {alpha: 0.05, detail: "p between 0.05 and 0.10 is not significant; no \"marginal\" or 10% significance"}
+      source: joep_guide
+      quote: "The threshold for statistical significance is 5% ... At the Journal of Economic Psychology, they are simply not significant"
+    - name: significance_stars
+      status: confirmed
+      value: {detail: "Every table states and applies * p<.05 ** p<.01 *** p<.001"}
+      source: joep_guide
+      quote: "In the case of regression tables, use the convention * p<.05 ** p<.01 *** p<.001"
+    - name: p_value_reporting
+      status: confirmed
+      value: {detail: "Exact p-values with three decimals in the text; inequalities only for p<.001; never p=.000"}
+      source: joep_guide
+      quote: "Report all ... values in the text with three decimals."
+    - name: multiple_testing
+      status: confirmed
+      value: {detail: "Adjust p-values for multiple tests on the same data (e.g., Holm-Bonferroni, FDR)"}
+      source: joep_guide
+      quote: "If multiple tests are conducted on the same data within a given study, ... values must be adjusted accordingly by using the appropriate corrections for multiple testing"
+    - name: sample_size_justification
+      status: confirmed
+      value: {detail: "Report how the sample size was determined; null results need a proper (not post hoc) power analysis"}
+      source: joep_guide
+      quote: "Even if a paper does not report null effects, it is necessary to report how the sample size was determined"
+    - name: incentives
+      status: confirmed
+      value: {detail: "At least one experiment shows the central effect with incentives; exceptions explained in a cover letter"}
+      source: joep_guide
+      quote: "For experimental papers, at least one reported experiment should show the paper's central effect in an incentivized setting."
+    - name: available_upon_request
+      status: confirmed
+      value: {detail: "The phrase must not appear in the manuscript or Online Appendix"}
+      source: joep_guide
+      quote: "The expression \"available upon request\" is banned from JoEP."
+    - name: footnotes
+      status: confirmed
+      value: {detail: "Avoid footnotes on first submission, apart from the expected footnotes to the title and author names; any kept should be one or two sentences"}
+      source: joep_guide
+      quote: "avoid footnotes as much as possible on initial submission"
+    - name: urls_in_footnotes
+      status: confirmed
+      value: {detail: "Cite online sources as bibliography entries with a last-accessed date, never as URLs in footnotes"}
+      source: joep_guide
+      quote: "Please never give URLs in footnotes."
+    - name: embedded_tables_figures
+      status: confirmed
+      value: {detail: "Tables and figures placed next to the relevant text, captions directly below; not collected at the end"}
+      source: joep_guide
+      quote: "We do not accept figures and tables collected at the end of the manuscript"
+    - name: numbering
+      status: confirmed
+      value: {detail: "Number sections, subsections, manuscript pages and Online Appendix pages"}
+      source: joep_guide
+      quote: "Please number your sections and subsections. Also number your manuscript pages, and your Online Appendix pages."
+    - name: figure_style
+      status: confirmed
+      value: {detail: "Show the full data where possible; violin plots preferred over boxplots"}
+      source: joep_guide
+      quote: "boxplots are outdated. Use violin plots instead"
+    - name: prior_joep_literature
+      status: confirmed
+      value: {detail: "Show awareness of related JoEP articles; the guide suggests reviewing the last 2-3 years of issues before submitting"}
+      source: joep_guide
+      quote: "Authors should be aware of articles previously published in the Journal of Economic Psychology on the topic of their manuscript."
+    - name: resubmission_after_rejection
+      status: confirmed
+      value: {detail: "Rejections and withdrawals are final unless the Editors in Chief invite resubmission"}
+      source: joep_guide
+      quote: "Rejections are final, even if they occurred on the grounds of excessive number of typos or insufficient language proficiency."
+    - name: funding_statement
+      status: confirmed
+      value: {required: true, detail: "Disclose all sources of funding and the sponsor's role in design, analysis, writing and the decision to submit"}
+      source: el_ethics
+      quote: "All sources of financial support for the conduct of the research and/or preparation of the article should be disclosed, as should the role of the sponsor(s), if any"
+      note: Elsevier-wide publishing ethics policy, not the editors' guide.
+    - name: informed_consent
+      status: confirmed
+      value: {required: true, detail: "Statement that informed consent was obtained from all human participants"}
+      source: el_research_ethics
+      quote: "Authors should include a statement in the manuscript confirming that they obtained informed consent from all participants"
+      note: Elsevier-wide research ethics policy, not the editors' guide.
+    - name: credit_statement
+      status: unconfirmed
+      source: el_credit
+      note: >-
+        Elsevier's CRediT page says "CRediT statements should be provided during the submission process"
+        but does not say which journals use them; the editors' guide does not mention CRediT and the
+        Elsevier guide blocked automated access. Verify in a browser.

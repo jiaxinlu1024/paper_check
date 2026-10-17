@@ -94,7 +94,7 @@ The report describes mismatches and the evidence for them. It never speculates a
 
 ## Test cases to build
 
-1. **This case, if the coauthors agree.** The reviewing author already checked every citation by hand, so their notes are ready-made ground truth. Running the skill on the original section and comparing with those notes would measure its precision and recall directly.
+1. **This case itself is not available.** The section will not be shared, so the seeded errors below reproduce its pattern instead.
 2. **Seeded errors.** Take a correct literature review paragraph and swap in citations that create known S1, S2 and S4 errors. Check that the skill flags those errors and nothing else.
 3. **Classic misattributions.** Build a fixed set of commonly misattributed behavioral economics findings, each confirmed against the original sources, and rerun it after every change to the skill.
 

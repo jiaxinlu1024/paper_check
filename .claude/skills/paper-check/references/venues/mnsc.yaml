@@ -1,0 +1,298 @@
+id: mnsc
+name: Management Science
+abbreviation: MS
+publisher: INFORMS
+group: field
+checked_on: "2026-10-17"
+notes: >-
+  Behavioral economics papers usually go to the Behavioral Economics and Decision
+  Analysis (BEDA) department. Every INFORMS PubsOnline page (guidelines, policies,
+  department statement) and the ScholarOne site refused automated access, and the main
+  INFORMS site only links to PubsOnline. Confirmed rules come from Editor-in-Chief
+  messages on INFORMS's own community site; unconfirmed values come from web-search
+  summaries of the blocked pages and need checking in a browser.
+sources:
+  - id: informs_guidelines
+    url: https://pubsonline.informs.org/page/mnsc/submission-guidelines
+    title: Submission Guidelines, Management Science (INFORMS PubsOnline)
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: informs_guidelines_search
+    url: https://pubsonline.informs.org/page/mnsc/submission-guidelines
+    title: Submission Guidelines, as shown in web-search summaries
+    access: search_summary
+    note: Text seen only in web-search result summaries on 2026-10-17. Summaries can paraphrase or leave text out.
+  - id: informs_datapolicy
+    url: https://pubsonline.informs.org/page/mnsc/datapolicy
+    title: Data and Code Disclosure Policy, Management Science
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: informs_fee_faq
+    url: https://pubsonline.informs.org/page/mnsc/submission-fee-faq
+    title: Submission Fee FAQ, Management Science
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: informs_fee_faq_search
+    url: https://pubsonline.informs.org/page/mnsc/submission-fee-faq
+    title: Submission Fee FAQ, as shown in web-search summaries
+    access: search_summary
+    note: >-
+      Text seen only in a web-search result summary on 2026-10-17. The same summary
+      listed the fee waiver page (informs_fee_waivers) among its results.
+  - id: informs_fee_waivers
+    url: https://pubsonline.informs.org/page/mnsc/submission-fee-waivers
+    title: Submission Fee Waivers, Management Science
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: informs_ethics
+    url: https://pubsonline.informs.org/page/mnsc/guidelines-for-ethical-behavior-in-publishing
+    title: Guidelines for Ethical Behavior in Publishing, Management Science
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: informs_ethics_search
+    url: https://pubsonline.informs.org/page/mnsc/guidelines-for-ethical-behavior-in-publishing
+    title: Guidelines for Ethical Behavior in Publishing, as shown in web-search summaries
+    access: search_summary
+    note: Text seen only in a web-search result summary on 2026-10-17.
+  - id: informs_coi
+    url: https://pubsonline.informs.org/page/mnsc/conflictofinterest
+    title: Conflict of Interest, Management Science
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: informs_editorial_statement
+    url: https://pubsonline.informs.org/page/mnsc/editorial-statement
+    title: Editorial Statement, Management Science
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: informs_editorial_statement_search
+    url: https://pubsonline.informs.org/page/mnsc/editorial-statement
+    title: Editorial Statement, as shown in web-search summaries
+    access: search_summary
+    note: Text seen only in a web-search result summary on 2026-10-17.
+  - id: informs_peer_review
+    url: https://pubsonline.informs.org/authorportal/peer-review
+    title: INFORMS Peer Review Policy and Journal Practices
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: informs_peer_review_search
+    url: https://pubsonline.informs.org/authorportal/peer-review
+    title: INFORMS Peer Review Policy and Journal Practices, as shown in web-search summaries
+    access: search_summary
+    note: Text seen only in a web-search result summary on 2026-10-17.
+  - id: beda_statement
+    url: https://pubsonline.informs.org/doi/abs/10.1287/mnsc.2024.bdestmt.v70.n8
+    title: Editorial Statement, Behavioral Economics and Decision Analysis (Management Science 70(8), 2024)
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: beda_statement_search
+    url: https://pubsonline.informs.org/doi/abs/10.1287/mnsc.2024.bdestmt.v70.n8
+    title: BEDA department editorial statement, as shown in web-search summaries
+    access: search_summary
+    note: Text seen only in a web-search result summary on 2026-10-17.
+  - id: transparency_editorial
+    url: https://pubsonline.informs.org/doi/10.1287/mnsc.2025.editorial.v71.n9
+    title: Reinforcing Research Transparency at Management Science (editorial, 2025)
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: scholarone
+    url: https://mc.manuscriptcentral.com/mnsc
+    title: Management Science submission site (ScholarOne Manuscripts)
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: connect_2023
+    url: https://connect.informs.org/discussion/management-science-may-2023
+    title: "Management Science: May 2023 (Editor-in-Chief's message, INFORMS Connect)"
+    access: read
+    note: Posted on 12 May 2023 by Editor-in-Chief David Simchi-Levi on INFORMS's community site.
+  - id: connect_2019
+    url: https://connect.informs.org/communities/community-home/digestviewer/viewthread?GroupId=469&MessageKey=441f66aa-135b-4638-a398-7ee8723c6a39&CommunityKey=1d5653fa-85c8-46b3-8176-869b140e5e3c&tab=digestviewer&hlmlt=VT
+    title: "Management Science: Update from the Editor (INFORMS Connect)"
+    access: read
+    note: Posted on 18 January 2019 by Editor-in-Chief David Simchi-Levi on INFORMS's community site.
+rules:
+  abstract_max_words:
+    status: unconfirmed
+    value: 250
+    source: informs_guidelines_search
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary of
+      https://pubsonline.informs.org/page/mnsc/submission-guidelines (2026-10-17) said
+      abstracts should be 250 words or less (the search tool's wording). A separate
+      executive summary may also be needed (see other, executive_summary).
+  manuscript_limit:
+    status: unconfirmed
+    value:
+      amount: 47
+      unit: pages
+      scope: >-
+        invited revisions, double-spaced with 25 lines per page (or 32 pages at 1.5
+        spacing with 33 lines per page); online appendix excluded; no limit on
+        first-round submissions
+    source: informs_guidelines_search
+    note: >-
+      Page blocked automated access; verify in a browser. Search summary of
+      https://pubsonline.informs.org/page/mnsc/submission-guidelines (2026-10-17):
+      "There is no page limit on initial (i.e., first-round) submissions. Department
+      Editors may reject an initial submission for excessive length." and "All invited
+      revisions must adhere to the following page limit: 47 pages with 25 lines of text
+      per page (double spacing) or 32 pages with 33 lines of text per page (1.5
+      spacing)." and "An online appendix will not count toward the page limit."
+  keywords:
+    status: unconfirmed
+    source: informs_guidelines
+    note: Page blocked automated access; verify in a browser.
+  jel_codes:
+    status: unconfirmed
+    source: informs_guidelines
+    note: Page blocked automated access; verify in a browser.
+  highlights:
+    status: unconfirmed
+    source: informs_guidelines
+    note: Page blocked automated access; verify in a browser.
+  review_type:
+    status: unconfirmed
+    value: double_anonymous
+    source: informs_peer_review_search
+    note: >-
+      Page blocked automated access; verify in a browser. Search summary of
+      https://pubsonline.informs.org/authorportal/peer-review (2026-10-17): editors-in-chief
+      "are required to implement double-anonymous peer review for all submitted
+      manuscripts", effective 1 January 2025 for all INFORMS journals except INFORMS
+      Journal on Computing, Mathematics of Operations Research and Stochastic Systems. A
+      search summary of the Management Science guidelines said authors must remove
+      explicit indications of their names and institutions, and all acknowledgments.
+  disclosure_statement:
+    status: unconfirmed
+    source: informs_ethics_search
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary of
+      https://pubsonline.informs.org/page/mnsc/guidelines-for-ethical-behavior-in-publishing
+      (2026-10-17) said authors "must be honest and disclose their sources and funders".
+      The journal's conflict-of-interest page (informs_coi) was also blocked.
+  data_availability_statement:
+    status: unconfirmed
+    source: informs_datapolicy
+    note: Page blocked automated access; verify in a browser.
+  data_code_policy:
+    status: confirmed
+    value:
+      summary: >-
+        Under the Data and Code Disclosure Policy introduced in June 2019, every paper
+        that uses code or data must provide replication materials approved by the Code
+        and Data Editor before publication. The policy text itself is on the blocked
+        PubsOnline data policy page.
+      url: https://pubsonline.informs.org/page/mnsc/datapolicy
+    source: connect_2023
+    quote: "all papers using code or data, and submitted after the introduction of the new policy, must provide replication materials which need to be approved by the Code and Data Editor."
+    note: >-
+      From the Editor-in-Chief's message of 12 May 2023. The current policy page
+      (informs_datapolicy) and the 2025 editorial "Reinforcing Research Transparency at
+      Management Science" (transparency_editorial) were blocked; a search summary said
+      that editorial ties the new submission fee to the journal's reproducibility work.
+  ethics_approval:
+    status: unconfirmed
+    source: informs_ethics
+    note: Page blocked automated access; verify in a browser. No search summary mentioned an IRB requirement for Management Science.
+  trial_registration:
+    status: unconfirmed
+    source: informs_guidelines
+    note: Page blocked automated access; verify in a browser.
+  deception:
+    status: unconfirmed
+    source: beda_statement
+    note: >-
+      Page blocked automated access; verify in a browser. Search summaries of the BEDA
+      department statement did not mention deception.
+  experiment_materials:
+    status: unconfirmed
+    source: informs_datapolicy
+    note: Page blocked automated access; verify in a browser.
+  ai_use:
+    status: unconfirmed
+    value:
+      detail: >-
+        Generative AI is not banned. Submitting a manuscript counts as a declaration that
+        the authors reviewed and edited any AI-generated content, and the authors are
+        responsible for its accuracy. Whether AI use must be stated in the paper was not
+        seen.
+    source: informs_guidelines_search
+    note: >-
+      Page blocked automated access; verify in a browser. Search summary of
+      https://pubsonline.informs.org/page/mnsc/submission-guidelines (2026-10-17):
+      "submission of a manuscript is taken as a declaration that the author(s) reviewed
+      and edited any AI-generated content as needed". In August 2023 INFORMS's VP of
+      Publications asked each journal to post its own AI policy
+      (https://connect.informs.org/discussion/generative-artificial-intelligence-ai-policy-for-reviewers-associate-editors-department-editors-editors-for-informs-journals,
+      read; it covers reviewers and editors only).
+  citation_style:
+    status: unconfirmed
+    source: informs_guidelines
+    note: Page blocked automated access; verify in a browser.
+  submission_fee:
+    status: unconfirmed
+    value:
+      amount: 79
+      currency: USD
+      detail: >-
+        For original submissions from 1 August 2025. Waived for current INFORMS members
+        and for authors whose primary affiliation is in a low- or lower-middle-income
+        country; an honor-based waiver exists for authors who cannot pay.
+    source: informs_fee_faq_search
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary (2026-10-17)
+      of results including https://pubsonline.informs.org/page/mnsc/submission-fee-faq
+      said the journal "will begin assessing a $79 submission fee for all original
+      submissions, effective August 1, 2025", and described the waivers above.
+  file_format:
+    status: unconfirmed
+    source: informs_guidelines
+    note: Page blocked automated access; verify in a browser. The ScholarOne site (scholarone) was also blocked.
+  other:
+    - name: department_choice
+      status: unconfirmed
+      value: >-
+        Choose the department, for behavioral work usually Behavioral Economics and
+        Decision Analysis, as the manuscript "Type" in step 1 of ScholarOne.
+      source: informs_guidelines_search
+      note: >-
+        Page blocked automated access; verify in a browser. Search summary of
+        https://pubsonline.informs.org/page/mnsc/submission-guidelines (2026-10-17):
+        "Step 1: Type, Title & Abstract: "Type" refers to the department in Management
+        Science to which the manuscript is being submitted."
+    - name: beda_department_scope
+      status: unconfirmed
+      value: >-
+        BEDA papers must be relevant to the science of management, either through issues
+        that matter to managers or through insights into behavior and decision making that
+        could affect management practice. Empirical papers should aspire to identify
+        causal mechanisms and to generalize beyond the context studied.
+      source: beda_statement_search
+      note: >-
+        Page blocked automated access; verify in a browser. Summarized by the search tool
+        (2026-10-17) from the 2024 department statement at
+        https://pubsonline.informs.org/doi/abs/10.1287/mnsc.2024.bdestmt.v70.n8; not a
+        verbatim snippet.
+    - name: executive_summary
+      status: unconfirmed
+      value: >-
+        A short nontechnical executive summary of at most 250 words naming the intended
+        practitioner audience, the key insight and the practical implications.
+      source: informs_editorial_statement_search
+      note: >-
+        Page blocked automated access; verify in a browser. A search summary of
+        https://pubsonline.informs.org/page/mnsc/editorial-statement (2026-10-17) said
+        submissions need such a summary ("maximum 250 words"). Whether it applies to
+        every department was not seen.
+    - name: data_provenance
+      status: confirmed
+      value: >-
+        Papers using data originally obtained illegally (for example stolen or hacked) are
+        not reviewed or published, even if the data are now public. Papers using data
+        scraped from sites that ban scraping can be published but may be withdrawn if
+        material harm is shown.
+      source: connect_2019
+      quote: 'Management Science will not allow review or publication of papers that use data that was "originally" obtained in an illegal manner (e.g., stolen or hacked) regardless of the availability of the data in public forum.'
+      note: >-
+        From the Editor-in-Chief's message of 18 January 2019, which describes how the
+        journal applies its Data Provenance Policy. The policy's current wording is on the
+        journal site, which was blocked; verify it in a browser.

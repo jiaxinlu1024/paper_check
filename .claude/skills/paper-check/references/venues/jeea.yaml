@@ -1,0 +1,223 @@
+id: jeea
+name: Journal of the European Economic Association
+abbreviation: JEEA
+publisher: Oxford University Press for the European Economic Association
+group: general
+checked_on: "2026-10-17"
+notes: >-
+  The Author Guidelines on Oxford Academic, which hold most format and policy rules,
+  refused automated access, and so did the EEA's own "Guidelines for Authors" download
+  and its JEEA home page. Confirmed rules come from the EEA's submission, fee and
+  Data Editor pages and from the Editorial Express submission form. Unconfirmed values
+  come from web-search summaries of the blocked guidelines; check them in a browser.
+sources:
+  - id: oup_guidelines
+    url: https://academic.oup.com/jeea/pages/Author_Guidelines
+    title: Instructions to Authors (Author Guidelines), Oxford Academic
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: oup_guidelines_search
+    url: https://academic.oup.com/jeea/pages/Author_Guidelines
+    title: Instructions to Authors, as shown in web-search summaries
+    access: search_summary
+    note: Text seen only in web-search result summaries on 2026-10-17. Summaries can paraphrase or leave text out.
+  - id: oup_why_publish
+    url: https://academic.oup.com/jeea/pages/why-publish
+    title: Publishing with the Journal of the European Economic Association, Oxford Academic
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: oup_why_publish_search
+    url: https://academic.oup.com/jeea/pages/why-publish
+    title: Publishing with the Journal of the European Economic Association, as shown in web-search summaries
+    access: search_summary
+    note: Text seen only in a web-search result summary on 2026-10-17.
+  - id: eea_journal
+    url: https://eeassoc.org/journal
+    title: JEEA home on the EEA site
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17, although other eeassoc.org pages loaded.
+  - id: eea_guide_zip
+    url: https://eeassoc-org.s3.eu-west-3.amazonaws.com/s3fs-public/2020-11/Instruction-to-Authors.zip?VersionId=mAWwzOSPi71lsjHt74jNbFWIg09NSbPy
+    title: Guidelines for Authors (ZIP download linked from the EEA's Submit your paper page)
+    access: blocked
+    note: Amazon S3 returned HTTP 403 AccessDenied on 2026-10-17, with and without the VersionId. The file path dates it to November 2020.
+  - id: eea_submit
+    url: https://eeassoc.org/submit-your-paper
+    title: Submit your paper (European Economic Association)
+    access: read
+  - id: eea_fee
+    url: https://eeassoc.org/jeea-submission-fee
+    title: JEEA Submission Fee (European Economic Association)
+    access: read
+  - id: eea_data_faq
+    url: https://eeassoc.org/jeea-data-editor-frequently-asked-questions-faqs
+    title: JEEA Data Editor - Frequently Asked Questions (European Economic Association)
+    access: read
+  - id: ee_submit
+    url: https://editorialexpress.com/cgi-bin/e-editor/e-submit.cgi?dbase=jeea
+    title: "E-submit: Journal of the European Economic Association (Editorial Express)"
+    access: read
+    note: Start page of the submission form. Later steps need an EEA member login, so the submission fields were not seen.
+rules:
+  abstract_max_words:
+    status: unconfirmed
+    source: oup_guidelines
+    note: Page blocked automated access; verify in a browser. Search summaries of the page did not show an abstract limit.
+  manuscript_limit:
+    status: unconfirmed
+    source: oup_guidelines
+    note: Page blocked automated access; verify in a browser.
+  keywords:
+    status: unconfirmed
+    source: oup_guidelines
+    note: Page blocked automated access; verify in a browser.
+  jel_codes:
+    status: unconfirmed
+    source: oup_why_publish_search
+    note: >-
+      Page blocked automated access; verify in a browser. Search summary of
+      https://academic.oup.com/jeea/pages/why-publish (2026-10-17): "providing the
+      relevant JEL code when submitting your paper increases discoverability of your
+      research". So JEL codes are asked for at submission; whether they are required,
+      and how many, was not seen.
+  highlights:
+    status: unconfirmed
+    source: oup_guidelines
+    note: Page blocked automated access; verify in a browser.
+  review_type:
+    status: unconfirmed
+    value: single_anonymous
+    source: oup_guidelines_search
+    note: >-
+      Page blocked automated access; verify in a browser. Search summary of
+      https://academic.oup.com/jeea/pages/Author_Guidelines (2026-10-17): "Manuscripts
+      are reviewed according to the single-blind principle. The names of the authors
+      are disclosed to the reviewers, while the reviewers remain anonymous to the
+      authors."
+  disclosure_statement:
+    status: unconfirmed
+    value:
+      required: true
+      detail: >-
+        A separate page titled "Disclosure Statement", uploaded at step 4 of the online
+        submission form, in which each author names every interested party that gave
+        significant financial support (at least €10,000 in the past three years,
+        including in-kind support such as data access).
+    source: oup_guidelines_search
+    note: >-
+      Page blocked automated access; verify in a browser. Search summary of
+      https://academic.oup.com/jeea/pages/Author_Guidelines (2026-10-17): "Each author
+      of a submitted article should identify each interested party from whom he or she
+      has received significant financial support, summing to at least €10,000 in the
+      past three years, in the form of consultant fees, retainers, grants and the like.
+      The disclosure requirement also includes in-kind support, such as providing access
+      to data." and "the authors should prepare a separate page entitled 'Disclosure
+      Statement' that will be uploaded on step 4 of the online submission form." The
+      summary also mentioned a "nothing to disclose" option and disclosure of close
+      relatives, partners and any party's right to review the paper before circulation.
+  data_availability_statement:
+    status: unconfirmed
+    source: oup_guidelines
+    note: Page blocked automated access; verify in a browser.
+  data_code_policy:
+    status: confirmed
+    value:
+      summary: >-
+        Replication packages go through reproducibility checks by the JEEA Data Editor's
+        team and are then published in JEEA's Zenodo community. Data exemptions are
+        requested at first submission; with one, a JEEA replicator gets temporary or
+        remote access to the restricted data or, as a second best, runs the code on
+        synthetic data.
+      url: https://eeassoc.org/jeea-data-editor-frequently-asked-questions-faqs
+    source: eea_data_faq
+    quote: "Authors that requested a data exemption when they first submitted their paper which was granted ... After the reproducibility checks are completed, please compress your package in a ZIP archive."
+    note: >-
+      The full policy is in the blocked Author Guidelines (oup_guidelines). Search
+      summaries of that page (2026-10-17) said "any empirical paper can only be formally
+      accepted after the Data Editor completes this verification process", that JEEA
+      endorses the Data and Code Availability Standard (DCAS), and that "all code
+      necessary to reproduce the tables and figures in papers as well as in the
+      supplementary materials should be provided"; verify in a browser.
+  ethics_approval:
+    status: unconfirmed
+    source: oup_guidelines
+    note: Page blocked automated access; verify in a browser.
+  trial_registration:
+    status: unconfirmed
+    source: oup_guidelines
+    note: Page blocked automated access; verify in a browser.
+  deception:
+    status: unconfirmed
+    source: oup_guidelines
+    note: Page blocked automated access; verify in a browser.
+  experiment_materials:
+    status: unconfirmed
+    source: oup_guidelines
+    note: Page blocked automated access; verify in a browser.
+  ai_use:
+    status: unconfirmed
+    value:
+      detail: >-
+        Disclose and precisely describe any use of AI in carrying out the research design
+        or writing the paper beyond spelling and grammar checks. Authors remain
+        responsible for all content.
+    source: oup_guidelines_search
+    note: >-
+      Page blocked automated access; verify in a browser. Search summary of
+      https://academic.oup.com/jeea/pages/Author_Guidelines (2026-10-17): "Any use of AI
+      in the process of executing the research design and of writing the submitted
+      paper, beyond spelling and grammar checks, should be explicitly disclosed and
+      precisely described. Authors remain responsible for all content whether based on
+      AI or not."
+  citation_style:
+    status: unconfirmed
+    source: oup_guidelines
+    note: Page blocked automated access; verify in a browser.
+  submission_fee:
+    status: confirmed
+    value:
+      amount: 100
+      currency: EUR
+      detail: >-
+        For submissions from 1 February 2026. Covers one manuscript for the whole review,
+        up to the final decision. Paid through the submitter's EEA membership profile at
+        submission, with VAT where European rules apply. Non-refundable, including for
+        papers rejected without review. Waived when the submitting author and all
+        coauthors are based in low- or middle-income countries (World Bank
+        classification); contact the EEA office before submitting.
+    source: eea_fee
+    quote: "A standard submission fee of €100 will apply. ... The fee is waived if the submitting author and all coauthors are based in low-or middle-income countries ... Submission fees are non-refundable under all circumstances, including papers rejected without review."
+  file_format:
+    status: confirmed
+    value: PDF only
+    source: ee_submit
+    quote: "Note that manuscripts must be uploaded in PDF format only"
+  other:
+    - name: eea_membership
+      status: confirmed
+      value: The person making the submission must be an EEA member.
+      source: eea_fee
+      quote: "Submitters (defined as the person making the submission) have to be members of EEA"
+      note: >-
+        Editorial Express words it as "At least one author of submitted papers must be a
+        member of the European Economic Association and pay a submission fee" and asks a
+        member coauthor to make the submission when the submitting author is not a member.
+    - name: language
+      status: confirmed
+      value: English
+      source: eea_submit
+      quote: "Papers should be in English."
+    - name: cover_letter
+      status: confirmed
+      value: Optional. Step 4 of Editorial Express uploads the manuscript and a cover letter if there is one.
+      source: ee_submit
+      quote: "Upload the manuscript and cover letter (if any)"
+    - name: contribution_statement
+      status: unconfirmed
+      value: Encouraged; required for papers with five or more coauthors.
+      source: oup_guidelines_search
+      note: >-
+        Page blocked automated access; verify in a browser. A search summary of
+        https://academic.oup.com/jeea/pages/Author_Guidelines (2026-10-17) said
+        contribution statements are encouraged, and required for papers with five or
+        more coauthors. This is the search tool's wording, not a verbatim snippet.

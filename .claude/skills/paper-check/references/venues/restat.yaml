@@ -1,0 +1,196 @@
+id: restat
+name: The Review of Economics and Statistics
+abbreviation: REStat
+publisher: MIT Press
+group: general
+checked_on: "2026-10-17"
+notes: >-
+  MIT Press Direct, which hosts the Submission Guidelines and the data policy, refused
+  automated access, so most rules are unconfirmed; their values come from web-search
+  summaries of that page and need checking in a browser. Confirmed rules come from the
+  MIT Press Journals fee page, the Editorial Express start page and the journal's
+  Dataverse record. The editorial office is at Harvard Kennedy School
+  (restat@hks.harvard.edu).
+sources:
+  - id: mit_guidelines
+    url: https://direct.mit.edu/rest/pages/submission-guidelines
+    title: Submission Guidelines, MIT Press Direct
+    access: blocked
+    note: HTTP 403 with a Cloudflare challenge on 2026-10-17.
+  - id: mit_guidelines_search
+    url: https://direct.mit.edu/rest/pages/submission-guidelines
+    title: Submission Guidelines, as shown in web-search summaries
+    access: search_summary
+    note: Text seen only in web-search result summaries on 2026-10-17. Summaries can paraphrase or leave text out.
+  - id: mit_fees
+    url: https://mitpressjournals.mit.edu/shop/fees/?issn=0034-6535
+    title: "Remit Submission Fees: Review of Economics and Statistics (MIT Press Journals)"
+    access: read
+  - id: ee_submit
+    url: https://editorialexpress.com/cgi-bin/e-editor/e-submit.cgi?dbase=restat
+    title: "E-submit: Review of Economics and Statistics (Editorial Express)"
+    access: read
+    note: Start page of the submission form; its menu includes a "Pay Submission fee" step. Later steps were not opened.
+  - id: dataverse
+    url: https://dataverse.harvard.edu/api/dataverses/restat
+    title: Review of Economics and Statistics Dataverse (Harvard Dataverse API record)
+    access: read
+    note: >-
+      The collection's web page, https://dataverse.harvard.edu/dataverse/restat, returned
+      an empty HTTP 202 challenge response on 2026-10-17. This is the same collection's
+      record from Dataverse's public API; its contact is restat@hks.harvard.edu.
+rules:
+  abstract_max_words:
+    status: unconfirmed
+    value: 100
+    source: mit_guidelines_search
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary of
+      https://direct.mit.edu/rest/pages/submission-guidelines (2026-10-17) said papers
+      "should use 12-point font, be double-spaced, and include an abstract of no more
+      than 100 words" (the search tool's wording).
+  manuscript_limit:
+    status: unconfirmed
+    value: {amount: 45, unit: pages, scope: "accepted papers; no mechanical limit at submission"}
+    source: mit_guidelines_search
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary of
+      https://direct.mit.edu/rest/pages/submission-guidelines (2026-10-17): "Full papers
+      have no mechanical length limit at submission, but at acceptance, papers are
+      required to be 45 pages or less." Short Papers have their own limit (see other,
+      short_papers).
+  keywords:
+    status: unconfirmed
+    source: mit_guidelines
+    note: Page blocked automated access; verify in a browser.
+  jel_codes:
+    status: unconfirmed
+    source: mit_guidelines_search
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary of
+      https://direct.mit.edu/rest/pages/submission-guidelines (2026-10-17) said editor
+      assignments are determined by the submitted paper's JEL codes. Whether codes are
+      required, and how many, was not seen.
+  highlights:
+    status: unconfirmed
+    source: mit_guidelines
+    note: Page blocked automated access; verify in a browser.
+  review_type:
+    status: unconfirmed
+    value: unknown
+    source: mit_guidelines
+    note: Page blocked automated access; verify in a browser.
+  disclosure_statement:
+    status: unconfirmed
+    source: mit_guidelines
+    note: Page blocked automated access; verify in a browser.
+  data_availability_statement:
+    status: unconfirmed
+    source: mit_guidelines
+    note: Page blocked automated access; verify in a browser.
+  data_code_policy:
+    status: unconfirmed
+    value:
+      summary: >-
+        Strict data and code availability policy for empirical papers: before
+        publication, post the code, the data (or, for restricted data, documentation and
+        how others can obtain it) and detailed readme files. Flag proprietary data at
+        submission. Authors who violate the policy can be barred from submitting for five
+        years.
+      url: https://direct.mit.edu/rest/pages/submission-guidelines
+    source: mit_guidelines_search
+    note: >-
+      Page blocked automated access; verify in a browser. Search summaries of
+      https://direct.mit.edu/rest/pages/submission-guidelines (2026-10-17): "The Review
+      of Economics and Statistics is implementing a strict data and computer code
+      availability policy for empirical papers", and violators "will be banned from
+      submitting a paper to The Review for a period of five years". Confirmed elsewhere:
+      the fee page asks authors with proprietary data to wait for the editorial office's
+      confirmation before paying (other, proprietary_data_check), and replication files
+      are posted on the journal's Dataverse (other, replication_archive).
+  ethics_approval:
+    status: unconfirmed
+    source: mit_guidelines
+    note: Page blocked automated access; verify in a browser.
+  trial_registration:
+    status: unconfirmed
+    source: mit_guidelines
+    note: Page blocked automated access; verify in a browser.
+  deception:
+    status: unconfirmed
+    source: mit_guidelines
+    note: Page blocked automated access; verify in a browser.
+  experiment_materials:
+    status: unconfirmed
+    source: mit_guidelines
+    note: Page blocked automated access; verify in a browser.
+  ai_use:
+    status: unconfirmed
+    source: mit_guidelines
+    note: Page blocked automated access; verify in a browser.
+  citation_style:
+    status: unconfirmed
+    source: mit_guidelines
+    note: Page blocked automated access; verify in a browser.
+  submission_fee:
+    status: confirmed
+    value:
+      amount: 125
+      currency: USD
+      detail: >-
+        Nonrefundable, for authors who are not subscribers. Waived when one of the
+        authors has a current-year individual subscription to the Review.
+    source: mit_fees
+    quote: "There is a nonrefundable submission fee for authors who are not subscribers. ... Review of Economics & Statistics Submission Fee : $125.00"
+    note: >-
+      The fee page also says "The submission fee is waived for papers for which one of
+      the authors has a current year, individual subscription to the Review". It is paid
+      at step 6 of Editorial Express (ee_submit). A search summary of the blocked
+      Submission Guidelines also mentioned a waiver when most authors work in low- or
+      lower-middle-income economies; not verified.
+  file_format:
+    status: confirmed
+    value: PDF only
+    source: ee_submit
+    quote: "Note that manuscripts must be uploaded in PDF format only"
+  other:
+    - name: proprietary_data_check
+      status: confirmed
+      value: >-
+        If the paper uses proprietary data, do not pay the submission fee until the
+        editorial office confirms that the data comply with the journal's Data
+        Availability Policy.
+      source: mit_fees
+      quote: "If your paper uses proprietary data, do not pay the submission fee until you have received confirmation from the ... editorial office that your data comply with the journal's Data Availability Policy"
+    - name: replication_archive
+      status: confirmed
+      value: >-
+        Replication data and code for published articles are posted on the journal's
+        Harvard Dataverse. Most articles before volume 92 were not subject to the data
+        availability policy.
+      source: dataverse
+      quote: "This page contains replication data and code for the articles published in the Review of Economics and Statistics."
+    - name: cover_letter
+      status: confirmed
+      value: Optional. Step 4 of Editorial Express uploads the manuscript and a cover letter if there is one.
+      source: ee_submit
+      quote: "Upload the manuscript and cover letter (if any)"
+    - name: short_papers
+      status: unconfirmed
+      value: >-
+        At most 6,000 words and 5 exhibits, with up to 200 more words for each exhibit
+        below five (7,000 words with no exhibits). Online appendix at most 20 pages. Upload
+        the AEA word-count tool's output as a separate PDF.
+      source: mit_guidelines_search
+      note: >-
+        Page blocked automated access; verify in a browser. A search summary of
+        https://direct.mit.edu/rest/pages/submission-guidelines (2026-10-17): "For each
+        exhibit before the maximum five, the authors may add up to 200 words toward the
+        word limit; thus, a paper with no exhibits must have 7,000 or fewer words."
+    - name: formatting
+      status: unconfirmed
+      value: 12-point font, double-spaced.
+      source: mit_guidelines_search
+      note: >-
+        Page blocked automated access; verify in a browser. From the same search summary
+        as abstract_max_words.

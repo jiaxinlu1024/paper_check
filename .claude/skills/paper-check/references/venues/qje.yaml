@@ -1,0 +1,255 @@
+id: qje
+name: The Quarterly Journal of Economics
+abbreviation: QJE
+publisher: Oxford University Press for the Department of Economics, Harvard University
+group: general-top5
+checked_on: "2026-10-17"
+notes: >-
+  Nearly every official page refused automated access on 2026-10-17: Oxford Academic (Cloudflare challenge),
+  Harvard's economics site (Akamai "Access Denied") and the QJE Dataverse (AWS WAF challenge). Only the
+  Editorial Express submission page could be read, so only the file format and two submission-system rules are
+  confirmed. The other rules quote web-search summaries, which paraphrase the pages; verify each one in a
+  browser before relying on it.
+sources:
+  - id: editorial_express
+    url: https://editorialexpress.com/qje
+    title: QJE submission form (Editorial Express)
+    access: read
+    note: >-
+      Redirects to e-submit.cgi?dbase=qje. Its step menu lists six steps (identify submitter, title and
+      abstract, coauthors, manuscript and cover letter, other files, review and submit) and no fee payment step.
+  - id: instructions
+    url: https://academic.oup.com/qje/pages/Instructions_To_Authors
+    title: QJE Instructions to Authors (Oxford Academic)
+    access: blocked
+    note: Answered HTTP 403 with a Cloudflare "Just a moment..." challenge on 2026-10-17. Not bypassed.
+  - id: instructions_search
+    url: https://academic.oup.com/qje/pages/Instructions_To_Authors
+    title: QJE Instructions to Authors (Oxford Academic), web-search summary
+    access: search_summary
+    note: >-
+      Summaries returned by the session's web search on 2026-10-17 for three queries. They paraphrase the page
+      and are not verbatim.
+  - id: general_instructions
+    url: https://academic.oup.com/qje/pages/General_Instructions
+    title: QJE General Instructions (Oxford Academic)
+    access: blocked
+    note: Answered HTTP 403 with a Cloudflare "Just a moment..." challenge on 2026-10-17. Not bypassed.
+  - id: data_policy
+    url: https://academic.oup.com/qje/pages/Data_Policy
+    title: QJE Data Policy (Oxford Academic)
+    access: blocked
+    note: >-
+      Answered HTTP 403 with a Cloudflare "Just a moment..." challenge on 2026-10-17. Not bypassed. The
+      Editorial Express form links to the policy through an old oxfordjournals.org address.
+  - id: data_policy_search
+    url: https://academic.oup.com/qje/pages/data_policy
+    title: QJE Data Policy (Oxford Academic), web-search summary
+    access: search_summary
+    note: Summaries returned by the session's web search on 2026-10-17; paraphrased, not verbatim.
+  - id: harvard_data_policy
+    url: https://www.economics.harvard.edu/qje-data-policy
+    title: QJE Data Policy (Harvard Department of Economics)
+    access: blocked
+    note: >-
+      Answered HTTP 403 "Access Denied" (Akamai) on 2026-10-17, as did the site's home page and the .md
+      version of the page. Not bypassed.
+  - id: harvard_data_policy_search
+    url: https://www.economics.harvard.edu/qje-data-policy
+    title: QJE Data Policy (Harvard Department of Economics), web-search summary
+    access: search_summary
+    note: >-
+      One search summary on 2026-10-17 covered this page together with the Oxford Academic data policy;
+      paraphrased, not verbatim.
+  - id: policies
+    url: https://academic.oup.com/qje/pages/Policies
+    title: QJE Policies (Oxford Academic)
+    access: blocked
+    note: Answered HTTP 403 with a Cloudflare "Just a moment..." challenge on 2026-10-17. Not bypassed.
+  - id: dataverse
+    url: https://dataverse.harvard.edu/dataverse/qje
+    title: QJE Dataverse (Harvard Dataverse)
+    access: blocked
+    note: Answered HTTP 202 with an empty body and an AWS WAF challenge header on 2026-10-17. Not bypassed.
+  - id: oup_ai_policy
+    url: https://academic.oup.com/pages/for-authors/journals/preparing-and-submitting-your-manuscript/ai-principles-for-oxford-journals/policy-on-ai-use-and-disclosure-for-oxford-journals-authors
+    title: Policy on AI Use & Disclosure for OUP Journals Authors
+    access: blocked
+    note: Answered HTTP 403 with a Cloudflare "Just a moment..." challenge on 2026-10-17. Not bypassed.
+  - id: oup_ai_policy_search
+    url: https://academic.oup.com/pages/for-authors/journals/preparing-and-submitting-your-manuscript/ai-principles-for-oxford-journals/policy-on-ai-use-and-disclosure-for-oxford-journals-authors
+    title: Policy on AI Use & Disclosure for OUP Journals Authors, web-search summary
+    access: search_summary
+    note: Summary returned by the session's web search on 2026-10-17; paraphrased, not verbatim.
+rules:
+  abstract_max_words:
+    status: unconfirmed
+    value: 250
+    source: instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. Web-search summaries of
+      https://academic.oup.com/qje/pages/Instructions_To_Authors (2026-10-17) said "Abstract: It must not
+      exceed 250 words, and reference citations must be avoided." and "The page caps the abstract at 250
+      words."
+  manuscript_limit:
+    status: unconfirmed
+    source: instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. Search summaries of
+      https://academic.oup.com/qje/pages/Instructions_To_Authors (2026-10-17) found no page or word limit
+      ("None of the results gave a current word or page limit") and said the title page should give "the
+      total word count".
+  keywords:
+    status: unconfirmed
+    source: instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary of
+      https://academic.oup.com/qje/pages/Instructions_To_Authors (2026-10-17) said its excerpt "doesn't
+      mention keywords".
+  jel_codes:
+    status: unconfirmed
+    value: {required: true, min: null, max: null}
+    source: instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. A web-search summary of
+      https://academic.oup.com/qje/pages/Instructions_To_Authors (2026-10-17) said: "Authors should provide
+      the relevant JEL codes upon submission. They go at the end of the abstract."
+  highlights:
+    status: unconfirmed
+    note: >-
+      Page blocked automated access; verify in a browser. No search summary of the Instructions to Authors
+      page mentioned highlights.
+  review_type:
+    status: unconfirmed
+    value: single_anonymous
+    source: instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. Not stated in anything seen. Search summaries of
+      https://academic.oup.com/qje/pages/Instructions_To_Authors (2026-10-17) said the title page includes
+      "contributor names" and that authors upload "a single .pdf file containing the complete manuscript
+      (i.e. title page, abstract, text, figures and tables)", which suggests manuscripts are not anonymized.
+  disclosure_statement:
+    status: unconfirmed
+    source: instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary of
+      https://academic.oup.com/qje/pages/Instructions_To_Authors (2026-10-17) said its excerpt did not cover
+      "conflict-of-interest disclosure rules".
+  data_availability_statement:
+    status: unconfirmed
+    source: data_policy_search
+    note: >-
+      Page blocked automated access; verify in a browser. No search summary of the QJE data policy mentioned
+      a data availability statement.
+  data_code_policy:
+    status: unconfirmed
+    value:
+      summary: >-
+        Unverified: papers are published only if their data are clearly documented and available for
+        replication; authors of accepted empirical, simulation or experimental papers deposit data, programs
+        and computational details in the QJE Dataverse before publication; proprietary data must be flagged in
+        a cover letter at submission. The policy is reported to adopt the AER's data availability policy.
+      url: https://academic.oup.com/qje/pages/Data_Policy
+    source: data_policy_search
+    note: >-
+      Page blocked automated access; verify in a browser. A web-search summary of
+      https://academic.oup.com/qje/pages/data_policy (2026-10-17) said: "Authors of accepted papers that
+      contain empirical work, simulations, or experimental work must provide to the QJE, prior to publication,
+      the data, programs, and other details of the computations sufficient to permit replication." A summary
+      covering the same policy at https://www.economics.harvard.edu/qje-data-policy said the journal adopts
+      the American Economic Review's data availability policy and quoted "It is the policy of the Quarterly
+      Journal of Economics to publish papers only if the data used in the analysis are clearly and precisely
+      documented". The Editorial Express form (read) asks authors to read the data availability policy before
+      submitting.
+  ethics_approval:
+    status: unconfirmed
+    note: >-
+      Pages blocked automated access; verify in a browser. No search summary of the QJE instructions or data
+      policy mentioned IRB or ethics approval.
+  trial_registration:
+    status: unconfirmed
+    note: >-
+      Pages blocked automated access; verify in a browser. No search summary of the QJE instructions or data
+      policy mentioned trial registration or pre-registration.
+  deception:
+    status: unconfirmed
+    note: >-
+      Pages blocked automated access; verify in a browser. No search summary mentioned deception.
+  experiment_materials:
+    status: unconfirmed
+    source: data_policy_search
+    note: >-
+      Page blocked automated access; verify in a browser. A web-search summary of
+      https://academic.oup.com/qje/pages/data_policy (2026-10-17) said "The QJE says it has a more detailed
+      policy, including requirements for submitted papers as well as accepted papers" for experimental papers,
+      and that "The retrieved text cuts off before listing those requirements."
+  ai_use:
+    status: unconfirmed
+    value:
+      detail: >-
+        Unverified, from OUP's journal-wide policy: AI tools cannot be listed as authors; help with language
+        clarity and formatting needs no disclosure; other use should be disclosed.
+    source: oup_ai_policy_search
+    note: >-
+      Page blocked automated access; verify in a browser. No QJE-specific AI rule was found. A web-search
+      summary of OUP's "Policy on AI Use & Disclosure for OUP Journals Authors" (2026-10-17) said "Gen AI Tools
+      are not eligible to be listed as authors, following COPE guidance", that the policy lists uses needing no
+      disclosure "such as improving clarity of language (e.g. spelling or grammar correction) and formatting",
+      and that where a journal's guidance differs, authors should follow the journal.
+  citation_style:
+    status: unconfirmed
+    value: Author-date
+    source: instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. A web-search summary of
+      https://academic.oup.com/qje/pages/Instructions_To_Authors (2026-10-17) said: "References: Citations
+      follow the author-date system, with callouts in parentheses and brackets when they appear inside
+      parenthetical text."
+  submission_fee:
+    status: unconfirmed
+    value: {amount: 0, currency: null, detail: "No submission fee found; an optional open-access charge applies only to accepted papers"}
+    source: editorial_express
+    note: >-
+      Page blocked automated access; verify in a browser. The Editorial Express form (read) lists no payment
+      step ("Step 5: Upload other files or documents (if any)", then "Step 6: Review and Submit"), whereas the
+      REStud and Econometrica forms on the same system include "Pay Submission fee". A web-search summary of
+      https://academic.oup.com/qje/pages/Instructions_To_Authors (2026-10-17) said "The official page I found
+      does not mention a submission fee. The only fee noted is an optional open-access charge".
+  file_format:
+    status: confirmed
+    value: PDF only
+    source: editorial_express
+    quote: "Note that manuscripts must be uploaded in PDF format only"
+    note: >-
+      A web-search summary of the Instructions to Authors page (unverified) adds that the manuscript should
+      be "a single .pdf file containing the complete manuscript (i.e. title page, abstract, text, figures and
+      tables)", with separate figure files only if file size requires.
+  other:
+    - name: submission_system
+      status: confirmed
+      value: Editorial Express, https://editorialexpress.com/qje (manuscript, cover letter and other files)
+      source: editorial_express
+      quote: "This form allows you to upload a manuscript, cover letter, or other files or supporting documentation for your submission (or resubmission) to Quarterly Journal of Economics"
+    - name: data_policy_before_submission
+      status: confirmed
+      value: Authors are asked to read the QJE data availability policy before submitting
+      source: editorial_express
+      quote: "Please read the data availability policy before submitting."
+    - name: title_page
+      status: unconfirmed
+      value: Title, contributor names, the corresponding author's full address and email, and the total word count
+      source: instructions_search
+      note: >-
+        Page blocked automated access; verify in a browser. A web-search summary of
+        https://academic.oup.com/qje/pages/Instructions_To_Authors (2026-10-17) said: "Required contents
+        include the title, contributor names, the corresponding author's full address with email, and the
+        total word count."
+    - name: cover_letter
+      status: unconfirmed
+      value: {required: false, detail: "Tell the editors if the data are proprietary or the data policy cannot otherwise be met"}
+      source: harvard_data_policy_search
+      note: >-
+        Pages blocked automated access; verify in a browser. A web-search summary covering the QJE data policy
+        pages at economics.harvard.edu and academic.oup.com (2026-10-17) said "Your cover letter needs to tell
+        the editors if the data are proprietary or if the requirements can't otherwise be met" and quoted
+        "Submissions should include a cover letter in which the Editors are notified".

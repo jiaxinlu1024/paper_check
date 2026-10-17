@@ -6,7 +6,7 @@ Every threshold and prompt in the skill is tuned against these sets, and every c
 
 | Set | What it tests | Source | Labels | Status |
 |---|---|---|---|---|
-| case-study | Citation support on a real literature review | The section from case study 1, with the reviewing author's notes | Verdict and failure code per citation, taken from the notes | Needs the coauthors' permission |
+| case-study | Citation support on a real literature review | The section from case study 1, with the reviewing author's notes | Verdict and failure code per citation, taken from the notes | Not available, because the section will not be shared. The seeded set reproduces its pattern |
 | seeded-citations | Citation support for S1, S2 and S4 errors | Clean literature-review paragraphs from open-access behavioral economics papers, with citations swapped | Known by construction. Untouched paragraphs act as negative controls | To build |
 | propositions | Citation support on real drafts | 50 to 100 attributed propositions from behavioral drafts, about a third of them correct | Two people label each one independently. Disagreements are resolved and recorded | Needs drafts |
 | references | Reference existence and metadata | Published planted-error sets, such as HALLMARK and bib-check-agent's test, plus an economics set of working papers with their published versions, chimeric citations and metadata drift | Known by construction | To build. Check each set's license before copying it |

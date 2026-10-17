@@ -1,0 +1,238 @@
+id: jebo
+name: Journal of Economic Behavior & Organization
+abbreviation: JEBO
+publisher: Elsevier
+group: field
+checked_on: "2026-10-17"
+notes: >-
+  The journal's guide for authors exists only on ScienceDirect, which returned HTTP 403 to automated
+  requests; Elsevier's own journal page, the old elsevier.com guide URLs and the Editorial Manager site
+  all point back to it. Journal-specific rules below are therefore unconfirmed, most with values taken
+  from web search summaries of the guide. Confirmed rules come from Elsevier-wide policy pages that
+  apply to all Elsevier journals, as each note says. Verify the unconfirmed rules in a browser.
+sources:
+  - id: guide
+    url: https://www.sciencedirect.com/journal/journal-of-economic-behavior-and-organization/publish/guide-for-authors
+    title: Guide for authors, Journal of Economic Behavior & Organization (ScienceDirect)
+    access: blocked
+    note: HTTP 403 ("There was a problem providing the content you requested"). Page blocked automated access; verify in a browser.
+  - id: guide_search
+    url: https://www.sciencedirect.com/journal/journal-of-economic-behavior-and-organization/publish/guide-for-authors
+    title: Guide for authors, Journal of Economic Behavior & Organization (web search summary)
+    access: search_summary
+    note: Summary text returned by the web search tool for this URL on 2026-10-17 (four searches); not the page's own wording.
+  - id: shop_search
+    url: https://shop.elsevier.com/journals/journal-of-economic-behavior-and-organization/0167-2681
+    title: Journal of Economic Behavior & Organization, Elsevier journal page (web search summary)
+    access: search_summary
+    note: >-
+      A web search summary attributed a submission fee to "an Elsevier shop listing". The page itself
+      (source shop) was read on 2026-10-17 and contains no fee text.
+  - id: shop
+    url: https://shop.elsevier.com/journals/journal-of-economic-behavior-and-organization/0167-2681
+    title: Journal of Economic Behavior & Organization, Elsevier journal page
+    access: read
+    note: Aims and scope only; points to ScienceDirect for the guide for authors.
+  - id: em
+    url: https://www.editorialmanager.com/jebo/default.aspx
+    title: Editorial Manager, Journal of Economic Behavior and Organization
+    access: read
+    note: Login page; its "Instructions For Authors" link redirects to the blocked ScienceDirect guide. No instructions of its own.
+  - id: el_genai
+    url: https://www.elsevier.com/about/policies-and-standards/generative-ai-policies-for-journals
+    title: Generative AI policies for journals (Elsevier-wide)
+    access: read
+  - id: el_ethics
+    url: https://www.elsevier.com/about/policies-and-standards/publishing-ethics
+    title: Publishing ethics (Elsevier-wide)
+    access: read
+  - id: el_research_ethics
+    url: https://www.elsevier.com/about/policies-and-standards/research-ethics
+    title: Research ethics (Elsevier-wide)
+    access: read
+  - id: el_highlights
+    url: https://www.elsevier.com/researcher/author/tools-and-resources/highlights
+    title: Highlights (Elsevier-wide)
+    access: read
+  - id: el_graphical_abstract
+    url: https://www.elsevier.com/researcher/author/tools-and-resources/graphical-abstract
+    title: Graphical abstract (Elsevier-wide)
+    access: read
+  - id: el_research_data_faq
+    url: https://www.elsevier.com/about/policies-and-standards/research-data/faq
+    title: Research data FAQs (Elsevier-wide)
+    access: read
+  - id: el_data_statement
+    url: https://www.elsevier.com/researcher/author/tools-and-resources/research-data/data-statement
+    title: Data statement (Elsevier-wide)
+    access: read
+  - id: el_submission_fees
+    url: https://www.elsevier.com/researcher/author/policies-and-guidelines/submission-fees
+    title: Submission fees (Elsevier economics, finance and accounting journals)
+    access: read
+  - id: el_latex
+    url: https://www.elsevier.com/researcher/author/policies-and-guidelines/latex-instructions
+    title: LaTeX instructions (Elsevier-wide)
+    access: read
+  - id: el_credit
+    url: https://www.elsevier.com/researcher/author/policies-and-guidelines/credit-author-statement
+    title: CRediT author statement (Elsevier-wide)
+    access: read
+rules:
+  abstract_max_words:
+    status: unconfirmed
+    value: 250
+    source: guide_search
+    note: >-
+      Search summary of the guide (https://www.sciencedirect.com/journal/journal-of-economic-behavior-and-organization/publish/guide-for-authors):
+      "Abstract: Limited to 250 words, and it should stand alone." Page blocked automated access; verify in a browser.
+  manuscript_limit:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser. No search summary mentioned a word or page limit.
+  keywords:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary says the guide has a
+      Keywords section but gave no count.
+  jel_codes:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser. No search summary mentioned JEL codes.
+  highlights:
+    status: unconfirmed
+    value: {required: true, count_min: 3, count_max: 5, max_chars_each: 85}
+    source: guide_search
+    note: >-
+      Search summary of the guide (https://www.sciencedirect.com/journal/journal-of-economic-behavior-and-organization/publish/guide-for-authors): "Highlights: Required at submission, as a
+      separate editable file with "highlights" in the filename. They should be 3 to 5 bullet points, each
+      a maximum of 85 characters, including spaces." Elsevier's general highlights page (read) gives the
+      same count and length but says highlights are "not required until the final files stage"; the
+      journal guide decides. Page blocked automated access; verify in a browser.
+  review_type:
+    status: unconfirmed
+    value: single_anonymous
+    source: guide_search
+    note: >-
+      Search summary of the guide (https://www.sciencedirect.com/journal/journal-of-economic-behavior-and-organization/publish/guide-for-authors): "The JEBO guide for authors describes a
+      single-anonymized review process." Page blocked automated access; verify in a browser.
+  disclosure_statement:
+    status: confirmed
+    value: {required: true, detail: "Disclose in the manuscript any financial and personal relationships with people or organisations that could be seen to bias the work."}
+    source: el_ethics
+    quote: "All authors should disclose in their manuscript any financial and personal relationships with other people or organisations that could be viewed as inappropriately influencing (bias) their work."
+    note: >-
+      Elsevier-wide publishing ethics policy, not the journal's own guide. A search summary of the
+      blocked guide adds that authors disclose "through the declarations tool".
+  data_availability_statement:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary lists a "data statement"
+      section in the guide without its wording. Elsevier's data statement page (read, Elsevier-wide)
+      says only that "a number of Elsevier journals encourage their authors to state the availability of
+      their data".
+  data_code_policy:
+    status: unconfirmed
+    value:
+      summary: Unknown for this journal. Elsevier-wide baseline encourages data sharing without mandating it; journals may set stricter rules in their guide.
+      url: https://www.sciencedirect.com/journal/journal-of-economic-behavior-and-organization/publish/guide-for-authors
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. Elsevier's research data FAQ (read) answers
+      "Is it compulsory to share my research data?" with "No." and adds that some journals have "their own
+      mandatory data sharing policies".
+  ethics_approval:
+    status: confirmed
+    value: {required: true, detail: "Studies with human participants need a statement in the manuscript that the appropriate institutional committee approved them, with the date and reference number of the approval; exempt studies must explain why."}
+    source: el_research_ethics
+    quote: "The authors should include a statement in the manuscript that confirms these requirements have been met. The statement should contain the date and reference number of the ethical approval(s) obtained"
+    note: Elsevier-wide research ethics policy, not the journal's own guide.
+  trial_registration:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. Elsevier's publishing ethics page covers
+      clinical trial registration only "for relevant journals" and names no economics registry.
+  deception:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser. No search summary mentioned a deception policy.
+  experiment_materials:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser.
+  ai_use:
+    status: confirmed
+    value: {detail: "Declare any use of AI tools in manuscript preparation in a separate AI declaration statement in the manuscript at submission (tool, purpose, extent of oversight). AI tools cannot be authors. Basic grammar and spelling checks need no declaration."}
+    source: el_genai
+    quote: "Authors should disclose the use of AI tools for manuscript preparation in a separate AI declaration statement included in their manuscript upon submission."
+    note: >-
+      Elsevier-wide policy. A search summary of the blocked guide says the statement is "placed before
+      the references".
+  citation_style:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser.
+  submission_fee:
+    status: unconfirmed
+    value: {amount: 175, currency: USD, detail: "New unsolicited manuscripts, paid during submission"}
+    source: guide_search
+    note: >-
+      Search summaries of the guide (https://www.sciencedirect.com/journal/journal-of-economic-behavior-and-organization/publish/guide-for-authors): "New unsolicited manuscripts carry a
+      submission fee of US$175, and submissions are considered only after it is paid" and "The journal
+      charges a submission fee for new and unsolicited manuscripts of US$ 175, payable during submission."
+      An earlier search summary instead said "An Elsevier shop listing says the journal charges a
+      non-refundable fee of US $125 for new submissions" (https://shop.elsevier.com/journals/journal-of-economic-behavior-and-organization/0167-2681, source shop_search), but that page has no fee
+      text now. Elsevier's submission-fees page (read) gives a conference "sponsored by the Journal of
+      Economic Behavior and Organization" as an example of how fee income is used. Page blocked automated
+      access; verify the amount in a browser.
+  file_format:
+    status: unconfirmed
+    value: "Word (.doc/.docx) or LaTeX (.tex) source files; PDF not accepted as the source file"
+    source: guide_search
+    note: >-
+      Search summary of the guide (https://www.sciencedirect.com/journal/journal-of-economic-behavior-and-organization/publish/guide-for-authors): "File formats: Submit Word (.doc/.docx) or
+      LaTeX (.tex) files. A PDF is not accepted as a source file." and "Word files should be
+      single-column." Elsevier's LaTeX page (read, Elsevier-wide) says "Most journals accept a PDF of your
+      manuscript at initial submission." Page blocked automated access; verify in a browser.
+  other:
+    - name: highlights_format
+      status: confirmed
+      value: {count_min: 3, count_max: 5, max_chars_each: 85}
+      source: el_highlights
+      quote: "Highlights are three to five (three to four for Cell Press articles) bullet points ... Each Highlight can be no more than 85 characters, including spaces"
+      note: Elsevier-wide format for highlights when they are supplied. Whether JEBO requires them at first submission is in the highlights rule.
+    - name: funding_statement
+      status: confirmed
+      value: {required: true, detail: "Disclose all sources of funding and the sponsor's role in design, analysis, writing and the decision to submit"}
+      source: el_ethics
+      quote: "All sources of financial support for the conduct of the research and/or preparation of the article should be disclosed, as should the role of the sponsor(s), if any"
+      note: Elsevier-wide publishing ethics policy, not the journal's own guide.
+    - name: informed_consent
+      status: confirmed
+      value: {required: true, detail: "Statement that informed consent was obtained from all human participants"}
+      source: el_research_ethics
+      quote: "Authors should include a statement in the manuscript confirming that they obtained informed consent from all participants"
+      note: Elsevier-wide research ethics policy, not the journal's own guide.
+    - name: graphical_abstract
+      status: unconfirmed
+      source: guide
+      note: >-
+        Page blocked automated access; verify in a browser. Elsevier's graphical abstract page (read)
+        says "Please review the journal's guide for authors for specific policies and instructions."
+    - name: title_page
+      status: unconfirmed
+      source: guide
+      note: Page blocked automated access; verify in a browser. A search summary lists a "Title page" section in the guide without its content.
+    - name: cover_letter
+      status: unconfirmed
+      source: guide
+      note: Page blocked automated access; verify in a browser.
+    - name: credit_statement
+      status: unconfirmed
+      source: el_credit
+      note: >-
+        Elsevier's CRediT page says "CRediT statements should be provided during the submission process"
+        but does not say which journals use them; the journal guide blocked automated access. Verify in a browser.

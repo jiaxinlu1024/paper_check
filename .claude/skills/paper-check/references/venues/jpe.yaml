@@ -1,0 +1,203 @@
+id: jpe
+name: Journal of Political Economy
+abbreviation: JPE
+publisher: University of Chicago Press
+group: general-top5
+checked_on: "2026-10-17"
+notes: >-
+  Every University of Chicago Press page for the journal (journals.uchicago.edu) answered with a Cloudflare
+  challenge on 2026-10-17, so no submission rule could be confirmed. Rules below quote web-search summaries,
+  which paraphrase the pages; verify each one in a browser. The JPE Editorial Manager site
+  (editorialmanager.com/jpolec), which the instructions are reported to name as the submission route, could
+  be read but carried the banner "Site under development. Do not use for live manuscript submission." Ask the
+  JPE office how to submit before relying on it.
+sources:
+  - id: instructions
+    url: https://www.journals.uchicago.edu/journals/jpe/instruct
+    title: JPE Instructions for Authors (University of Chicago Press)
+    access: blocked
+    note: Answered HTTP 403 with a Cloudflare "Just a moment..." challenge on 2026-10-17. Not bypassed.
+  - id: instructions_search
+    url: https://www.journals.uchicago.edu/journals/jpe/instruct
+    title: JPE Instructions for Authors, web-search summary
+    access: search_summary
+    note: >-
+      Summaries returned by the session's web search on 2026-10-17 for several queries. They paraphrase the
+      page and are not verbatim; one noted that the indexed copies looked several years old.
+  - id: data_policy
+    url: https://www.journals.uchicago.edu/journals/jpe/datapolicy
+    title: JPE Data Policy (University of Chicago Press)
+    access: blocked
+    note: Answered HTTP 403 with a Cloudflare "Just a moment..." challenge on 2026-10-17. Not bypassed.
+  - id: data_policy_search
+    url: https://www.journals.uchicago.edu/journals/jpe/datapolicy
+    title: JPE Data Policy, web-search summary
+    access: search_summary
+    note: Summaries returned by the session's web search on 2026-10-17; paraphrased, not verbatim.
+  - id: editorial_manager
+    url: https://www.editorialmanager.com/jpolec/
+    title: Journal of Political Economy, Editorial Manager site
+    access: read
+    note: >-
+      Redirects to default.aspx. Its menu links "Instructions For Authors" to the blocked journals.uchicago.edu
+      page. https://www.editorialmanager.com/jpe/ and https://editorialexpress.com/jpe do not host the journal.
+rules:
+  abstract_max_words:
+    status: unconfirmed
+    source: instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. Web searches on 2026-10-17 surfaced no abstract
+      limit from https://www.journals.uchicago.edu/journals/jpe/instruct.
+  manuscript_limit:
+    status: unconfirmed
+    source: instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. Web searches on 2026-10-17 surfaced no page or word
+      limit from https://www.journals.uchicago.edu/journals/jpe/instruct.
+  keywords:
+    status: unconfirmed
+    source: instructions_search
+    note: Page blocked automated access; verify in a browser. No search summary mentioned keywords.
+  jel_codes:
+    status: unconfirmed
+    source: instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. Search summaries of the instructions page did not
+      return its JEL-code requirements.
+  highlights:
+    status: unconfirmed
+    note: Page blocked automated access; verify in a browser. No search summary mentioned highlights.
+  review_type:
+    status: unconfirmed
+    value: single_anonymous
+    source: instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. Not stated in anything seen. A web-search summary of
+      https://www.journals.uchicago.edu/journals/jpe/instruct (2026-10-17) quoted "Manuscripts must be in
+      English and must begin with a title page that includes the names, e-mail addresses, and affiliations of
+      all authors", which suggests manuscripts are not anonymized.
+  disclosure_statement:
+    status: unconfirmed
+    note: >-
+      Page blocked automated access; verify in a browser. No search summary mentioned a funding or
+      conflict-of-interest disclosure requirement.
+  data_availability_statement:
+    status: unconfirmed
+    value: {required: true, detail: "A Data Availability Statement as a section of the README in the replication package"}
+    source: data_policy_search
+    note: >-
+      Page blocked automated access; verify in a browser. Web-search summaries of
+      https://www.journals.uchicago.edu/journals/jpe/datapolicy (2026-10-17) quoted "The DAS should be included
+      as a section of the README file (see Section 3.4 below)" and said the statement must give enough detail
+      for independent researchers to replicate the steps needed to access the original data.
+  data_code_policy:
+    status: unconfirmed
+    value:
+      summary: >-
+        Unverified: papers are published only if data and code are documented and available for replication;
+        the JPE runs reproducibility checks on conditionally accepted papers, working with a Data Editor; raw
+        data go in the package unless held in a trusted repository; legal barriers to sharing require an
+        exemption request with a justification; proprietary data are to be flagged to the editor at
+        submission.
+      url: https://www.journals.uchicago.edu/journals/jpe/datapolicy
+    source: data_policy_search
+    note: >-
+      Page blocked automated access; verify in a browser. Web-search summaries of
+      https://www.journals.uchicago.edu/journals/jpe/datapolicy (2026-10-17) quoted "the JPE will perform
+      reproducibility checks of empirical, experimental, and simulation results of all conditionally accepted
+      papers and their approved online appendices" and "In cases where legal barriers for sharing the data
+      prohibit the authors from publishing them, the authors must request an exemption and provide a
+      justification for not complying with the policy." A summary of the instructions page said authors
+      "should also notify the editor at submission if their data are proprietary".
+  ethics_approval:
+    status: unconfirmed
+    source: data_policy_search
+    note: >-
+      Pages blocked automated access; verify in a browser. A web-search summary (2026-10-17) said "The results
+      did not show an IRB requirement in the JPE data or submission policy."
+  trial_registration:
+    status: unconfirmed
+    source: data_policy_search
+    note: >-
+      Page blocked automated access; verify in a browser. A web-search summary (2026-10-17) found a
+      pre-registration requirement only for the sister journal JPE Microeconomics, and said "the flagship JPE
+      policy text I saw was cut off before its pre-registration section". Do not apply the JPE Micro rule to
+      the JPE.
+  deception:
+    status: unconfirmed
+    note: Pages blocked automated access; verify in a browser. No search summary mentioned deception.
+  experiment_materials:
+    status: unconfirmed
+    value:
+      detail: >-
+        Unverified: survey instruments or experimental instructions and subject selection criteria go in the
+        replication package, and the README describes the subject pool, recruiting, experimental technology and
+        comprehension tests.
+    source: data_policy_search
+    note: >-
+      Page blocked automated access; verify in a browser. A web-search summary of
+      https://www.journals.uchicago.edu/journals/jpe/datapolicy (2026-10-17) quoted "In case the raw data are
+      collected or generated via surveys or experiments, authors are required to include survey instruments or
+      experimental instructions and subject selection criteria in the replication package."
+  ai_use:
+    status: unconfirmed
+    note: >-
+      Pages blocked automated access; verify in a browser. Web searches on 2026-10-17 found no JPE AI policy;
+      University of Chicago Press journals set their own AI rules, which range from bans to disclosure.
+  citation_style:
+    status: unconfirmed
+    source: instructions_search
+    note: >-
+      Pages blocked automated access; verify in a browser. Search summaries of the JPE instructions and
+      manuscript-preparation pages did not return a reference style.
+  submission_fee:
+    status: unconfirmed
+    value:
+      amount: 250
+      currency: USD
+      detail: >-
+        Unverified: USD 250 for nonsubscribers or USD 125 for individual JPE subscribers, non-refundable even
+        after a desk rejection; a reviewer waiver is reported for authors who wrote three or more referee
+        reports in the prior twelve months (confirm eligibility with the JPE office).
+    source: instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. Web-search summaries of
+      https://www.journals.uchicago.edu/journals/jpe/instruct (2026-10-17) said "all manuscripts submitted to
+      the journal must be accompanied by a $250 submission fee for nonsubscribers or a $125 submission fee for
+      individual JPE subscribers, or a reviewer waiver must be granted" and that "Fees are non-refundable, even
+      in cases when a manuscript is desk rejected".
+  file_format:
+    status: unconfirmed
+    value: PDF preferred; Word (.doc) and LaTeX (.tex) also accepted
+    source: instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. A web-search summary of
+      https://www.journals.uchicago.edu/journals/jpe/instruct (2026-10-17) quoted "The preferred format for
+      submitting manuscripts online is Adobe Acrobat (.pdf). Editorial Manager will also accept Microsoft Word
+      (.doc) and LaTeX (.tex)."
+  other:
+    - name: editorial_manager_status
+      status: confirmed
+      value: The JPE Editorial Manager site says it is under development and not for live submissions
+      source: editorial_manager
+      quote: "Important Message: Site under development. Do not use for live manuscript submission."
+      note: >-
+        Seen on 2026-10-17. Search summaries say the instructions send authors to the JPE Editorial Manager
+        site, so the live submission route is unclear; ask the JPE office.
+    - name: title_page
+      status: unconfirmed
+      value: Manuscript in English, opening with a title page giving the names, email addresses and affiliations of all authors
+      source: instructions_search
+      note: >-
+        Page blocked automated access; verify in a browser. A web-search summary of
+        https://www.journals.uchicago.edu/journals/jpe/instruct (2026-10-17) quoted "Manuscripts must be in
+        English and must begin with a title page that includes the names, e-mail addresses, and affiliations of
+        all authors."
+    - name: exclusive_submission
+      status: unconfirmed
+      value: Not published and not under consideration elsewhere
+      source: instructions_search
+      note: >-
+        Page blocked automated access; verify in a browser. A web-search summary (2026-10-17) said "Papers
+        submitted to the Journal of Political Economy must not have been published and must not be under
+        consideration elsewhere."

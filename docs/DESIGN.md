@@ -21,6 +21,10 @@ The skill reports only. It never edits the paper.
 | Network | Full access in the cloud environment, set on 2026-10-17 |
 | Repository | https://github.com/jiaxinlu1024/paper_check |
 | Test drafts | Real drafts to be supplied later |
+| Target journals | The top behavioral economics journals, listed in section 12 |
+| Credentials | A work email as the contact address. OpenAlex key requested on 2026-10-17; Semantic Scholar and RePEc applications prepared. See `docs/api-access.md` |
+| Sources folder | The user keeps PDFs of the cited works |
+| Case-study section | Not available for testing |
 
 ## 2. Build order
 
@@ -509,7 +513,15 @@ A profile records, with the source URL and the date it was checked:
 - **Style:** citation style such as AEA author-date, heading and table conventions.
 - **Policies:** data and code requirements, deception rules for experiments, and AI-use disclosure.
 
-A style guide is the writing and citation part of a profile, such as the AEA style or APA 7. Several journals can share one style guide. Each profile is built from the journal's current author guidelines and rechecked before use, because journals change their rules. The survey confirmed some rules already, listed in its Table 9.
+A style guide is the writing and citation part of a profile, such as the AEA style or APA 7. Several journals can share one style guide. Each profile is built from the journal's current author guidelines and rechecked before use, because journals change their rules. Profiles live in `.claude/skills/paper-check/references/venues/`, one YAML file per journal. Every confirmed rule carries a verbatim quote from its source, and `tools/validate_venues.py --verify-quotes` re-fetches each source to find each quote.
+
+The first set covers the top journals for behavioral economics:
+
+| Group | Journals |
+|---|---|
+| General, top five | American Economic Review; Quarterly Journal of Economics; Journal of Political Economy; Econometrica; Review of Economic Studies |
+| General | AER: Insights; AEJ: Applied Economics; AEJ: Economic Policy; AEJ: Microeconomics; Journal of the European Economic Association; Economic Journal; Review of Economics and Statistics |
+| Field | Journal of Economic Behavior & Organization; Experimental Economics; Journal of the Economic Science Association; Games and Economic Behavior; Management Science; Journal of Risk and Uncertainty; Journal of Behavioral and Experimental Economics; Journal of Economic Psychology; Behavioural Public Policy |
 
 ### Settings for each paper
 
@@ -520,7 +532,7 @@ Settings come from the request or from a `paper-check.yaml` beside the paper:
 - **language variant**: US or UK English.
 - **mode**: quick, standard or deep. The default is deep.
 - **network**: on or off. With it off, lookup checks are reported as skipped, not passed.
-- **sources folder**: an optional folder of PDFs of the cited works, read first.
+- **sources folder**: a folder of PDFs of the cited works, read first. By default it is `sources/` beside the paper. File names do not matter: the skill matches each PDF to a reference by the DOI or title in its text, and reports PDFs it could not match and references that have no PDF.
 - **paid PDFs**: whether OpenAlex's paid PDF service may be used. Off by default.
 - **output folder** and **minimum severity** to include.
 
@@ -532,7 +544,7 @@ Keys and the contact email live in `~/.paper-check/config.yaml`, outside any rep
 
 The evaluation sets come before any tuning. `evals/README.md` describes them:
 
-- **The case-study section,** with the reviewing author's notes as ground truth, if the coauthors agree.
+- **The case-study section** is not available, so the seeded citation errors reproduce its pattern instead.
 - **Seeded citation errors:** clean literature-review paragraphs with swapped citations that create known S1, S2 and S4 errors.
 - **Attributed propositions:** 50 to 100 from real behavioral drafts, about a third of them correct, each labelled by two people.
 - **Reference sets:** published benchmarks of planted fake references, plus an economics set of working papers, published versions and chimeric citations.
@@ -644,10 +656,6 @@ Gathered by the survey on 2026-10-17. Recheck each source when implementing the 
 
 ## 18. Open questions
 
-1. Which journals do you target? Each one gets a venue profile, as described in section 12.
-2. Could the coauthors share the section from case study 1, with the reviewing author's notes? Those notes are ready-made ground truth.
-3. Will you keep a folder of PDFs of the cited works? It gives the skill full text for paywalled journals.
-4. Can you get a Semantic Scholar key with an institutional email, and a free OpenAlex key? Which contact email should the lookups use?
-5. RePEc grants API access only on an emailed request. Do you want to request it?
-6. Should OpenAlex's paid PDF service ever be used? It stays off unless you say so.
-7. When can you share two or three real drafts, ideally with known problems and in different formats?
+1. Is the journal list in section 12 right? Add or remove any.
+2. Should OpenAlex's paid PDF service ever be used? It stays off unless you say so.
+3. When can you share two or three real drafts, ideally with known problems and in different formats?
