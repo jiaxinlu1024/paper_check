@@ -1692,6 +1692,11 @@ class DocxReader:
             m = re.match(r"^(\d{1,2}(?:\.\d{1,2}){0,3}|[A-Z](?:\.\d{1,2}){0,3}|[IVX]{1,5}(?=\.))\.?\s", display)
             if m:
                 number = m.group(1)
+        # "4.2" is a second-level heading whatever its style says; drafts often mix heading styles.
+        if number and source == "style" and re.fullmatch(r"(?:\d{1,2}|[A-Z])(?:\.\d{1,2})*", number):
+            by_number = number.count(".") + 1
+            if by_number != level:
+                level, source = by_number, "style, level from numbering"
         return {"level": level, "number": number, "text": display, "source": source, "name": _norm_heading(display),
                 "appendix": bool(am), "label": label}
 
@@ -1759,12 +1764,17 @@ class DocxReader:
                 it.heading = self._heading_info(it)
         state, front, in_abstract = "front", "start", False
         in_refs = in_ack = None
+        bib_open = False  # inside a reference manager's bibliography field without a References heading
         abstract_seen = False
         for idx, it in enumerate(items):
             if isinstance(it, _TableItem):
                 self._classify_table(it)
                 if state == "front" and front != "start":
                     state = "body"
+                if in_refs is not None or bib_open:
+                    in_refs = None
+                    bib_open = False
+                    it.after_refs = True
                 continue
             p = it
             text = p.text.strip()
@@ -1777,9 +1787,18 @@ class DocxReader:
                 continue
             if "bibliography" in p.field_kinds or "bibliography" in p.sdt_kinds or (names and names[0] == "bibliography"):
                 p.role = "reference"
+                bib_open = in_refs is None
                 continue
+            if bib_open and not p.heading:
+                cap = self._caption_kind(p, idx)
+                if cap in ("table", "figure"):
+                    bib_open = False
+                    p.after_refs = True
+                    p.role, p.caption_kind = "caption", cap
+                    continue
             h = p.heading
             if h:
+                bib_open = False
                 if h["name"] == "abstract":
                     p.role = "abstract_label"
                     in_abstract = abstract_seen = True
@@ -1801,6 +1820,12 @@ class DocxReader:
                 front = "title"
                 continue
             if in_refs is not None:
+                cap = self._caption_kind(p, idx)
+                if cap in ("table", "figure"):
+                    in_refs = None
+                    p.after_refs = True
+                    p.role, p.caption_kind = "caption", cap
+                    continue
                 p.role = "reference"
                 continue
             if in_ack is not None:
@@ -2011,6 +2036,8 @@ class DocxReader:
         appendix = False
         last_block = None
         for idx, it in enumerate(self.items):
+            if getattr(it, "after_refs", False):
+                self.section_path = ["Tables and figures"]
             if isinstance(it, _TableItem):
                 if it.equation:
                     paras = [p for p in it.paras() if p.text]
@@ -2060,6 +2087,8 @@ class DocxReader:
             elif role == "caption":
                 block = self._caption_block(p, idx)
             elif role == "reference":
+                if not self.section_path or _norm_heading(self.section_path[-1]) not in REF_HEADINGS:
+                    self.section_path = ["References"]  # a bibliography field with no heading of its own
                 block = self._reference_block(p)
             elif role == "equation":
                 m = re.search(r"\(\s*([A-Z]?\d+[a-z]?)\s*\)[\s.,;]*$", self._nonmath(p))
