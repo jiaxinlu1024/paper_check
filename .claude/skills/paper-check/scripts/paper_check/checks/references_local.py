@@ -238,6 +238,12 @@ def reference_ages(pm, ctx):
 
 
 # =============================================================== FMT-08 reference list consistency
+
+# Acronyms that titles in economics often contain; a lowercase form in a printed title is suspect.
+KNOWN_ACRONYMS = {"OECD", "RCT", "RCTS", "GDP", "IMF", "NBER", "CEPR", "IZA", "SSRN", "USA", "EU", "UK", "US",
+                  "IRA", "IRAS", "SAT", "CEO", "CEOS", "ESG", "COVID", "HIV", "AIDS", "NGO", "NGOS", "PISA",
+                  "EEG", "FMRI", "MTURK", "BDM", "WTP", "WTA", "CRRA", "CARA", "IV", "OLS", "DID", "RDD",
+                  "LATE", "ATE", "CPI", "FDI", "WTO", "UN", "WHO", "ECB", "FED", "ETF", "IPO"}
 _REQUIRED = {
     "article": (("author",), ("title",), ("journal", "container"), ("year",)),
     "book": (("author", "editor"), ("title",), ("publisher",), ("year",)),
@@ -480,6 +486,44 @@ def reference_list(pm, ctx):
         if b is None:
             add_location(f, _ref_anchor(r))
         yield f
+
+    # printed reference lists (PDF, Word, thebibliography): acronyms already lowercased
+    printed = [r for r in refs if r.source != "bibtex"]
+    if printed:
+        body_caps = Counter(w for b in pm.blocks if b.kind != "reference"
+                            for w in re.findall(r"\b[A-Z]{3,6}\b", b.text))
+        for r in printed:
+            title = str((r.fields or {}).get("title") or "")
+            if not title:
+                continue
+            lowered = []
+            for w in re.findall(r"\b[a-z]{3,6}\b", title):
+                up = w.upper()
+                if up in KNOWN_ACRONYMS or body_caps.get(up, 0) >= 2:
+                    lowered.append(w)
+            if not lowered:
+                continue
+            b, quote = _ref_quote(pm, r, title)
+            fixed = title
+            for w in lowered:
+                fixed = re.sub(rf"\b{re.escape(w)}\b", w.upper(), fixed, count=1)
+            f = ctx.finding(
+                "FMT-08", "Acronym printed in lowercase in a reference title", "minor",
+                f"The printed title of this reference has {', '.join(lowered)}, which the paper or common usage writes as "
+                f"{', '.join(w.upper() for w in lowered)}. A citation style or a reference manager probably lowercased it.",
+                block=b, quote=quote, status="likely", confidence="medium",
+                evidence=[Evidence(type="script_output", text=f"printed title: {title}",
+                                   data={"script": SCRIPT, "lowercased": lowered,
+                                         "known_or_in_body": [w.upper() for w in lowered]})],
+                trajectory=steps + ["Scanned printed reference titles for lowercase words that are acronyms in "
+                                    "the paper's own text or in a list of common acronyms."],
+                fix=Fix(action="replace", original=title, replacement=fixed,
+                        detail="Fix the title in the reference manager or bibliography source, protecting the acronym.",
+                        resolved_when=f"The printed title shows {', '.join(w.upper() for w in lowered)} in capitals."),
+                script=SCRIPT, extra={"ref": r.id, "acronyms": [w.upper() for w in lowered]})
+            if b is None:
+                add_location(f, _ref_anchor(r))
+            yield f
 
     # one venue under several names
     venues = defaultdict(list)

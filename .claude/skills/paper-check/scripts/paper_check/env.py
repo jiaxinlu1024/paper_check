@@ -57,6 +57,10 @@ def _probe(url: str) -> str:
         with urllib.request.urlopen(req, timeout=15) as resp:
             return f"ok (HTTP {resp.status})"
     except urllib.error.HTTPError as exc:
+        if exc.code == 429:
+            return "reachable but rate-limited (HTTP 429): lookups will slow down, retry later or add the API key"
+        if exc.code in (401, 403):
+            return f"reachable, but access was refused (HTTP {exc.code}): check the key or the network policy"
         return f"ok (HTTP {exc.code})"
     except Exception as exc:
         return f"unreachable: {str(exc)[:60]}"

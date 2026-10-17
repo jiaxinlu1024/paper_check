@@ -297,7 +297,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("work")
     s.add_argument("--page", type=int, required=True)
     s.add_argument("--bbox", help="x0,top,x1,bottom in points")
-    s.add_argument("--out")
+    s.add_argument("--out", help="file name under WORK/images/")
     s.set_defaults(func=cmd_render)
 
     s = sub.add_parser("find", help="locate a quote in the paper map")

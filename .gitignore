@@ -3,3 +3,8 @@ __pycache__/
 .DS_Store
 paper-check-work/
 evals/private/
+# paper-check outputs, written beside a paper
+paper-check-report.md
+paper-check-findings.json
+# skill-creator eval workspace (large run outputs; results are shared as the static viewer)
+.claude/skills/paper-check-workspace/
