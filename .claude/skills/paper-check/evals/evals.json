@@ -1,0 +1,26 @@
+{
+  "skill_name": "paper-check",
+  "evals": [
+    {
+      "id": 1,
+      "name": "latex-aer-full-check",
+      "prompt": "We're submitting our defaults and present-bias paper to the AER next week. The LaTeX source is in tests/fixtures/latex_basic. Can you give it a full pre-submission check and tell me what we need to fix?",
+      "expected_output": "A report beside the paper (or in the chosen output folder) that quotes the draft for every finding, with location, proof, trajectory and a suggested fix, ordered by severity with an index in paper order and a coverage table. It should catch the planted problems in tests/fixtures/latex_basic/expected.yaml, such as the fabricated and chimeric references, the hidden instruction to AI reviewers, the abstract's 23% against the 18.2% implied by Table 1, the citation of Madrian and Shea (2001) for gym attendance, the 2.25 loss-aversion estimate attributed to the 1979 paper, the impossible mean of 3.47 with N = 25, and the wrong significance claim, without flagging the correct passages listed as negatives.",
+      "files": ["../../../tests/fixtures/latex_basic"]
+    },
+    {
+      "id": 2,
+      "name": "word-coauthor-citations-jebo",
+      "prompt": "My coauthor sent me the Word version of our draft, tests/fixtures/docx_basic/paper.docx. I'm worried some of the citations don't actually say what we claim. Can you check them, and anything else a referee at JEBO would pick on?",
+      "expected_output": "A report on the Word draft with verified quotes and paragraph anchors. Citation support is checked for every citation, with the gym-attendance citation of Madrian and Shea (2001) flagged as not supported and the 2.25 estimate flagged as misattributed. It also catches the Word-specific problems in tests/fixtures/docx_basic/expected.yaml: tracked changes, a reviewer comment, hidden and white text, and the author property, and applies the JEBO venue profile.",
+      "files": ["../../../tests/fixtures/docx_basic/paper.docx"]
+    },
+    {
+      "id": 3,
+      "name": "pdf-quick-numbers-and-references",
+      "prompt": "Quick sanity check on tests/fixtures/pdf_basic/paper.pdf please: do the numbers and the references hold up? No need for the full treatment.",
+      "expected_output": "A quick-mode report on the PDF: the number checks (abstract against Table 1, GRIM, percentage points, the significance claim and stars) and the reference checks (fabricated, chimeric and year drift), with page-and-line anchors, and a coverage table that records the reading checks as skipped because of quick mode rather than passed.",
+      "files": ["../../../tests/fixtures/pdf_basic/paper.pdf"]
+    }
+  ]
+}
