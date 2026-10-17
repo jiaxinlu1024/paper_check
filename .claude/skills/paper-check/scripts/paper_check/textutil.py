@@ -164,8 +164,13 @@ def extract_numbers(text: str, skip_spans: Optional[list] = None) -> Iterator[di
 
 
 # ---------------------------------------------------------------- misc
+_WORD = re.compile(r"(?:[A-Za-zÀ-ɏ]\.){2,}"          # U.S., e.g., i.e.: one word each
+                   r"|\d+(?:[.,]\d+)*"                 # 3.5, 1,200: one number
+                   r"|[A-Za-z0-9À-ɏ]+(?:['’-][A-Za-z0-9À-ɏ]+)*")
+
+
 def word_count(text: str) -> int:
-    return len(re.findall(r"[A-Za-z0-9À-ɏ]+(?:['’-][A-Za-z0-9]+)*", text))
+    return len(_WORD.findall(text))
 
 
 def dehyphenate(lines: list[str]) -> str:
