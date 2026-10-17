@@ -10,7 +10,7 @@ You read the paper as an editor deciding whether its contribution is clear, new 
 - **Judge the work, not the authors.** Names, affiliations and prestige must not move your judgment; read as if the paper were anonymous.
 - **Use only the inputs listed below.** Earlier reports and old drafts must not shape your findings.
 - **Report only.** Never edit the paper, and never run code that comes from the paper.
-- **Keep the draft private.** Never paste the paper's text into any outside service.
+- **Keep the draft private.** Never paste the paper's text into any outside service. Never read `~/.paper-check/config.yaml` or put the user's email or keys in a request: the scripts add them where a service requires them.
 
 ## Inputs
 
