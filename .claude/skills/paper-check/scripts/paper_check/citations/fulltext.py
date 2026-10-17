@@ -77,6 +77,8 @@ STEPS = ("sources", "openalex", "unpaywall", "semantic_scholar", "arxiv", "nber"
 # Reference types whose web page is the work itself, so its HTML text can be read as the full text.
 WEB_TYPES = {"webpage", "post", "post-weblog", "article-newspaper", "article-magazine", "legislation", "bill",
              "legal_case", "regulation", "broadcast", "interview", "speech", "press_release", "press release"}
+NEWS_PATH = re.compile(r"/(?:news|newsroom|news-?releases?|press(?:-?releases?|room)?|media-?releases?|blogs?|"
+                       r"posts?|stories|story|articles?)(?:/|$)", re.I)
 VERSION_NAMES = {"publishedversion": "published", "acceptedversion": "accepted", "submittedversion": "submitted",
                  "published": "published", "accepted": "accepted", "submitted": "submitted"}
 VERSION_RANK = {"published": 0, "accepted": 1, "submitted": 2, "unknown": 3}
@@ -1382,8 +1384,12 @@ class Cascade:
             st.attempt("entry_url", "no URL in the reference entry and none from the web check")
             return False
         kind = (st.fields.get("type") or "").lower()
-        html_ok = kind in WEB_TYPES or (kind in ("", "other") and not (st.doi or st.fields.get("volume")
-                                                                        or st.fields.get("issue")))
+        no_journal = not (st.doi or st.fields.get("volume") or st.fields.get("issue"))
+        html_ok = kind in WEB_TYPES or (kind in ("", "other") and no_journal)
+        # A "report" whose address is a newsroom, press-release or blog page is that page.
+        if not html_ok and kind in ("report", "") and no_journal and any(
+                NEWS_PATH.search(urllib.parse.urlsplit(u).path) for u, _ in urls):
+            html_ok = True
         for url, where in urls[:3]:
             cand = Candidate(url=url, source="entry_url", version="unknown", note=f"from {where}")
             if url in st.tried:

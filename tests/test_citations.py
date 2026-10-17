@@ -632,3 +632,16 @@ def test_a_report_page_gives_its_full_report_not_the_summary(tmp_path):
     meta = Cascade(Fetcher(tmp_path / "cache", transport=_transport(routes), sleep=lambda s: None),
                    tmp_path / "sources").run(ref, steps=["entry_url"])
     assert meta["status"] == "full_text" and meta["pages"] == 5 and meta["url"].endswith("tb-123.pdf")
+
+
+def test_a_report_on_a_newsroom_page_is_read_from_its_html(tmp_path):
+    url = "https://newsroom.example.com/news-releases/2026/money-study"
+    title = "Example Bank 2026 Money Study Finds Savers Are Rethinking Their Goals"
+    page = (f"<html><head><title>{title}</title></head><body><article><h1>{title}</h1>".encode()
+            + b"<p>The survey of 3,000 adults found that many savers changed their goals this year. </p>" * 20
+            + b"</article></body></html>")
+    ref = _ref("r054", f"Example Bank (2026) {title}. Available at: {url}",
+               {"title": title, "year": "2026", "type": "report", "url": url})
+    meta = Cascade(Fetcher(tmp_path / "cache", transport=_transport({url: (200, "text/html", page)}),
+                           sleep=lambda s: None), tmp_path / "sources").run(ref, steps=["entry_url"])
+    assert meta["status"] == "full_text" and meta["web_page"] is True
