@@ -127,6 +127,7 @@ _NORM_PATTERNS = [
     ("beta", r"\\hat\{\\beta\}|\\hat\\beta|\\beta(?![a-zA-Z])"),
     ("txt", r"\\(?:text|mathrm|mathit|textit|textrm|mbox|textnormal|operatorname|textbf|mathbf|emph|textsc)\s*\{"),
     ("thin", r"\\[,;:! ]"),
+    ("cur", r"\\\$"),
     ("cmd", r"\\[a-zA-Z]+"),
     ("thou", r"\{,\}"),
     ("drop", r"[{}$^]"),
@@ -134,19 +135,23 @@ _NORM_PATTERNS = [
     ("space", r"[\u00a0\u2009\u202f\u2007]"),
 ]
 _NORM_RE = re.compile("|".join(f"(?P<{n}>{p})" for n, p in _NORM_PATTERNS))
+# In Word and PDF text "$" is a currency sign, not a LaTeX math delimiter, so it is kept.
+_NORM_RE_PLAIN = re.compile("|".join(f"(?P<{n}>{p if n != 'drop' else r'[{}^]'})" for n, p in _NORM_PATTERNS))
 _NORM_REPL = {"chi": "\u03c72", "le": "\u2264", "ge": "\u2265", "lt": "<", "gt": ">", "approx": "\u2248", "pct": "%",
-              "beta": "\u03b2", "txt": "", "thin": " ", "cmd": " ", "thou": ",", "drop": "", "dash": "-", "space": " "}
+              "beta": "\u03b2", "txt": "", "thin": " ", "cur": "$", "cmd": " ", "thou": ",", "drop": "", "dash": "-",
+              "space": " "}
 _NORM_NAMES = [n for n, _ in _NORM_PATTERNS]
 
 
-def normalize_math(text: str) -> tuple:
+def normalize_math(text: str, latex: bool = True) -> tuple:
     """Plain analysis text, plus maps from each output character to the source span.
 
     LaTeX math is reduced (``$t(28) = 2.20$`` becomes ``t(28) = 2.20``) so that
-    patterns can match; the maps turn a match back into verbatim source text."""
+    patterns can match; the maps turn a match back into verbatim source text. For
+    Word and PDF input (latex=False) a "$" is a currency sign and stays."""
     out, starts, ends = [], [], []
     pos = 0
-    for m in _NORM_RE.finditer(text):
+    for m in (_NORM_RE if latex else _NORM_RE_PLAIN).finditer(text):
         for k in range(pos, m.start()):
             out.append(text[k])
             starts.append(k)
@@ -312,6 +317,7 @@ def _role(block: Block) -> str:
 
 def _sentences(pm, table_by_label: dict, table_numbers: set) -> list:
     out = []
+    latex = str((pm.source or {}).get("format") or "latex") == "latex"
     for b in pm.blocks:
         if b.kind not in TEXT_KINDS or b.attrs.get("hidden"):
             continue
@@ -335,7 +341,7 @@ def _sentences(pm, table_by_label: dict, table_numbers: set) -> list:
                             refs.append(table_by_label[lab])
                     for i in range(max(r.start, s), min(r.end, e)):
                         chars[i - s] = MASK
-            norm, starts, ends = normalize_math("".join(chars))
+            norm, starts, ends = normalize_math("".join(chars), latex=latex)
             for m in _TABLE_REF.finditer(norm):
                 for n in [m.group("n")] + re.findall(r"[A-Z]?\d+(?:\.\d+)?", m.group("more") or ""):
                     if n in table_numbers and n not in refs:
@@ -2742,8 +2748,45 @@ def _grim_sentence(ctx, sent: Sent, mean_raw: str, n: int, items: int, bounds, s
 _HEADER_MEAN = re.compile(r"^(?:mean|average|avg\.?|share|proportion)$", re.I)
 _HEADER_SD = re.compile(r"^(?:sd|s\.d\.|std\.?\s*dev\.?|standard\s+deviation|std\.?)$", re.I)
 _HEADER_N = re.compile(r"^(?:n|obs\.?|observations|count)$", re.I)
-_BINARY_LABEL = re.compile(r"\(\s*=\s*1\b|\bdummy\b|\bindicator\b|\bbinary\b|\b(?:share|fraction|proportion)\b|"
-                           r"^(?:female|male|married|employed|unemployed|white|black|college|treated|yes)\b|\b0/1\b", re.I)
+# A 0/1 variable. A plain "share" is not one: an income share is continuous, a share of respondents is binary.
+_BINARY_LABEL = re.compile(r"\(\s*=\s*1\b|\bdummy\b|\bindicator\b|\bbinary\b|\b0/1\b|"
+                           r"\b(?:share|fraction|proportion|percent(?:age)?)\s+(?:of\s+)?(?:the\s+|all\s+)?(?:respondents|"
+                           r"households|individuals|people|persons|participants|subjects|workers|women|men|borrowers|"
+                           r"families|firms|sample)\b|"
+                           r"^(?:female|male|married|employed|unemployed|white|black|college|treated|yes)\b", re.I)
+# A variable between 0 and 1 that may be continuous: only the bound SD <= sqrt(m (1 - m)) applies to it.
+_SHARE_LABEL = re.compile(r"\b(?:share|fraction|proportion)\b", re.I)
+
+
+def _share_sd_excess(mean, sd, n: int) -> Optional[float]:
+    """The largest SD any variable between 0 and 1 with this mean can have (Bhatia and Davis 2000), when the
+    reported SD exceeds it beyond rounding; otherwise None."""
+    half_m = 0.5 * 10 ** -(mean.decimals or 0)
+    half_s = 0.5 * 10 ** -(sd.decimals or 0)
+    lo, hi = max(0.0, mean.value - half_m), min(1.0, mean.value + half_m)
+    m = 0.5 if lo <= 0.5 <= hi else (hi if hi < 0.5 else lo)
+    bound = math.sqrt(m * (1 - m) * (n / (n - 1) if n > 1 else 1.0))
+    return bound if sd.value - half_s > bound + 1e-12 else None
+
+
+def _share_bound_finding(ctx, pt: ParsedTable, row: int, label: str, mean, sd, n: int, bound: float, layout: str):
+    quote = pt.row_quote(row)
+    if not quote:
+        return None
+    return _emit(ctx, "NUM-04", f"SD larger than any share with this mean can have in {pt.name}", "major",
+                 f"{pt.name}, row \"{label}\": a variable between 0 and 1 with mean {mean.raw} has an SD of at most "
+                 f"{bound:.3f} (N = {n}), so the reported SD {sd.raw} is impossible: the mean, the SD or the scale is "
+                 "wrong.",
+                 block=pt.block, quote=quote,
+                 evidence=[_cr("for any variable in [0, 1]: SD <= sqrt(m (1 - m)), times sqrt(N / (N - 1)) for a "
+                               "sample SD (Bhatia and Davis, 2000)",
+                               {"mean": mean.raw, "SD": sd.raw, "N": n, "layout": layout},
+                               {"largest possible SD": round(bound, 4)}, "rounding intervals of the mean and SD")],
+                 trajectory=[f"Read {layout} in {pt.name}.", f"Row \"{label}\" is a share, so it lies between 0 and 1.",
+                             "Compared its SD with the largest SD a variable in [0, 1] with that mean can have."],
+                 fix=Fix("investigate", detail="Recompute the SD, or state the scale if the variable is not a share.",
+                         resolved_when="The SD is at most sqrt(m (1 - m)) for the reported mean."),
+                 status="likely", confidence="medium", extra={"table": pt.table.label, "row": label, "test": "share bound"})
 
 
 def _debit_finding(ctx, pt: ParsedTable, row: int, label: str, mean: st.Reported, sd: st.Reported, n: int, res,
@@ -2775,10 +2818,20 @@ def _table_summary_checks(pt: ParsedTable, ctx):
         for est in pt.estimates:
             label = est.label
             n_cell = pt.column_values("observations", est.col)
-            if (not _BINARY_LABEL.search(label or "") or est.se.kind != "brack" or n_cell is None or n_cell.num is None
-                    or n_cell.num.decimals or est.coef.num is None or not (0 <= est.coef.num.value <= 1)):
+            if (est.se.kind != "brack" or n_cell is None or n_cell.num is None or n_cell.num.decimals
+                    or est.coef.num is None or est.se.num is None or not (0 <= est.coef.num.value <= 1)):
                 continue
             n = int(n_cell.num.value)
+            if not _BINARY_LABEL.search(label or ""):
+                if _SHARE_LABEL.search(label or ""):
+                    bound = _share_sd_excess(est.coef.num, est.se.num, n)
+                    yield None
+                    if bound is not None:
+                        f = _share_bound_finding(ctx, pt, est.row, label, est.coef.num, est.se.num, n, bound,
+                                                 "means with standard deviations in parentheses")
+                        if f is not None:
+                            yield f
+                continue
             res = st.debit(est.coef.num.raw, est.se.num.raw, n)
             if not res.testable:
                 continue
@@ -2808,7 +2861,8 @@ def _table_summary_checks(pt: ParsedTable, ctx):
         if kind != "values":
             continue
         label = pt.table.rows[i][0].strip()
-        if not _BINARY_LABEL.search(label):
+        binary = bool(_BINARY_LABEL.search(label))
+        if not binary and not _SHARE_LABEL.search(label):
             continue
         row = pt.cells[i]
         try:
@@ -2816,6 +2870,15 @@ def _table_summary_checks(pt: ParsedTable, ctx):
         except IndexError:
             continue
         if mean.num is None or sd.num is None or n.num is None or n.num.decimals or not (0 <= mean.num.value <= 1):
+            continue
+        if not binary:
+            bound = _share_sd_excess(mean.num, sd.num, int(n.num.value))
+            yield None
+            if bound is not None:
+                f = _share_bound_finding(ctx, pt, i, label, mean.num, sd.num, int(n.num.value), bound,
+                                         "Mean, SD and N columns")
+                if f is not None:
+                    yield f
             continue
         res = st.debit(mean.num.raw, sd.num.raw, int(n.num.value))
         if not res.testable:
@@ -2852,7 +2915,9 @@ def _sample_mentions(paper: _Paper) -> list:
         norm = sent.norm
         for m in _N_MENTION.finditer(norm):
             tok = _tok_at(sent, m.start("n"))
-            if tok is None or tok.kind not in ("count", "result"):
+            if tok is None or tok.kind not in ("count", "result") or tok.unit or tok.cur:
+                continue  # "94 percent of households" and "$2,000 ... for a household" are not head counts
+            if re.match(r"\s*(?:percent|per\s+cent|percentage|pct)\b", m.group("mods") or "", re.I):
                 continue
             noun = m.group("noun").lower()
             key = noun.rstrip("s") if noun not in ("people", "children", "women", "men", "families") else noun

@@ -28,7 +28,28 @@ _EXPLAIN = re.compile(r"sub-?samples?|restrict|exclud|drop(?:s|ped|ping)?\b|miss
                       r"those who|among (?:the )?(?:households|respondents|participants|borrowers)|"
                       r"singleton|lagged|first[- ]difference|we lose|lost|winsori[sz]|trim|except|estimated on|"
                       r"(?:respondents|households|individuals|participants|borrowers|firms|users) (?:who|that|with)|"
-                      r"subset|sample of|subgroup|split by|by (?:income|treatment|gender|quartile|group)", re.I)
+                      r"subset|sample of|subgroup|split by|by (?:income|treatment|gender|quartile|group)|"
+                      r"\b(?:aged?|ages)\s+\d|thresholds?\b|cut-?offs?\b", re.I)
+# In column headers, a comparison or a span describes the column's sample: "No Age Restriction | >= 62 | >= 65",
+# "Four-wave Span | Five-wave Span". (In prose these would match p-values, so they are read in headers only.)
+_HEADER_EXPLAIN = re.compile(r"[\u2265\u2264]\s*\d|[<>]=?\s*\d|\b(?:span|waves?|cohorts?|only|excl\w*|without|"
+                             r"full sample|pooled|balanced|unbalanced)\b", re.I)
+_SAMPLE_ROW = re.compile(r"^\s*(?:sample|subsample|sub-sample|restriction|population|selection)\b", re.I)
+
+
+def _header_text(table) -> str:
+    """Column headers and sample rows of a table, which often say how a column's sample differs:
+    "No Age Restriction | >= 62 | >= 65", "Sample: borrowers only"."""
+    rows = table.rows or []
+    parts = []
+    for r in rows[:4]:
+        if r and _N_ROW.match(r[0] or ""):
+            break
+        parts += [c for c in r if c and _int(c) is None and not re.fullmatch(r"\s*\(\d+\)\s*", c)]
+    for r in rows:
+        if r and _SAMPLE_ROW.match(r[0] or ""):
+            parts += [c for c in r if c]
+    return " | ".join(parts)
 
 
 def _int(cell: str) -> Optional[int]:
@@ -130,8 +151,9 @@ def sample_sizes(pm, ctx):
     explained = Counter()
     for table, ns in found:
         parts = _partitions(ns + [("main", 0, "main", main_n)])
-        texts = [table.caption or "", table.notes or ""] + [b.text for b in _mentions(pm, table)]
-        cue = next((m for t in texts for m in [_EXPLAIN.search(t)] if m), None)
+        header = _header_text(table)
+        texts = [table.caption or "", table.notes or "", header] + [b.text for b in _mentions(pm, table)]
+        cue = next((m for t in texts for m in [_EXPLAIN.search(t)] if m), None) or _HEADER_EXPLAIN.search(header)
         for lab, j, col, n in ns:
             if n == main_n:
                 continue

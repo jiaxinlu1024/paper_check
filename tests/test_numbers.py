@@ -920,3 +920,12 @@ def test_p_values_next_to_estimates(run, tmp_path):
     assert flagged == ["0.12 (SE 0.08; p < 0.05)", "0.120 (p < 0.01)"]
     assert all(f.severity == "major" for f in by_check(findings, "NUM-03"))  # both claim p < 0.05; t = 1.5
     assert_well_formed(pm, findings, tmp_path)
+
+
+def test_percentages_and_money_are_not_head_counts(run):
+    paras = [("paragraph", "1 Introduction", "In our data, 94 percent of households report incomes below 25,000, and "
+              "a \\$2,000 fluctuation for a household is common."),  # LaTeX writes a dollar sign as \\$
+             ("paragraph", "3 Data", "The sample has 1,200 households."),
+             ("paragraph", "4 Results", "Only 24 percent of households borrowed.")]
+    findings, _ = run(make_map(paras, []))
+    assert not by_check(findings, "NUM-05"), [(f.title, f.problem) for f in by_check(findings, "NUM-05")]
