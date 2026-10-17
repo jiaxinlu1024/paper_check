@@ -1197,7 +1197,7 @@ _STARS_OTHER_TEST = re.compile(r"(?:stars?|asterisks?|\*)[^.]{0,60}?(?:denote|in
 _CONSTANT = re.compile(r"^(?:constant|intercept|_cons|const\.?)$", re.I)
 
 
-def _table_star_findings(pt: ParsedTable, ctx, counts: dict, notes: list):
+def _table_star_findings(pt: ParsedTable, ctx, counts: dict, notes: list, text_clustered: bool = False):
     if not pt.has_stars:
         notes.append(f"{pt.name}: no significance marks, so stars were not checked")
         return
@@ -1253,8 +1253,9 @@ def _table_star_findings(pt: ParsedTable, ctx, counts: dict, notes: list):
         if verdict == "understated":
             if df_low is not None:
                 df_decides = res.df_sensitive
-            elif "clustered" in pt.se_types or not pt.column_values("observations", est.col):
-                df_decides = True
+            elif ("clustered" in pt.se_types or not pt.column_values("observations", est.col)
+                  or (text_clustered and not pt.se_types)):
+                df_decides = True  # with few clusters, t(G - 1) can make these stars right
         if pt.adjusted or pt.one_sided or df_decides or (verdict == "understated" and paren_kind == "p"):
             status, confidence = "needs_human", "medium"
         elif assumed:
@@ -1654,6 +1655,9 @@ def statistics_consistency(pm, ctx):
     notes: list = []
     covered: set = set()
     candidates = 0
+    # The text says standard errors are clustered, even where the table notes do not.
+    text_clustered = any(re.search(r"cluster", sent.norm, re.I) and _TEXT_SE.search(sent.norm)
+                         for sent in paper.sents if not sent.has_citation)
     for pt in paper.tables:
         if pt.block is None:
             notes.append(f"{pt.name}: no table block to quote")
@@ -1668,7 +1672,7 @@ def statistics_consistency(pm, ctx):
                 candidates += 1
             continue
         candidates += 1
-        yield from _table_star_findings(pt, ctx, counts, notes)
+        yield from _table_star_findings(pt, ctx, counts, notes, text_clustered)
         yield from _table_ci_findings(pt, ctx, counts, notes)
         yield from _table_impossible(pt, ctx)
     candidates += len(paper.text_stats)

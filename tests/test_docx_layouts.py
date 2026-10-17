@@ -97,3 +97,25 @@ def test_a_references_title_in_the_bibliography_style_is_a_heading(tmp_path):
     pm = _read(path, tmp_path)
     assert [r.raw[:5] for r in pm.references] == ["Jones", "Smith"]
     assert any(b.kind == "heading" and b.text == "References:" for b in pm.blocks)
+
+
+def test_a_significance_legend_under_a_table_joins_its_notes(tmp_path):
+    d = docx.Document()
+    d.add_heading("A Paper", 0)
+    d.add_heading("1. Results", 1)
+    d.add_paragraph("Table 1 reports the estimates.")
+    d.add_paragraph("Table 1 Main Estimates")
+    t = d.add_table(rows=3, cols=2)
+    t.cell(0, 0).text, t.cell(0, 1).text = "", "(1)"
+    t.cell(1, 0).text, t.cell(1, 1).text = "Treatment", "0.25**"
+    t.cell(2, 0).text, t.cell(2, 1).text = "", "(0.10)"
+    d.add_paragraph("Note: Standard errors in parentheses.")
+    d.add_paragraph("")
+    d.add_paragraph("+ p<0.10, * p<0.05, ** p<0.01, *** p<0.001.")
+    d.add_paragraph("The next section discusses p < 0.05 results.")
+    path = tmp_path / "paper.docx"
+    d.save(path)
+    pm = _read(path, tmp_path)
+    notes = pm.tables[0].notes or ""
+    assert "Standard errors in parentheses" in notes and "*** p<0.001" in notes
+    assert any(b.text.startswith("The next section") for b in pm.blocks if b.kind == "paragraph")

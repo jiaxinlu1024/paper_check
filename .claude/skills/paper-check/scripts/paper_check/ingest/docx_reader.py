@@ -647,6 +647,10 @@ _ACK_START = re.compile(r"^(?:acknowledg(?:e)?ments?\b|we (?:are (?:very )?grate
                         r"acknowledge)|i (?:am grateful|thank)|the authors? (?:thanks?|(?:are|is) grateful|gratefully)|"
                         r"thanks (?:to|go)|funding\s*:)", re.I)
 _NOTES_START = re.compile(r"^(?:notes?|sources?|source and notes?|notes? and sources?)\s*[:.—–-]", re.I)
+# A significance legend printed as its own paragraph under a table: "+ p<0.10, * p<0.05, ** p<0.01, *** p<0.001."
+_SIG_LEGEND = re.compile(r"^\s*(?:(?:significance(?:\s+levels?)?|levels?\s+of\s+significance|stars?)\s*[:.]?\s*)?"
+                         r"(?:(?:[+†‡§#]{1,3}|\*{1,4}|\^?[abc])\s*(?:p\s*[<≤=]\s*0?\.\d+|significant\s+at[^,;.]{0,40})"
+                         r"\s*[,;.]?\s*(?:and\s+)?)+$", re.I)
 _NOT_NAME = {"university", "department", "school", "institute", "college", "center", "centre", "faculty",
              "laboratory", "lab", "economics", "research", "version", "draft", "preliminary", "working", "paper",
              "january", "february", "march", "april", "may", "june", "july", "august", "september", "october",
@@ -1968,8 +1972,20 @@ class DocxReader:
                 j = idx + 1
                 while j < len(items) and isinstance(items[j], _Para) and (items[j].role == "empty" or id(items[j]) in used):
                     j += 1
-                while j < len(items) and isinstance(items[j], _Para) and items[j].role in ("paragraph", "list_item", "caption") \
-                        and id(items[j]) not in used and self._is_table_note(items[j]):
+                def is_note(k):
+                    return (k < len(items) and isinstance(items[k], _Para) and id(items[k]) not in used
+                            and items[k].role in ("paragraph", "list_item", "caption") and self._is_table_note(items[k]))
+                while j < len(items) and isinstance(items[j], _Para):
+                    if items[j].role == "empty":  # an empty line between a note and a significance legend
+                        k = j + 1
+                        while k < len(items) and isinstance(items[k], _Para) and items[k].role == "empty":
+                            k += 1
+                        if it.notes and is_note(k):
+                            j = k
+                            continue
+                        break
+                    if not is_note(j):
+                        break
                     items[j].role = "table_notes"
                     it.notes.append(items[j])
                     j += 1
@@ -2019,7 +2035,7 @@ class DocxReader:
     def _is_table_note(self, p: _Para) -> bool:
         text = p.text.strip()
         names = self.styles.names(p.style)
-        if _NOTES_START.match(text):
+        if _NOTES_START.match(text) or (len(text) <= 160 and _SIG_LEGEND.match(text)):
             return True
         return bool(names) and "note" in names[0] and "foot" not in names[0] and "end" not in names[0]
 
