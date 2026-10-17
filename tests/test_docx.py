@@ -750,3 +750,19 @@ def test_a_broken_field_does_not_swallow_the_rest_of_the_document(tmp_path):
     pm = read_docx(make_docx(tmp_path / "broken.docx", body))
     assert [b.text for b in pm.blocks] == ["This paragraph is still read (Smith, 2020)."]
     assert any("has no end" in w for w in pm.warnings)
+
+
+def test_a_zotero_item_without_author_matches_an_entry_led_by_its_title(tmp_path):
+    law = {"id": 77, "type": "legislation", "title": "Truth in Lending Act", "volume": "15 U.S.C. 1601",
+           "issued": {"date-parts": [["1968", 5]]}}
+    zotero = {"citationID": "law1", "properties": {"formattedCitation": "(Truth in Lending Act, 1968)",
+                                                   "plainCitation": "(Truth in Lending Act, 1968)",
+                                                   "noteIndex": 0},
+              "citationItems": [{"id": 77, "uris": ["http://zotero.org/users/1/items/Q"], "itemData": law}]}
+    body = (p("Lenders must disclose the annual rate ", field(" ADDIN ZOTERO_ITEM CSL_CITATION " + json.dumps(zotero),
+                                                                "(Truth in Lending Act, 1968)"), ".")
+            + p("References", style="Heading1")
+            + p("Truth in Lending Act, 15 U.S.C. 1601 (1968)."))
+    pm = read_docx(make_docx(tmp_path / "law.docx", body))
+    cite = pm.blocks[0].citations[0]
+    assert cite.resolved and pm.reference(cite.keys[0]).raw.startswith("Truth in Lending Act")

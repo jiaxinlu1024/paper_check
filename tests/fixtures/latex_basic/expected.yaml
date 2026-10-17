@@ -106,8 +106,10 @@ planted:
 negatives:
   - quote: "automatic enrollment sharply raised 401(k) participation in the firm studied by"
     truth: "Supported by Madrian and Shea (2001)."
+    wrong_if: [CIT-06, CIT-02, BEH-15]
   - quote: "show that gym members who choose flat-rate contracts overestimate their future attendance"
     truth: "Supported by DellaVigna and Malmendier (2006)."
+    wrong_if: [CIT-06, CIT-02, BEH-15]
   - table: tab:main
     cell: "-0.018**"
     truth: "t = 2.25, p about 0.024: two stars are correct."
@@ -116,3 +118,4 @@ negatives:
     truth: "t = 5: three stars are correct."
   - quote: "Figure 1 shows the distribution of contribution rates"
     truth: "The figure reference resolves."
+    wrong_if: [FMT-05, FMT-06, FMT-16]

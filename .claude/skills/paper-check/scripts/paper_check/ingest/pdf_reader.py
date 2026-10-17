@@ -79,7 +79,7 @@ from pathlib import Path
 from typing import Optional
 
 from ..model import Anchor, Block, Citation, CrossRef, Figure, Label, Note, PaperMap, Reference, Table
-from ..textutil import dehyphenate
+from ..textutil import APA_DATE, dehyphenate
 
 # ---------------------------------------------------------------- constants
 LIGATURES = {"\ufb00": "ff", "\ufb01": "fi", "\ufb02": "fl", "\ufb03": "ffi", "\ufb04": "ffl",
@@ -751,6 +751,10 @@ def parse_reference(text: str, italic: Optional[list] = None) -> dict:
         ym, authors_text = years[0], text[:years[0].start()]
     if ym is not None:
         rest_start = ym.end()
+        date = APA_DATE.match(text, rest_start)  # "(2020, December 2)": month and day are part of the date
+        if date:
+            fields["date"] = date.group("date")
+            rest_start = date.end()
         while rest_start < len(text) and text[rest_start] in " .,):;":
             rest_start += 1
     else:

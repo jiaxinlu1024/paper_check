@@ -3410,6 +3410,14 @@ _RANDOMIZED_AT = [
                r"(?P<u>[a-z]+)", re.I),
     re.compile(r"\bbetween[\s-]+(?P<u>session|group|subject)s?\s+design", re.I),
 ]
+# The text says how standard errors are computed: "standard errors adjust for district-level clustering",
+# "we cluster by session", "heteroskedasticity-robust standard errors", "delta-method standard errors".
+_TEXT_SE = re.compile(
+    r"standard\s+errors?\b[^.;]{0,80}?\b(?:cluster|robust|heterosk|heterosc|bootstrap|huber|eicker|sandwich|newey|"
+    r"conley|delta[\s-]+method|jackknife)"
+    r"|(?:robust|clustered|bootstrapped|delta[\s-]+method|heterosk\w*[\s-]+(?:robust|consistent))\s+standard\s+errors?"
+    r"|\bcluster(?:ed|ing|s)?\b[^.;]{0,40}?\b(?:at|by)\s+(?:the\s+)?[a-z-]+(?:\s+[a-z-]+)?[\s-]+level"
+    r"|\b[a-z]+[\s-]+level\s+clustering|\bwe\s+cluster\b|\bclustered\s+(?:at|by)\b", re.I)
 _FEW_FIX = re.compile(r"wild\s+(?:cluster\s+)?(?:\w+\s+)?bootstrap|randomi[sz]ation\s+inference|permutation|\bcr2\b|"
                       r"bell[\s-]+mccaffrey|few\s+clusters|small[\s-]+sample\s+correction", re.I)
 
@@ -3441,6 +3449,19 @@ def _assignment_unit(paper: _Paper) -> Optional[tuple]:
     return None
 
 
+_SE_HEADER = re.compile(r"^\(?(?:s\.?\s?e\.?|std\.?\s*err(?:or)?s?\.?|standard\s+errors?|robust\s+s\.?e\.?)\)?$", re.I)
+
+
+def _has_se_column(pt: ParsedTable) -> bool:
+    """A column headed "SE" or "Std. err." in the rows above the first value row, as in SEM tables."""
+    for i, kind in enumerate(pt.row_kinds):
+        if kind in ("values", "brackets", "mixed") or kind.startswith("stat:"):
+            break
+        if any(_SE_HEADER.match((cell or "").strip()) for cell in pt.table.rows[i][1:]):
+            return True
+    return False
+
+
 @register("BEH-09")
 def standard_error_notes(pm, ctx):
     """BEH-09 (script part). Every regression table's note states the type of standard errors;
@@ -3451,8 +3472,11 @@ def standard_error_notes(pm, ctx):
     Misses: the unit of assignment when the text does not say "randomized at the X level" or
     similar, and statements about standard errors made only in the text far from the table."""
     paper = _paper(pm)
-    regs = [pt for pt in paper.tables if pt.block is not None and pt.paren not in ("sd", "ci") and (
-        pt.has_stars or (pt.estimates and re.search(r"standard\s+errors?|std\.?\s*err", pt.notes or "", re.I)))]
+    # Regression tables: estimates with a value in parentheses below or beside them. A table of means whose
+    # difference column carries stars (a balance or descriptive table) has no standard errors to describe.
+    regs = [pt for pt in paper.tables if pt.block is not None and pt.paren not in ("sd", "ci")
+            and (pt.estimates or _has_se_column(pt))
+            and (pt.has_stars or re.search(r"standard\s+errors?|std\.?\s*err", pt.notes or "", re.I))]
     if not pm.tables:
         ctx.not_applicable("BEH-09", "the paper has no tables")
         return
@@ -3460,36 +3484,18 @@ def standard_error_notes(pm, ctx):
         ctx.not_applicable("BEH-09", "no regression tables with standard errors")
         return
     assign = _assignment_unit(paper)
-    text_se = re.search(r"standard\s+errors?\s+(?:are\s+)?(?:clustered|robust|heteros)|robust\s+standard\s+errors|"
-                        r"cluster(?:ed)?\s+(?:standard\s+errors|at|by)", paper.body_text, re.I)
+    text_se = None
+    for sent in paper.sents:
+        if not sent.has_citation and _TEXT_SE.search(sent.norm):
+            text_se = sent
+            break
     text_fix = bool(_FEW_FIX.search(paper.body_text))
+    missing = []
     for pt in regs:
         notes_quote = pt.notes_quote()
         anchor_quote = notes_quote or pt.row_quote(0)
         if not pt.se_types:
-            stated_elsewhere = bool(text_se)
-            no_note = not (pt.notes or "").strip()
-            yield _emit(ctx, "BEH-09", f"{pt.name} does not state the type of standard errors",
-                        "minor" if stated_elsewhere else "major",
-                        (f"{pt.name} has no note, so it does not say" if no_note else f"The note of {pt.name} does not say")
-                        + " whether standard errors are robust, clustered (and at which level) or bootstrapped."
-                        + (" The text mentions them elsewhere, but a table note should be self-contained."
-                           if stated_elsewhere else "")
-                        + (" (A note may also have been lost when the file was read.)" if no_note else ""),
-                        block=pt.block, quote=anchor_quote,
-                        evidence=[Evidence(type="checked_absence", data={
-                            "scope": f"note of {pt.name}",
-                            "terms": {"robust": 0, "cluster": 0, "heteroskedasticity": 0, "bootstrap": 0},
-                            "version": "paper map"}),
-                            _cr("presence of a standard-error type in the table note", {"note": pt.notes or "(none)"},
-                                "no type stated", "exact keyword search")],
-                        trajectory=[f"Read the note of {pt.name}.", "Searched it for the type of standard errors."],
-                        fix=Fix("insert", detail="Add the type of standard errors and the clustering level to the note, "
-                                                 "for example \"Standard errors clustered at the session level in "
-                                                 "parentheses.\"",
-                                resolved_when=f"The note of {pt.name} names the type of standard errors and any clustering."),
-                        status="likely" if no_note else "confirmed", confidence="medium" if no_note else "high",
-                        extra={"table": pt.table.label})
+            missing.append((pt, anchor_quote))
             continue
         if assign is None:
             continue
@@ -3545,5 +3551,45 @@ def standard_error_notes(pm, ctx):
                             fix=Fix("investigate", detail="Report wild cluster bootstrap or randomization-inference p-values.",
                                     resolved_when="Inference with few clusters uses a correction suited to it."),
                             status="needs_human", confidence="medium", extra={"table": pt.table.label, "clusters": g})
+    if missing:
+        # One finding for all the tables whose notes leave the type out: the fix is the same for each.
+        names = [pt.name for pt, _ in missing]
+        first, first_quote = missing[0]
+        no_note = [pt.name for pt, _ in missing if not (pt.notes or "").strip()]
+        listed = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+        subject = f"{names[0]} does not" if len(names) == 1 else f"{len(names)} regression tables do not"
+        problem = ((f"The note of {listed} does not say" if len(names) == 1 else f"The notes of {listed} do not say")
+                   + " whether standard errors are robust, clustered (and at which level) or bootstrapped.")
+        if text_se is not None:
+            problem += (f" The text says it at {text_se.where()}, but a table note should be self-contained, "
+                        "since tables are often read on their own.")
+        if no_note:
+            problem += (f" {', '.join(no_note)} {'has' if len(no_note) == 1 else 'have'} no note at all, which may "
+                        "also mean a note was lost when the file was read.")
+        rel = [_rel(pt.block, q) for pt, q in missing[1:12] if pt.block is not None and q]
+        if text_se is not None:
+            rel.append(_rel(text_se.block, text_se.quote()))
+        yield _emit(ctx, "BEH-09", f"{subject} state the type of standard errors",
+                    "minor" if text_se is not None else "major", problem,
+                    block=first.block, quote=first_quote, related=rel,
+                    evidence=[Evidence(type="checked_absence", data={
+                        "scope": "notes of " + ", ".join(names),
+                        "terms": {"robust": 0, "cluster": 0, "heteroskedasticity": 0, "bootstrap": 0},
+                        "version": "paper map"}),
+                        _cr("presence of a standard-error type in each table note",
+                            {pt.name: pt.notes or "(none)" for pt, _ in missing[:12]},
+                            "no type stated", "exact keyword search")],
+                    trajectory=[f"Read the notes of {len(regs)} regression table(s).",
+                                "Searched each for the type of standard errors: none in " + listed + ".",
+                                (f"Searched the text: the type is stated at {text_se.where()}." if text_se is not None
+                                 else "Searched the text: the type of standard errors is not stated anywhere.")],
+                    fix=Fix("insert", detail="Add the type of standard errors and the clustering level to each note, "
+                                             "for example \"Standard errors clustered at the county level in "
+                                             "parentheses.\"",
+                            resolved_when="Every regression table's note names the type of standard errors and any "
+                                          "clustering."),
+                    status="likely" if len(no_note) == len(names) else "confirmed",
+                    confidence="medium" if len(no_note) == len(names) else "high",
+                    extra={"tables": [pt.table.label for pt, _ in missing]})
     ctx.note("BEH-09", f"read the notes of {len(regs)} regression table(s)"
              + (f"; unit of assignment: {assign[1]}" if assign else "; unit of assignment not stated in the text"))

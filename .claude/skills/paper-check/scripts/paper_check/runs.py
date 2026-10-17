@@ -54,6 +54,25 @@ def _same(f1, s1, f2, s2) -> float:
     return 1 + ov if ov >= 0.5 else 0.0
 
 
+def merge_disputes(into: dict, other: dict) -> int:
+    """Add the other run's disputed script findings, so the refuter sees both runs' disputes."""
+    mine = into.setdefault("disputed_script_findings", [])
+    seen = {(d.get("check_id"), d.get("block"), (d.get("quote") or "")[:80]) for d in mine if isinstance(d, dict)}
+    added = 0
+    for d in other.get("disputed_script_findings") or []:
+        if not isinstance(d, dict):
+            continue
+        key = (d.get("check_id"), d.get("block"), (d.get("quote") or "")[:80])
+        if key in seen:
+            continue
+        seen.add(key)
+        mine.append({**d, "from_run": 2})
+        added += 1
+    if not mine:
+        into.pop("disputed_script_findings")
+    return added
+
+
 def merge_runs(work: Path, dimension: str) -> int:
     dim = dimension.strip().lower().removeprefix("agent_")
     first_path = work / "findings" / f"agent_{dim}.json"
@@ -133,6 +152,7 @@ def merge_runs(work: Path, dimension: str) -> int:
         if c.check_id not in cov or (cov[c.check_id].status != "run" and c.status == "run"):
             cov[c.check_id] = c
     first.coverage = sorted(cov.values(), key=lambda c: c.check_id)
+    merge_disputes(first.settings, second.settings)
     first.settings["runs"] = 2
     first.save(first_path)
     second_path.rename(second_path.with_name(second_path.name + ".merged"))

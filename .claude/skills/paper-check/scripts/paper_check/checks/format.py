@@ -938,6 +938,28 @@ def broken_crossrefs(pm, ctx):
                        "exists. The field still shows its old result, but Word prints \"Error! Reference source not "
                        "found.\" once fields are updated" + (f"; {len(uses)} fields are affected" if len(uses) > 1 else "")
                        + ".")
+        elif r.command == "text" and "?" not in r.raw:
+            # A typed mention ("Table 7", "Appendix Table A1") that matches no caption, title or heading.
+            lettered = any(re.search(r"(?:^|:)[A-Z]{1,2}\d", x) for x in (r.labels or []))
+            problem = (f"The text refers to \"{r.raw}\"" + (f" in {len(uses)} places" if len(uses) > 1 else "")
+                       + ", but no caption, title or heading with that number was found in the document"
+                       + (". Appendix tables and figures are often titled in plain text or kept in a separate "
+                          "file, so check that it exists and is numbered as cited." if lettered else "."))
+            yield ctx.finding(
+                "FMT-05", "Reference to a table, figure or section that was not found", "minor" if lettered else "major",
+                problem, block=b, quote=quote, related=rel,
+                status="needs_human" if lettered else "likely", confidence="low" if lettered else "medium",
+                evidence=[Evidence(type="quote", text=quote, block=b.id),
+                          Evidence(type="checked_absence", text=f"target of {r.raw}",
+                                   data={"scope": "every caption, typed table or figure title, heading and bookmark",
+                                         "terms": {lab: 0}})],
+                trajectory=steps + [f"\"{r.raw[:60]}\" at {b.anchor.label()} matched no caption, title or heading."],
+                fix=Fix(action="investigate",
+                        detail="Number the intended table, figure or section as cited, or correct the reference; a "
+                               "Word caption (Insert > Caption) with a cross-reference keeps the two in step.",
+                        resolved_when="Every reference names a table, figure or section that exists with that number."),
+                script=SCRIPT, extra={"label": lab, "uses": len(uses)})
+            continue
         elif r.command == "text":
             problem = (f"The text shows \"{r.raw}\"" + (f" in {len(uses)} places" if len(uses) > 1 else "")
                        + ", the mark LaTeX prints for a reference to an undefined label: the table, figure or "

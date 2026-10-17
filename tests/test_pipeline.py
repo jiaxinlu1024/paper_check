@@ -218,3 +218,17 @@ def test_recurring_minor_findings_are_grouped_but_major_ones_are_not(work_copy):
     assert len(lang) == 1 and lang[0]["extra"]["instances"] == 5 and len(lang[0]["related_quotes"]) == 4
     assert "and 2 more places" in lang[0]["where"]
     assert len([f for f in data["findings"] if f["check_id"] == "LOG-04"]) == 2
+
+
+def test_merged_runs_keep_the_second_runs_disputes():
+    from paper_check.runs import merge_disputes
+
+    first = {"disputed_script_findings": [{"check_id": "NUM-05", "block": "b0010", "quote": "94 vs 24", "reason": "a"}]}
+    second = {"disputed_script_findings": [{"check_id": "NUM-05", "block": "b0010", "quote": "94 vs 24", "reason": "b"},
+                                           {"check_id": "BEH-09", "block": "b0148", "quote": "Note: Table 1",
+                                            "reason": "a table of means"}]}
+    assert merge_disputes(first, second) == 1
+    assert [d["check_id"] for d in first["disputed_script_findings"]] == ["NUM-05", "BEH-09"]
+    assert first["disputed_script_findings"][1]["from_run"] == 2
+    empty = {}
+    assert merge_disputes(empty, {}) == 0 and "disputed_script_findings" not in empty

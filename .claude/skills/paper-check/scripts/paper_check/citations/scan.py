@@ -13,6 +13,8 @@ Matching, for each term independently:
   - whole words only, with an optional plural: "gym" matches "gyms" but not "gymnasium";
     "study" matches "studies"
   - "*" ends a word with any letters: "procrastinat*" matches "procrastination" and "procrastinate"
+  - a term with no whole-word hit is also counted as the start of longer words, reported under
+    "inside_longer_words" with a warning, so a stem written without its "*" is never recorded as absent
   - a term starting with "re:" is a regular expression on the folded (lowercased) text,
     for example "re:β\\s*[<=]\\s*0?\\.\\d+"
   - text inside the page markers themselves is never matched
@@ -140,6 +142,35 @@ def compile_term(term: str) -> re.Pattern:
     last = tokens[-1].rstrip("*")
     tail = r"(?![a-z0-9])" if _ASCII_ALNUM.match(last[-1:]) and not tokens[-1].endswith("*") else ""
     return re.compile(head + body + tail)
+
+
+def _longer_words(term: str, folded: str, index: list, text: str, pages: list) -> Optional[dict]:
+    """For a term with no whole-word hit: the words that start with it, so that a stem written
+    without its "*" ("procrastinat") is not reported as absent. None if there are none."""
+    t = term.strip()
+    if t.lower().startswith("re:") or t.endswith("*"):
+        return None
+    folded_term = "".join(_fold_char(c) for c in t)
+    tokens = [x for x in re.split(r"[\s\-]+", folded_term) if x]
+    if not tokens or not tokens[-1][-1:].isalpha():
+        return None
+    try:
+        regex = compile_term(t + "*")
+    except (re.error, ValueError):
+        return None
+    forms, hit_pages, hits = Counter(), [], 0
+    for m in regex.finditer(folded):
+        if m.end() <= m.start():
+            continue
+        start, end = index[m.start()], index[m.end() - 1] + 1
+        hits += 1
+        forms[_clean(text[start:end]).replace("- ", "-")] += 1
+        label = page_at(pages, start)
+        if label not in hit_pages:
+            hit_pages.append(label)
+    if not hits:
+        return None
+    return {"hits": hits, "pages": hit_pages, "forms": dict(forms.most_common())}
 
 
 # ================================================================ pages
@@ -299,6 +330,14 @@ def scan(text: str, terms: list, context: int = 300, top: int = 8) -> dict:
                 entry["examples"].append(example)
         entry["pages"] = hit_pages
         entry["forms"] = dict(forms.most_common())
+        if not entry["hits"]:
+            longer = _longer_words(term, folded, index, text, pages)
+            if longer:
+                entry["inside_longer_words"] = longer
+                shown = ", ".join(f"{w} ({n})" for w, n in list(longer["forms"].items())[:4])
+                entry["warning"] = (f"No whole-word match, but {longer['hits']} words start with it: {shown}. "
+                                    f"Scan \"{term.strip()}*\" to count those, and don't call the term absent "
+                                    "without reading them.")
         results.append(entry)
 
     # document frequency of each term, over chunks
@@ -359,7 +398,9 @@ def scan(text: str, terms: list, context: int = 300, top: int = 8) -> dict:
         "terms": results,
         "total_hits": len(all_hits),
         "terms_with_hits": sum(1 for r in results if r["hits"]),
-        "terms_without_hits": [r["term"] for r in results if not r["hits"] and "error" not in r],
+        "terms_without_hits": [r["term"] for r in results
+                               if not r["hits"] and "error" not in r and "inside_longer_words" not in r],
+        "terms_only_inside_longer_words": [r["term"] for r in results if "inside_longer_words" in r],
         "passages": passages,
         "passage_basis": basis,
         "pages_scanned": {"count": sum(1 for x in labels if isinstance(x, int)), "labels": labels[:1] + labels[-1:]},
@@ -370,7 +411,8 @@ def scan(text: str, terms: list, context: int = 300, top: int = 8) -> dict:
             "context": context, "top": top,
             "matching": "case-insensitive; spaces, hyphens and line breaks between words ignored; line-break "
                         "hyphenation joined; whole words with optional plural; * ends a word with any letters; "
-                        "re: prefix for a regular expression",
+                        "re: prefix for a regular expression; a term with no whole-word hit is also counted "
+                        "as the start of longer words (inside_longer_words)",
             "ranking": f"BM25 (k1={K1}, b={B}) over the terms as phrases plus {WORD_WEIGHT} x BM25 over their "
                        f"words; document frequencies from {len(chunks)} chunks of about {CHUNK_WORDS} words; "
                        "passages in the work's reference list come last",

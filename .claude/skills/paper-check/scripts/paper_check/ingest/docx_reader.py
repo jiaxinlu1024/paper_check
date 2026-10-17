@@ -64,6 +64,7 @@ from typing import Optional
 from lxml import etree
 
 from ..model import Anchor, Block, Citation, CrossRef, Figure, Label, Note, PaperMap, Reference, Table
+from ..textutil import APA_DATE
 
 # ---------------------------------------------------------------- namespaces
 NS = {
@@ -637,7 +638,8 @@ _NUM_HEAD = re.compile(r"^(?P<num>\d{1,2}(?:\.\d{1,2}){0,3}|[A-Z](?:\.\d{1,2}){0
                        r"(?P<title>[A-ZÀ-ɏ\"“‘(].*)$")
 _APPX_HEAD = re.compile(r"^(?:Online\s+|Supplementary\s+|Supplemental\s+)?(?:Appendix|Appendices)"
                         r"(?:\s+(?P<num>[A-Z]|\d{1,2}|[IVX]{1,4})(?![\w]))?\s*(?:[.:—–-]\s*)?(?P<title>.*)$", re.I)
-_CAPTION = re.compile(r"^(?P<kind>Table|Figure|Fig\.|Exhibit|Chart)\s+(?P<num>[A-Z]{0,2}\d+[a-z]?|[IVX]{1,6}|[A-Z])"
+_CAPTION = re.compile(r"^(?:(?:Online\s+|Supplementary\s+|Supplemental\s+)?Appendix\s+)?"
+                      r"(?P<kind>Table|Figure|Fig\.|Exhibit|Chart)\s+(?P<num>[A-Z]{0,2}\d+[a-z]?|[IVX]{1,6}|[A-Z])"
                       r"(?P<rest>\s*[:.—–-]\s*.*|\s*$|\s+.*)$", re.S)
 _ABSTRACT_START = re.compile(r"^abstract\s*(?:[:.—–-]\s*|\s+(?=[A-ZÀ-ɏ]))", re.I)
 _JEL_KW = re.compile(r"^(?:jel\b|jel codes?|jel classification|keywords?\s*[:.—-]|key words\s*[:.—-])", re.I)
@@ -824,6 +826,11 @@ def parse_reference(text: str, italics: Optional[list] = None) -> dict:
         fields["et_al"] = True
     rest_start = ym.end()
     rest = t[rest_start:]
+    date = APA_DATE.match(rest)  # "(2020, December 2)": the month and day belong to the date, not the title
+    if date:
+        fields["date"] = date.group("date")
+        rest_start += date.end()
+        rest = t[rest_start:]
     lstrip = len(rest) - len(rest.lstrip(" ).,:;"))
     rest_start += lstrip
     rest = t[rest_start:]
@@ -1785,7 +1792,14 @@ class DocxReader:
             if not text:
                 p.role = "figure_image" if any(i["kind"] != "shape" for i in p.images) else "empty"
                 continue
-            if "bibliography" in p.field_kinds or "bibliography" in p.sdt_kinds or (names and names[0] == "bibliography"):
+            in_bib_field = ("bibliography" in p.field_kinds or "bibliography" in p.sdt_kinds
+                            or (names and names[0] == "bibliography"))
+            if in_bib_field and _norm_heading(text) in REF_HEADINGS and len(text.split()) <= 3:
+                # The list's title inside the bibliography field or in the Bibliography style: "References:".
+                if not p.heading:
+                    p.heading = {"level": 1, "number": None, "text": text.rstrip(":. "), "source": "title in the "
+                                 "bibliography field", "name": _norm_heading(text)}
+            elif in_bib_field:
                 p.role = "reference"
                 bib_open = in_refs is None
                 continue
@@ -2471,6 +2485,10 @@ class DocxReader:
             if year and pf.get("year") == year:
                 score += 1
             ratio = self._title_ratio(title, pf.get("title"))
+            if not authors and pa:
+                # An item without an author (a law, an unsigned report) is printed with its title in the
+                # author position: "Truth in Lending Act, 15 U.S.C. 1601 (1968)."
+                ratio = max(ratio, self._title_ratio(title, pa[0].get("family")))
             if ratio >= 90:
                 score += 3
             elif ratio >= 75:

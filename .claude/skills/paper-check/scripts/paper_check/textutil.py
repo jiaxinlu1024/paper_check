@@ -183,3 +183,9 @@ def dehyphenate(lines: list[str]) -> str:
         else:
             out = line
     return out
+
+
+# The month, day or season after the year in an APA entry, "(2020, December 2)": part of the date.
+APA_DATE = re.compile(r"\s*,\s*(?P<date>(?:January|February|March|April|May|June|July|August|September|October|"
+                      r"November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept?|Oct|Nov|Dec|Spring|Summer|Fall|Autumn|"
+                      r"Winter)\.?(?:\s+\d{1,2}(?:\s*[–-]\s*\d{1,2})?)?)\s*\)")

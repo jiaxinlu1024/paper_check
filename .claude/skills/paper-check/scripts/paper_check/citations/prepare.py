@@ -31,7 +31,7 @@ from .. import __version__
 from ..config import USER_CONFIG, Credentials, PaperSettings
 from ..model import PaperMap
 from ..textutil import extract_numbers
-from .fulltext import NEGATIVE_TTL, Cascade, Fetcher, match_sources
+from .fulltext import NEGATIVE_TTL, Cascade, Fetcher, entry_urls, match_sources
 
 CLAIM_TYPES = ("origin", "number", "definition", "direction", "finding", "method", "topic")
 FLOW_KINDS = {"paragraph", "list_item", "abstract"}
@@ -257,7 +257,32 @@ def _core_key(creds: Credentials) -> Optional[str]:
 
 
 # ================================================================ reuse
-def _reusable(prev: Optional[dict], match: Optional[dict], offline: bool) -> bool:
+def _web_pages(work: Path) -> dict:
+    """Pages the reference web-check agents found dedicated to a work, by reference id."""
+    pages: dict = {}
+    for path in sorted((work / "references").glob("web_checks_*.json")):
+        try:
+            rows = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        for row in rows if isinstance(rows, list) else []:
+            url = row.get("dedicated_page") if isinstance(row, dict) else None
+            outcome = str(row.get("outcome") or "") if isinstance(row, dict) else ""
+            if (isinstance(url, str) and url.startswith(("http://", "https://")) and row.get("ref")
+                    and "non-existent" not in outcome and "unverified" not in outcome):
+                pages.setdefault(row["ref"], [])
+                if url not in pages[row["ref"]]:
+                    pages[row["ref"]].append(url)
+    return pages
+
+
+def _untried_urls(prev: dict, urls: list) -> bool:
+    """A URL to read (in the entry, or from a web check) that the previous run did not try."""
+    tried = {a.get("url") for a in prev.get("attempts") or []}
+    return any(u not in tried for u in urls)
+
+
+def _reusable(prev: Optional[dict], match: Optional[dict], offline: bool, urls: Optional[list] = None) -> bool:
     if not prev:
         return False
     if match:
@@ -270,6 +295,8 @@ def _reusable(prev: Optional[dict], match: Optional[dict], offline: bool) -> boo
         return True
     if offline:
         return True
+    if urls and _untried_urls(prev, urls):
+        return False  # a URL in the entry or from a web check has not been read yet
     if prev.get("offline") or prev.get("transient_failure"):
         return False  # a miss recorded offline, or after a rate limit or network error, is retried
     try:
@@ -302,9 +329,11 @@ def prepare(work: Path, sources: Optional[str] = None, offline: bool = False) ->
     fetcher = Fetcher(out / "cache", email=creds.contact_email, offline=offline, secrets=secrets)
     matched = match_sources(Path(settings["sources"]) if settings["sources"] else None, cited,
                             out / "cache" / "sources_index.json")
+    web_pages = _web_pages(work)
     cascade = Cascade(fetcher, out / "sources", email=creds.contact_email, openalex_key=creds.openalex_api_key,
                       s2_key=creds.semantic_scholar_api_key, core_key=core_key, paid_pdfs=settings["paid_pdfs"],
-                      source_matches=matched["matches"], sources_folder=settings["sources"], offline=offline)
+                      source_matches=matched["matches"], sources_folder=settings["sources"], offline=offline,
+                      web_pages=web_pages)
 
     results = OrderedDict()
     for ref in cited:
@@ -315,7 +344,8 @@ def prepare(work: Path, sources: Optional[str] = None, offline: bool = False) ->
                 prev = json.loads(meta_path.read_text(encoding="utf-8"))
             except ValueError:
                 prev = None
-        if _reusable(prev, matched["matches"].get(ref.id), offline) and (
+        urls = entry_urls(ref.fields or {}, ref.raw) + web_pages.get(ref.id, [])
+        if _reusable(prev, matched["matches"].get(ref.id), offline, urls) and (
                 prev.get("status") == "not_found" or (out / "sources" / f"{ref.id}.txt").exists()):
             prev["reused"] = True
             results[ref.id] = prev

@@ -12,7 +12,12 @@ For each cited reference the cascade stops at the first full text it can verify:
    7. openalex_versions  open-access copies attached to other OpenAlex records of the same work
    8. core               only with a CORE API key
    9. openalex_content   OpenAlex's paid cached PDF, only when the paper's settings say paid_pdfs: true
-  10. abstract           OpenAlex abstract_inverted_index, then Crossref, then Semantic Scholar
+  10. entry_url          the URL printed in the reference entry, then the page a web-check agent found
+                         dedicated to the work: a report, news article, press release, law or blog post
+                         that no scholarly database holds. Journal articles and reports take only a PDF
+                         there, because their landing pages show an abstract, not the work; news, posts,
+                         press releases, web pages and laws are read from the page's HTML
+  11. abstract           OpenAlex abstract_inverted_index, then Crossref, then Semantic Scholar
 
 Rules:
   - No shadow libraries, no search-engine scraping, and no bypassing of bot protection: a challenge
@@ -68,7 +73,10 @@ DEFAULT_INTERVAL = 1.0
 SECRET_PARAMS = {"api_key", "apikey", "key", "email", "mailto", "token"}
 
 STEPS = ("sources", "openalex", "unpaywall", "semantic_scholar", "arxiv", "nber", "openalex_versions",
-         "core", "openalex_content", "abstract")
+         "core", "openalex_content", "entry_url", "abstract")
+# Reference types whose web page is the work itself, so its HTML text can be read as the full text.
+WEB_TYPES = {"webpage", "post", "post-weblog", "article-newspaper", "article-magazine", "legislation", "bill",
+             "legal_case", "regulation", "broadcast", "interview", "speech", "press_release", "press release"}
 VERSION_NAMES = {"publishedversion": "published", "acceptedversion": "accepted", "submittedversion": "submitted",
                  "published": "published", "accepted": "accepted", "submitted": "submitted"}
 VERSION_RANK = {"published": 0, "accepted": 1, "submitted": 2, "unknown": 3}
@@ -547,6 +555,77 @@ def strip_tags(text: str) -> str:
     return re.sub(r"^(abstract|summary)[\s.:]+", "", text, flags=re.I)
 
 
+_URL_IN_ENTRY = re.compile(r"https?://[^\s<>\"']+", re.I)
+_DROP_ELEMENTS = re.compile(r"<(script|style|noscript|svg|nav|footer|aside|form|iframe|template|button|select)\b[^>]*>"
+                            r".*?</\1\s*>", re.I | re.S)
+_BLOCK_TAGS = re.compile(r"</?(?:p|div|section|article|main|header|h[1-6]|li|ul|ol|tr|td|th|table|blockquote|br|hr|"
+                         r"dd|dt|dl|figcaption|figure|pre)\b[^>]*>", re.I)
+
+
+def entry_urls(fields: dict, raw: str = "") -> list:
+    """URLs printed in a reference entry, without DOI links (the DOI steps already cover those)."""
+    out = []
+    for url in [fields.get("url")] + _URL_IN_ENTRY.findall(raw or ""):
+        url = (url or "").strip().rstrip(").,;]>")
+        host = urllib.parse.urlsplit(url).netloc.lower()
+        if not host or host == "doi.org" or host.endswith(".doi.org"):
+            continue
+        if url not in out:
+            out.append(url)
+    return out
+
+
+def html_page_text(body: bytes, content_type: str = "") -> dict:
+    """The title and readable text of an HTML page: scripts, menus and forms removed, block elements
+    on their own lines, the <article> or <main> element preferred when it holds the text."""
+    m = re.search(r"charset=([\w-]+)", content_type or "", re.I) or re.search(rb"<meta[^>]+charset=[\"']?([\w-]+)",
+                                                                             body[:4000], re.I)
+    charset = (m.group(1).decode() if m and isinstance(m.group(1), bytes) else m.group(1) if m else "utf-8")
+    try:
+        raw = body[:3_000_000].decode(charset, errors="replace")
+    except LookupError:
+        raw = body[:3_000_000].decode("utf-8", errors="replace")
+    title = None
+    for pattern in (r"<meta[^>]+property=[\"']og:title[\"'][^>]*content=[\"']([^\"']+)",
+                    r"<meta[^>]+content=[\"']([^\"']+)[\"'][^>]*property=[\"']og:title",
+                    r"<title[^>]*>(.*?)</title>", r"<h1[^>]*>(.*?)</h1>"):
+        t = re.search(pattern, raw, re.I | re.S)
+        if t and strip_tags(t.group(1)):
+            title = strip_tags(t.group(1))
+            break
+    raw = re.sub(r"<!--.*?-->", " ", raw, flags=re.S)
+    raw = _DROP_ELEMENTS.sub(" ", raw)
+    for tag in ("article", "main"):
+        part = re.search(rf"<{tag}\b[^>]*>(.*)</{tag}\s*>", raw, re.I | re.S)
+        if part and len(strip_tags(part.group(1))) > 800:
+            raw = part.group(1)
+            break
+    else:
+        body_part = re.search(r"<body\b[^>]*>(.*)</body\s*>", raw, re.I | re.S)
+        if body_part:
+            raw = body_part.group(1)
+    raw = _BLOCK_TAGS.sub("\n", raw)
+    text = html.unescape(re.sub(r"<[^>]+>", " ", raw))
+    lines = [re.sub(r"[ \t\u00a0]+", " ", line).strip() for line in text.splitlines()]
+    return {"title": title, "text": "\n".join(line for line in lines if line)}
+
+
+def pdf_links(body: bytes, base_url: str, limit: int = 5) -> list:
+    """Links to PDFs on a page: the ones whose link text mentions a download or the report first, and
+    summaries, briefs, fact sheets and appendices last."""
+    text = body[:2_000_000].decode("utf-8", errors="replace")
+    found = []
+    for m in re.finditer(r"<a\b[^>]*href=[\"']([^\"']+?\.pdf(?:\?[^\"']*)?)[\"'][^>]*>(.*?)</a>", text, re.I | re.S):
+        url = urllib.parse.urljoin(base_url, html.unescape(m.group(1).strip()))
+        label = strip_tags(m.group(2)).lower()
+        partial = re.search(r"summary|highlights|brief|fact[\s_-]?sheet|infographic|errata|appendix|supplement|"
+                            r"overview|toc\b|cover", f"{label} {url.lower()}")
+        rank = 2 if partial else 0 if re.search(r"download|full report|read the report|pdf", label) else 1
+        if url not in [u for _, u in found]:
+            found.append((rank, url))
+    return [u for _, u in sorted(found, key=lambda x: x[0])][:limit]
+
+
 def openalex_abstract(inverted: Optional[dict]) -> Optional[str]:
     if not inverted:
         return None
@@ -746,7 +825,7 @@ class Cascade:
     def __init__(self, fetcher: Fetcher, out_dir: Path, *, email: Optional[str] = None,
                  openalex_key: Optional[str] = None, s2_key: Optional[str] = None, core_key: Optional[str] = None,
                  paid_pdfs: bool = False, source_matches: Optional[dict] = None, sources_folder: Optional[str] = None,
-                 offline: bool = False):
+                 offline: bool = False, web_pages: Optional[dict] = None):
         self.fetcher = fetcher
         self.out_dir = Path(out_dir)
         self.email = email
@@ -757,6 +836,7 @@ class Cascade:
         self.source_matches = source_matches or {}
         self.sources_folder = sources_folder
         self.offline = offline
+        self.web_pages = web_pages or {}  # ref id -> pages the web-check agents found dedicated to the work
         self.service_notes: dict = {}
         self.disabled: dict = {}
         self._openalex_key_off = False
@@ -930,14 +1010,25 @@ class Cascade:
 
     # ---------------------------------------------------------------- fetching one candidate
     def _try(self, st: _State, cand: Candidate, hop: int = 0) -> bool:
+        got = self._fetch_pdf(st, cand, hop)
+        if got is None:
+            return False
+        self._save_fulltext(st, got["ext"], got["quality"], got["ident"], got["cand"], got["shown"],
+                            pdf_bytes=got["body"])
+        return True
+
+    def _fetch_pdf(self, st: _State, cand: Candidate, hop: int = 0) -> Optional[dict]:
+        """Fetch a candidate and return the verified PDF ({ext, quality, ident, cand, shown, body}) or None."""
         if cand.url.startswith("http://") and not cand.shown_url:
             secure = "https://" + cand.url[len("http://"):]   # prefer HTTPS; fall back to the address as listed
-            if secure not in st.tried and self._try(st, dataclasses.replace(cand, url=secure), hop):
-                return True
+            if secure not in st.tried:
+                got = self._fetch_pdf(st, dataclasses.replace(cand, url=secure), hop)
+                if got is not None:
+                    return got
         shown = cand.shown_url or strip_secrets(cand.url)
         if cand.url in st.tried:
             st.attempt(cand.source, "same URL as an earlier step; not fetched again", shown)
-            return False
+            return None
         st.tried.add(cand.url)
         response = self.fetcher.get(cand.url, accept="application/pdf, */*;q=0.5", api=cand.api,
                                     headers=cand.headers, timeout=90)
@@ -946,7 +1037,7 @@ class Cascade:
                 st.attempt(cand.source, "blocked by bot protection (not bypassed)", shown)
             else:
                 st.failed(cand.source, "", response, shown)
-            return False
+            return None
         body = response.body
         if not body.lstrip()[:8].startswith(b"%PDF"):
             link = citation_pdf_url(body, response.final_url or cand.url) if b"<" in body[:4000] else None
@@ -954,13 +1045,13 @@ class Cascade:
                 follow = dataclasses.replace(cand, url=link, shown_url=None,
                                              landing_page=cand.landing_page or strip_secrets(cand.url))
                 st.attempt(cand.source, "landing page; following its citation_pdf_url", shown)
-                return self._try(st, follow, hop=1)
+                return self._fetch_pdf(st, follow, hop=1)
             if is_challenge(response):
                 self.fetcher.mark_negative(cand.url)
                 st.attempt(cand.source, "blocked by bot protection (not bypassed)", shown)
             else:
                 st.attempt(cand.source, f"not a PDF ({response.content_type or 'unknown type'})", shown)
-            return False
+            return None
         verdict = {}
 
         def check(first_pages: str) -> bool:
@@ -970,19 +1061,18 @@ class Cascade:
         ext = extract_pdf(body, check=check)
         if ext["error"]:
             st.attempt(cand.source, f"PDF could not be read: {ext['error']}", shown)
-            return False
+            return None
         quality = text_quality(ext["pages"])
         if not quality["usable"]:
             st.attempt(cand.source, "PDF has no usable text layer (scanned?); OCR is not available", shown)
             st.warn(f"A PDF was found at {shown} but has no usable text layer; OCR is not available.")
-            return False
+            return None
         ident = verdict or identify(st.fields, "\n".join(ext["pages"][:3]))
         if ext["rejected"] or not ident["ok"]:
             st.attempt(cand.source, f"PDF rejected: {ident['basis']} (title score {ident['title_score']})", shown)
-            return False
-        st.attempt(cand.source, "ok", shown)
-        self._save_fulltext(st, ext, quality, ident, cand, shown, pdf_bytes=body)
-        return True
+            return None
+        st.attempt(cand.source, f"ok ({ext['n_pages']} pages)" if cand.source == "entry_url" else "ok", shown)
+        return {"ext": ext, "quality": quality, "ident": ident, "cand": cand, "shown": shown, "body": body}
 
     # ---------------------------------------------------------------- steps
     def _step_sources(self, st: _State) -> bool:
@@ -1284,6 +1374,77 @@ class Cascade:
                          note="OpenAlex cached PDF (paid download, allowed by paid_pdfs)")
         return self._try(st, cand)
 
+    def _step_entry_url(self, st: _State) -> bool:
+        urls = [(u, "the URL printed in the reference entry") for u in entry_urls(st.fields, st.ref.raw)]
+        urls += [(u, "the page the web check found dedicated to the work") for u in self.web_pages.get(st.ref.id, [])
+                 if u not in [x for x, _ in urls]]
+        if not urls:
+            st.attempt("entry_url", "no URL in the reference entry and none from the web check")
+            return False
+        kind = (st.fields.get("type") or "").lower()
+        html_ok = kind in WEB_TYPES or (kind in ("", "other") and not (st.doi or st.fields.get("volume")
+                                                                        or st.fields.get("issue")))
+        for url, where in urls[:3]:
+            cand = Candidate(url=url, source="entry_url", version="unknown", note=f"from {where}")
+            if url in st.tried:
+                st.attempt("entry_url", "same URL as an earlier step; not fetched again", strip_secrets(url))
+                continue
+            response = self.fetcher.get(url, accept="text/html, application/pdf;q=0.9, */*;q=0.5", timeout=60)
+            if not response.ok:
+                st.tried.add(url)
+                if is_challenge(response):
+                    st.attempt("entry_url", "blocked by bot protection (not bypassed)", strip_secrets(url))
+                else:
+                    st.failed("entry_url", "", response, strip_secrets(url))
+                continue
+            if response.body.lstrip()[:8].startswith(b"%PDF"):
+                if self._try(st, cand):  # read from the cache; checks the title on the first pages
+                    return True
+                continue
+            st.tried.add(url)
+            if is_challenge(response):
+                st.attempt("entry_url", "blocked by bot protection (not bypassed)", strip_secrets(url))
+                continue
+            if b"<" not in response.body[:2000]:
+                st.attempt("entry_url", f"neither a PDF nor a web page ({response.content_type or 'unknown type'})",
+                           strip_secrets(url))
+                continue
+            if not html_ok:
+                # A journal article's or report's page usually shows only an abstract or a summary: look for the PDF.
+                links = [link for link in pdf_links(response.body, response.final_url or url) if link not in st.tried]
+                if not links:
+                    st.attempt("entry_url", "web page without a PDF of the work; a landing page is not read as the "
+                                            "full text of an article or report", strip_secrets(url))
+                    continue
+                st.attempt("entry_url", f"web page; trying the {len(links)} PDF(s) it links to", strip_secrets(url))
+                best = None
+                for link in links:  # a report page often links a summary too: keep the longest PDF of the work
+                    got = self._fetch_pdf(st, dataclasses.replace(cand, url=link, landing_page=strip_secrets(url)))
+                    if got is not None and (best is None or got["ext"]["n_pages"] > best["ext"]["n_pages"]):
+                        best = got
+                if best is not None:
+                    if len(links) > 1:
+                        st.attempt("entry_url", f"kept the longest of the PDFs found ({best['ext']['n_pages']} pages)",
+                                   best["shown"])
+                    self._save_fulltext(st, best["ext"], best["quality"], best["ident"], best["cand"], best["shown"],
+                                        pdf_bytes=best["body"])
+                    return True
+                continue
+            page = html_page_text(response.body, response.content_type or "")
+            ident = identify(st.fields, f"{page['title'] or ''}\n{page['text'][:15000]}")
+            if not ident["ok"]:
+                st.attempt("entry_url", f"page rejected: {ident['basis']} (title score {ident['title_score']})",
+                           strip_secrets(url))
+                continue
+            words = len(page["text"].split())
+            if words < 150:
+                st.attempt("entry_url", f"page has too little text ({words} words)", strip_secrets(url))
+                continue
+            st.attempt("entry_url", "ok (web page text, without page numbers)", strip_secrets(url))
+            self._save_web_text(st, page, strip_secrets(response.final_url or url), ident, where)
+            return True
+        return False
+
     def _step_abstract(self, st: _State) -> bool:
         if not st.openalex_done and "openalex" not in self.disabled:
             self._openalex_work(st)
@@ -1391,6 +1552,23 @@ class Cascade:
                      "version_basis": "not labelled", "pages": None, "abstract_only": False, "chars": len(body),
                      "file": f"sources/{st.ref.id}.txt",
                      "note": "full text without page numbers; cite passages without a page",
+                     "sha256": hashlib.sha256(body.encode("utf-8")).hexdigest()})
+        st.result = self._write_meta(st, {k: v for k, v in meta.items() if v is not None})
+
+    def _save_web_text(self, st: _State, page: dict, url: str, ident: dict, where: str) -> None:
+        out = self.out_dir
+        out.mkdir(parents=True, exist_ok=True)
+        heading = f"{page['title']}\n\n" if page.get("title") else ""
+        body = f"[[text]]\n{heading}{clean_page_text(page['text'])}\n"
+        (out / f"{st.ref.id}.txt").write_text(body, encoding="utf-8")
+        self._remove(out / f"{st.ref.id}.pdf")
+        meta = self._base_meta(st)
+        meta.update({"status": "full_text", "source": "entry_url", "url": url, "version": "web page",
+                     "version_basis": f"the page as fetched on {meta['fetched']}, from {where}; it may have "
+                                      "changed since the paper cited it",
+                     "pages": None, "abstract_only": False, "web_page": True, "chars": len(body),
+                     "file": f"sources/{st.ref.id}.txt", "identity": ident,
+                     "note": "web page text without page numbers; cite passages without a page",
                      "sha256": hashlib.sha256(body.encode("utf-8")).hexdigest()})
         st.result = self._write_meta(st, {k: v for k, v in meta.items() if v is not None})
 

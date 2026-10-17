@@ -1,5 +1,6 @@
 """Citation support scripts: propositions, full-text cascade, sources folder, STW terms, scan."""
 
+import datetime as dt
 import json
 import shutil
 import subprocess
@@ -524,3 +525,110 @@ def test_network_downloads_stw_once(tmp_path):
     assert "CC BY" in r["attribution"] or "ODbL" in r["attribution"]
     again, note = terms.Thesaurus.load(cache_dir=tmp_path, offline=True)
     assert again is not None and note == "STW read from the cache"
+
+
+def test_a_stem_without_its_star_is_not_recorded_as_absent():
+    result = scanmod.scan(SYNTH, ["procrastinat", "gymnas", "gym attendance", "re:zzz"])
+    t = {e["term"]: e for e in result["terms"]}
+    assert t["procrastinat"]["hits"] == 0
+    assert t["procrastinat"]["inside_longer_words"]["hits"] == 1
+    assert "procrastinat*" in t["procrastinat"]["warning"]
+    assert t["gymnas"]["inside_longer_words"]["forms"] == {"gymnasium": 1}
+    assert "inside_longer_words" not in t["gym attendance"] and "inside_longer_words" not in t["re:zzz"]
+    assert result["terms_without_hits"] == ["gym attendance", "re:zzz"]
+    assert result["terms_only_inside_longer_words"] == ["procrastinat", "gymnas"]
+
+
+# ================================================================ the URL printed in a reference entry
+def _ref(rid, raw, fields):
+    return Reference(id=rid, raw=raw, anchor=Anchor(), source="text", key=rid, fields=fields)
+
+
+NEWS_HTML = (b"<html><head><title>City adopts a new transit plan for its outer districts | Example News"
+             b"</title><script>var x = 1;</script></head><body><nav>Home About Donate</nav><article>"
+             b"<h1>City adopts a new transit plan for its outer districts</h1><p>By Jane Roe</p>"
+             + b"".join(b"<p>The transit office estimated that average commuting time was 48 minutes last year, "
+                        b"and bus ridership rose sharply after the new routes opened. </p>" for _ in range(12))
+             + b"</article><footer>Copyright</footer></body></html>")
+
+
+def test_a_news_page_in_the_entry_is_read_as_the_full_text(tmp_path):
+    url = "https://news.example.org/2020/12/02/transit-plan"
+    ref = _ref("r027", f"Roe, J. (2020, December 2). City adopts a new transit plan for its outer districts. "
+                       f"Example News. {url}",
+               {"title": "City adopts a new transit plan for its outer districts", "year": "2020",
+                "authors": [{"family": "Roe", "given": "Jane"}], "type": "post-weblog", "url": url})
+    transport = _transport({url: (200, "text/html; charset=utf-8", NEWS_HTML)})
+    cascade = Cascade(Fetcher(tmp_path / "cache", transport=transport, sleep=lambda s: None), tmp_path / "sources")
+    meta = cascade.run(ref)
+    assert meta["status"] == "full_text" and meta["source"] == "entry_url" and meta["web_page"] is True
+    text = (tmp_path / "sources" / "r027.txt").read_text()
+    assert text.startswith("[[text]]\nCity adopts a new transit plan") and "48 minutes last year" in text
+    assert "var x" not in text and "Donate" not in text and "Copyright" not in text
+    result = scanmod.scan(text, ["48 minutes", "median*"])
+    assert result["terms"][0]["hits"] == 12 and result["terms"][1]["hits"] == 0
+
+
+def test_a_journal_landing_page_is_not_read_as_the_article(tmp_path):
+    url = "https://www.journal.example.org/article/credit-access-and-spending"
+    landing = (b"<html><head><title>Credit access and household spending</title></head><body><article>"
+               + b"<p>Abstract. We study credit access and household spending in many states. </p>" * 30
+               + b"<a href='/content/credit.pdf'>Download PDF</a></article></body></html>")
+    ref = _ref("r010", f"Doe, J. (2018). Credit access and household spending. Journal of Tests, 76, 40-54. "
+                       f"https://doi.org/10.1016/j.x.2018.01.001 {url}",
+               {"title": "Credit access and household spending", "year": "2018", "type": "article-journal",
+                "authors": [{"family": "Doe", "given": "J."}], "doi": "10.1016/j.x.2018.01.001", "volume": "76"})
+    transport = _transport({url: (200, "text/html", landing)})
+    cascade = Cascade(Fetcher(tmp_path / "cache", transport=transport, sleep=lambda s: None), tmp_path / "sources",
+                      offline=False)
+    meta = cascade.run(ref, steps=["entry_url"])
+    assert meta["status"] == "not_found"
+    outcomes = [a["outcome"] for a in meta["attempts"] if a["step"] == "entry_url"]
+    assert any(o.startswith("web page; trying the 1 PDF") for o in outcomes)
+    assert not any("doi.org" in u for u, _ in transport.calls)
+
+
+def test_a_page_with_another_title_is_rejected(tmp_path):
+    url = "https://news.example.org/story"
+    ref = _ref("r018", f"Poe, D. (2019). Changes in state transit law create new commuting options. Example Radio. {url}",
+               {"title": "Changes in state transit law create new commuting options", "year": "2019",
+                "type": "post-weblog", "authors": [{"family": "Poe", "given": "D."}], "url": url})
+    other = b"<html><head><title>Weather today</title></head><body>" + b"<p>Rain and wind all day long.</p>" * 60 + b"</body></html>"
+    transport = _transport({url: (200, "text/html", other)})
+    meta = Cascade(Fetcher(tmp_path / "cache", transport=transport, sleep=lambda s: None),
+                   tmp_path / "sources").run(ref, steps=["entry_url"])
+    assert meta["status"] == "not_found"
+    assert any(a["outcome"].startswith("page rejected") for a in meta["attempts"])
+
+
+def test_web_check_pages_feed_the_cascade(tmp_path):
+    work = tmp_path / "w"
+    (work / "references").mkdir(parents=True)
+    rows = [{"ref": "r006", "dedicated_page": "https://www.example.org/report.pdf", "outcome": "exists, not indexed"},
+            {"ref": "r044", "dedicated_page": None, "outcome": "likely non-existent"},
+            {"ref": "r045", "dedicated_page": "https://x.example/p", "outcome": "unverified"}]
+    (work / "references" / "web_checks_1.json").write_text(json.dumps(rows))
+    assert prep._web_pages(work) == {"r006": ["https://www.example.org/report.pdf"]}
+    prev = {"status": "not_found", "attempts": [{"step": "openalex", "outcome": "no match"}], "fetched_at":
+            dt.datetime.now(dt.timezone.utc).isoformat()}
+    assert prep._reusable(prev, None, False, ["https://www.example.org/report.pdf"]) is False
+    assert prep._reusable(prev, None, False, []) is True
+
+
+def test_a_report_page_gives_its_full_report_not_the_summary(tmp_path):
+    page = "https://www.agency.example.gov/publications/123"
+    title = "Measuring Household Food Purchases with Retail Scanner Data"
+    summary_pdf = make_pdf([[title, "Report summary"] + FILLER] * 2)
+    full_pdf = make_pdf([[title, "Ann Example"] + FILLER] * 5)
+    landing = (b"<html><head><title>Measuring Household Food Purchases</title></head><body>"
+               b"<a href='/media/7545/tb-123-report-summary.pdf'>Download the report summary (PDF)</a>"
+               b"<a href='/media/7544/tb-123.pdf'>Download the full report (PDF)</a></body></html>")
+    routes = {page: (200, "text/html", landing),
+              "https://www.agency.example.gov/media/7545/tb-123-report-summary.pdf": (200, "application/pdf", summary_pdf),
+              "https://www.agency.example.gov/media/7544/tb-123.pdf": (200, "application/pdf", full_pdf)}
+    ref = _ref("r008", f"Example, A. et al. (2019). {title} (TB-123). Example Agency. {page}",
+               {"title": title, "year": "2019", "type": "report", "authors": [{"family": "Example", "given": "Ann"}],
+                "url": page})
+    meta = Cascade(Fetcher(tmp_path / "cache", transport=_transport(routes), sleep=lambda s: None),
+                   tmp_path / "sources").run(ref, steps=["entry_url"])
+    assert meta["status"] == "full_text" and meta["pages"] == 5 and meta["url"].endswith("tb-123.pdf")
