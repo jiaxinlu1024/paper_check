@@ -1,6 +1,6 @@
 # Paper Check skill: design
 
-Status: v0.4, 2026-10-17. Adopts the P0 and P1 recommendations from the survey of existing tools in `reports/Existing paper check tools.md`. No code is built yet.
+Status: v0.5, 2026-10-17. Adopts the P0 and P1 recommendations from the survey of existing tools in `reports/Existing paper check tools.md`. Version 0.1 of the skill implements this design; `dev/ARCHITECTURE.md` says how the code realizes it, and section 15 shows the actual layout.
 
 ## 1. Goal
 
@@ -569,28 +569,32 @@ Each check is measured by precision, recall, false accepts and false rejects, an
 .claude/skills/paper-check/
   SKILL.md                 orchestration, kept under 500 lines
   requirements.txt         the permissive core from section 3
-  THIRD_PARTY_NOTICES.md   licenses of adapted prompts and rules
+  THIRD_PARTY_NOTICES.md   licenses of adapted prompts, rules and data
   references/
-    checklist.md           section 8 of this document
+    checks.yaml            all 119 checks, machine-readable; checklist.md is the readable version
     report-format.md       section 11
     reference-policy.md    section 6
     citation-support.md    section 7
     dimensions/            one prompt per reading agent, adapted with attribution
+    agents/                source digest, citation judge, refuter, reference web check, second run
     venues/                one dated profile per journal
-    guidelines/            the economics composite checklist
+    guidelines/            the economics experiments checklist and the verified list of common misattributions
   scripts/
-    ingest.py              LaTeX, PDF or Word into the paper map
-    lookups/               one client per service, with cache and backoff
-    check_format.py
-    check_references.py
-    citation_support.py
-    check_numbers.py       regression tables, GRIM, DEBIT, percentage points
-    verify_quotes.py
-    build_report.py
-evals/                     at the repository root, see evals/README.md
+    pc.py                  the command line; re-runs itself inside ~/.paper-check/venv
+    paper_check/
+      ingest/              LaTeX, Word and PDF readers into the paper map, and page rendering
+      checks/              format, venue, coherence, language, local references, numbers and statistics, integrity
+      lookups/             one client per service, the reference policy, versions, retractions, replications, links
+      citations/           propositions, the legal full-text cascade, term expansion, the exhaustive scan
+      verify.py            findings validation and quote verification
+      runs.py              merging two independent runs
+      report.py            the Markdown and JSON report
+  evals/                   eval prompts and scoring scripts for the skill-creator loop
+tests/                     at the repository root, with three synthetic test papers and their answer keys
+evals/                     at the repository root, the evaluation sets described in evals/README.md
 ```
 
-The skill lives in the shared GitHub repository. Your coworker opens that repository in Claude Code desktop and can use the skill at once, change it, and send changes back by pull request. To use it in every project, they can also copy the folder into `~/.claude/skills/`. The Retraction Watch file, FReD and the STW thesaurus are downloaded on first use and cached, not committed.
+The skill lives in the shared GitHub repository. Your coworker opens that repository in Claude Code desktop and can use the skill at once, change it, and send changes back by pull request. To use it in every project, they can also copy the folder into `~/.claude/skills/`. The STW thesaurus and the FReD replication data are downloaded on first use and cached under `~/.paper-check/cache/`, not committed.
 
 ## 16. Deferred recommendations (P2)
 
