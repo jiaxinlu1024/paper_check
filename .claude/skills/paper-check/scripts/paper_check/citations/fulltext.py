@@ -292,7 +292,13 @@ def family_keys(authors) -> list:
 
 
 def names_from_display(names: Iterable[str]) -> list:
-    return [w for w in (norm_text(n).split()[-1:] for n in names if n) for w in w]
+    """Family-name keys from display names such as 'Brigitte C. Madrian' -> 'madrian'."""
+    keys = []
+    for name in names:
+        words = norm_text(name).split()
+        if words:
+            keys.append(words[-1])
+    return keys
 
 
 def author_overlap(ref_keys: list, record_keys: list) -> Optional[float]:
@@ -372,21 +378,23 @@ def clean_page_text(text: str) -> str:
     return "\n".join(line.rstrip() for line in text.split("\n")).strip()
 
 
-def extract_pdf(source, max_pages: int = MAX_PAGES) -> dict:
+def extract_pdf(source, max_pages: int = MAX_PAGES, check: Optional[Callable[[str], bool]] = None) -> dict:
     """Text of each page with pdfplumber. `source` is a path or the PDF's bytes.
 
-    Returns {"pages": [text per page], "n_pages", "truncated", "error"}."""
+    With `check`, the first three pages are passed to it first, and extraction stops early when it
+    returns False ("rejected": True), so a wrong PDF is not read to the end.
+    Returns {"pages": [text per page], "n_pages", "truncated", "error", "rejected"}."""
     import pdfplumber
 
     for name in ("pdfminer", "pdfplumber"):
         logging.getLogger(name).setLevel(logging.ERROR)
-    out = {"pages": [], "n_pages": 0, "truncated": False, "error": None}
+    out = {"pages": [], "n_pages": 0, "truncated": False, "error": None, "rejected": False}
     try:
         handle = io.BytesIO(source) if isinstance(source, (bytes, bytearray)) else str(source)
         with pdfplumber.open(handle) as pdf:
             out["n_pages"] = len(pdf.pages)
             out["truncated"] = out["n_pages"] > max_pages
-            for page in pdf.pages[:max_pages]:
+            for i, page in enumerate(pdf.pages[:max_pages]):
                 try:
                     text = page.extract_text() or ""
                 except Exception:
@@ -396,6 +404,10 @@ def extract_pdf(source, max_pages: int = MAX_PAGES) -> dict:
                     page.close()
                 except Exception:
                     pass
+                if check is not None and i == min(2, out["n_pages"] - 1, max_pages - 1):
+                    if not check("\n".join(out["pages"])):
+                        out["rejected"] = True
+                        break
     except Exception as exc:
         out["error"] = f"{type(exc).__name__}: {str(exc)[:200]}"
     return out
@@ -468,15 +480,20 @@ def guess_version(page1: str, fields: dict) -> tuple:
 
 
 # ================================================================ HTML pages
-_CHALLENGE = re.compile(rb"just a moment\.\.\.|cf-chl|challenge-platform|cf-browser-verification|attention required! \| cloudflare|"
-                        rb"anubis|checking your browser|are you a robot|captcha|pardon our interruption|incapsula|access denied",
-                        re.I)
+_CHALLENGE_STRONG = re.compile(rb"<title>\s*just a moment|cf-chl|cf-browser-verification|attention required! \| cloudflare|"
+                               rb"anubis_challenge|protected by <a[^>]*anubis|checking your browser before|"
+                               rb"pardon our interruption|incapsula incident", re.I)
+_CHALLENGE_WEAK = re.compile(rb"captcha|are you a robot|access denied|unusual traffic", re.I)
 
 
 def is_challenge(response: Response) -> bool:
-    head = response.body[:20000]
-    return bool(head) and b"%PDF" not in head[:1024] and bool(_CHALLENGE.search(head)) and (
-        response.status in (401, 403, 429, 503) or b"<html" in head.lower() or b"<!doctype" in head.lower())
+    """A bot-protection page. Strong markers count on any status; weak ones only on refusals."""
+    head = response.body[:30000]
+    if not head or head.lstrip()[:5].startswith(b"%PDF"):
+        return False
+    if _CHALLENGE_STRONG.search(head):
+        return True
+    return response.status in (401, 403, 429, 503) and bool(_CHALLENGE_WEAK.search(head))
 
 
 def citation_pdf_url(body: bytes, base_url: str) -> Optional[str]:
@@ -839,9 +856,10 @@ class Cascade:
             if title_similarity(st.title, record.get("title")) < 92:
                 continue
             overlap = author_overlap(st.keys, self._oa_keys(record))
-            if overlap is not None and overlap < 0.5:
-                continue
-            if overlap is None and not st.keys:
+            if overlap is None or overlap < 0.5:
+                continue  # without author agreement a same-titled record may be another work
+            y = _year(record.get("publication_year"))
+            if st.year and y and abs(st.year - y) > 8:
                 continue
             st.versions.append(record)
             self._collect_ids(st, record)
@@ -880,28 +898,34 @@ class Cascade:
             return False
         body = response.body
         if not body.lstrip()[:8].startswith(b"%PDF"):
-            if is_challenge(response):
-                st.attempt(cand.source, "blocked by bot protection (not bypassed)", shown)
-                return False
-            link = citation_pdf_url(body, response.final_url or cand.url) if b"<" in body[:2000] else None
+            link = citation_pdf_url(body, response.final_url or cand.url) if b"<" in body[:4000] else None
             if link and hop == 0 and link not in st.tried:
                 follow = dataclasses.replace(cand, url=link, shown_url=None,
                                              landing_page=cand.landing_page or strip_secrets(cand.url))
                 st.attempt(cand.source, "landing page; following its citation_pdf_url", shown)
                 return self._try(st, follow, hop=1)
-            st.attempt(cand.source, f"not a PDF ({response.content_type or 'unknown type'})", shown)
+            if is_challenge(response):
+                st.attempt(cand.source, "blocked by bot protection (not bypassed)", shown)
+            else:
+                st.attempt(cand.source, f"not a PDF ({response.content_type or 'unknown type'})", shown)
             return False
-        ext = extract_pdf(body)
+        verdict = {}
+
+        def check(first_pages: str) -> bool:
+            verdict.update(identify(st.fields, first_pages))
+            return bool(verdict["ok"]) or not text_quality([first_pages])["usable"]
+
+        ext = extract_pdf(body, check=check)
         if ext["error"]:
             st.attempt(cand.source, f"PDF could not be read: {ext['error']}", shown)
             return False
         quality = text_quality(ext["pages"])
         if not quality["usable"]:
             st.attempt(cand.source, "PDF has no usable text layer (scanned?); OCR is not available", shown)
-            st.warn(f"A PDF was found at {shown} but has no usable text layer.")
+            st.warn(f"A PDF was found at {shown} but has no usable text layer; OCR is not available.")
             return False
-        ident = identify(st.fields, "\n".join(ext["pages"][:3]))
-        if not ident["ok"]:
+        ident = verdict or identify(st.fields, "\n".join(ext["pages"][:3]))
+        if ext["rejected"] or not ident["ok"]:
             st.attempt(cand.source, f"PDF rejected: {ident['basis']} (title score {ident['title_score']})", shown)
             return False
         st.attempt(cand.source, "ok", shown)
@@ -1221,11 +1245,17 @@ class Cascade:
         (out / f"{st.ref.id}.txt").write_text(body, encoding="utf-8")
         self._remove(out / f"{st.ref.id}.pdf")
         meta = self._base_meta(st)
-        meta.update({"status": "abstract_only", "source": source, "url": None, "version": "abstract",
+        if source == "openalex_abstract" and st.openalex_work:
+            url = st.openalex_work.get("id")
+        elif source == "crossref_abstract":
+            url = f"https://doi.org/{st.doi}"
+        elif st.ids.get("semantic_scholar"):
+            url = f"https://www.semanticscholar.org/paper/{st.ids['semantic_scholar']}"
+        else:
+            url = None
+        meta.update({"status": "abstract_only", "source": source, "url": url, "version": "abstract",
                      "pages": 0, "abstract_only": True, "chars": len(text), "file": f"sources/{st.ref.id}.txt",
                      "note": ABSTRACT_NOTE, "sha256": hashlib.sha256(body.encode("utf-8")).hexdigest()})
-        if st.openalex_work:
-            meta["url"] = st.openalex_work.get("id")
         st.result = self._write_meta(st, meta)
         return False  # an abstract is not full text; the cascade ends here anyway
 
