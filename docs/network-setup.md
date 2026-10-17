@@ -36,4 +36,19 @@ python3 tools/check_network.py
 
 Every required host should show OK. Some publishers and SSRN use bot protection and may answer with HTTP 403. The script counts that as reachable, because the network path is open, but the skill may not be able to read pages there. In that case it falls back to other sources and says so in the report.
 
+## API keys and contact email
+
+Open network access is not enough for every service. A test on 2026-10-17, with Full access, found:
+
+| Service | Without a key | What to set up |
+|---|---|---|
+| Crossref | DOI lookups work | Add a contact email, which moves requests into Crossref's faster polite pool |
+| OpenAlex | Single-DOI lookups work; searches answered "too many requests" | A free API key, required for most use since February 2026 according to the survey |
+| Semantic Scholar | Refused with "too many requests" | A free API key. According to the survey, keys are not issued to free email domains, so apply with an institutional address |
+| Unpaywall | Refused a placeholder email | A real contact email with every request |
+| arXiv, NBER, RePEc | Work | Nothing |
+| Most publisher sites | Answer 403 because of bot protection | Nothing to fix. The skill uses open-access copies and the user's folder of PDFs instead |
+
+The skill will read keys and the contact email from `paper-check.yaml`, never from the paper or the repository.
+
 Official documentation: https://code.claude.com/docs/en/cloud-environments#network-access
