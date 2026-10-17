@@ -232,3 +232,34 @@ def test_merged_runs_keep_the_second_runs_disputes():
     assert first["disputed_script_findings"][1]["from_run"] == 2
     empty = {}
     assert merge_disputes(empty, {}) == 0 and "disputed_script_findings" not in empty
+
+
+def test_consolidation_groups_one_root_cause_from_several_dimensions(work_copy):
+    _write(work_copy, "agent_logic.json", {"producer": "agent_logic", "findings": [
+        _finding(check_id="LOG-03", title="Causal claim", severity="major", problem="Causal wording from a correlation."),
+    ]})
+    _write(work_copy, "agent_reviewer.json", {"producer": "agent_reviewer", "findings": [
+        _finding(check_id="REV-06", title="No design for causal claims", severity="minor", status="likely",
+                 quote=SESSIONS, problem="Survey sessions cannot support the causal claim."),
+        _finding(check_id="REV-05", title="Other problem", severity="minor", quote=SESSIONS,
+                 problem="Something else entirely."),
+    ]})
+    main(["verify", str(work_copy)])
+    main(["report", str(work_copy)])
+    first = json.loads((work_copy.parent / "paper-check-findings.json").read_text())["findings"]
+    keys = {f["check_id"]: f["key"] for f in first}
+    assert len(first) == 3 and all(keys.values())
+    (work_copy / "consolidation.json").write_text(json.dumps({"groups": [
+        {"keys": [keys["REV-06"], keys["LOG-03"]], "keep": keys["REV-06"], "reason": "one causal overclaim"},
+        {"keys": ["NUM-01-00000000", keys["REV-05"]], "reason": "a key that does not exist"},
+    ]}))
+    main(["report", str(work_copy)])
+    data = json.loads((work_copy.parent / "paper-check-findings.json").read_text())
+    by_check = {f["check_id"]: f for f in data["findings"]}
+    assert set(by_check) == {"LOG-03", "REV-05"}            # the Major keeps the group, whatever "keep" says
+    merged = by_check["LOG-03"]
+    assert merged["extra"]["also"][0]["check_id"] == "REV-06"
+    assert any(q.get("quote") == SESSIONS for q in merged["related_quotes"])
+    assert any("NUM-01-00000000" in w for w in data["warnings"])
+    # the keys stay stable across builds
+    assert merged["key"] == keys["LOG-03"]

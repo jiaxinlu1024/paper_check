@@ -166,6 +166,8 @@ PC status WORK            # confirms coverage
 
 `PC status` lists checks that have no outcome. Each one either gets run, or gets skipped with an honest reason, such as "not run in quick mode" or "the subagent failed". Use `--uncovered` only after you have tried to run them.
 
+**Consolidate.** Different dimensions often report one problem from different angles: the abstract's overclaim under coherence, logic and numbers, or a missing dataset citation under citations and ethics. The script merges findings that quote the same sentence; for the rest, after the first `PC report`, launch one agent with `references/agents/consolidator.md`. It reads the draft `paper-check-findings.json` and writes `WORK/consolidation.json`, groups of findings that one fix resolves. Then run `PC report WORK` again: each group appears once, under its most severe finding, with the others listed in it.
+
 Then read the report yourself before handing it over. Look for findings that contradict each other, duplicates the merge missed, and anything that reads as generic advice rather than a specific problem with a quote. Fix the findings files and rerun `PC verify` and `PC report` if needed.
 
 Finally, tell the user, briefly:

@@ -16,6 +16,7 @@ Outputs, beside the work folder:
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -219,7 +220,23 @@ def _strength(f) -> tuple:
             0 if f.producer.get("kind") == "script" else 1)
 
 
+def _key(f) -> str:
+    """A key that names a finding across report builds: its producer, check, block and quote."""
+    base = "|".join([str(f.producer.get("name") or ""), str(f.producer.get("check") or ""), f.check_id,
+                     f.locations[0].block if f.locations else "", normalize(f.quote or "").lower()[:300],
+                     "" if f.quote else normalize(f.problem or "").lower()[:200]])
+    return f"{f.check_id}-{hashlib.sha1(base.encode('utf-8')).hexdigest()[:8]}"
+
+
+def _take_keys(keep, other) -> None:
+    keys = keep.extra.setdefault("absorbed_keys", [])
+    for k in [other.extra.get("key")] + list(other.extra.get("absorbed_keys") or []):
+        if k and k not in keys and k != keep.extra.get("key"):
+            keys.append(k)
+
+
 def _absorb(keep, other, note: str) -> None:
+    _take_keys(keep, other)
     keep.evidence.extend(e for e in other.evidence if e not in keep.evidence)
     keep.related_quotes.extend(q for q in other.related_quotes if q not in keep.related_quotes)
     keep.trajectory.extend(t for t in other.trajectory if t not in keep.trajectory)
@@ -303,6 +320,7 @@ def _pair_runs(findings: list) -> list:
             if other.quote and other.quote != keep.quote:
                 keep.related_quotes.append({"quote": other.quote})
             keep.trajectory.append("Second run found it independently, quoting another passage.")
+            _take_keys(keep, other)
             drop.add(id(other))
     return [f for f in findings if id(f) not in drop]
 
@@ -328,6 +346,7 @@ def _group_patterns(findings: list) -> list:
             if o.quote:
                 keep.related_quotes.append({"quote": o.quote, "block": o.locations[0].block if o.locations else None})
             keep.locations.extend(l for l in o.locations if l.block not in {x.block for x in keep.locations})
+            _take_keys(keep, o)
             drop.add(id(o))
         keep.trajectory.append(f"Grouped {len(fs)} findings of the same kind from {keep.producer.get('name')}.")
     return [f for f in findings if id(f) not in drop]
@@ -356,7 +375,60 @@ def _dedupe(findings: list, pm=None) -> list:
         keep.evidence.extend(e for e in f.evidence if e not in keep.evidence)
         keep.trajectory.extend(t for t in f.trajectory if t not in keep.trajectory)
         keep.extra.setdefault("merged_from", []).append(f.producer.get("name"))
+        _take_keys(keep, f)
     return _group_patterns(_merge_root_causes(list(merged.values()), pm))
+
+
+def _consolidate(findings: list, work: Path) -> tuple:
+    """Merge the groups a consolidation agent wrote to WORK/consolidation.json: findings from different
+    dimensions that report one root cause, which one fix resolves. Each group goes under its most
+    severe finding; the others become "also reported" entries with their quotes and places."""
+    path = work / "consolidation.json"
+    data = _load_json(path) if path.exists() else None
+    if not data:
+        return findings, []
+    groups = data.get("groups") if isinstance(data, dict) else data
+    index: dict = {}
+    for f in findings:
+        for k in [f.extra.get("key")] + list(f.extra.get("absorbed_keys") or []):
+            if k:
+                index.setdefault(k, f)
+    notes, drop, merged = [], set(), 0
+    for g in groups if isinstance(groups, list) else []:
+        if not isinstance(g, dict):
+            continue
+        members, seen = [], set()
+        for k in g.get("keys") or []:
+            f = index.get(k) if isinstance(k, str) else None
+            if f is None:
+                notes.append(f"consolidation.json names a finding key that this report does not have: {k}")
+                continue
+            if id(f) not in seen and id(f) not in drop:
+                seen.add(id(f))
+                members.append(f)
+        if len(members) < 2:
+            continue
+        strongest = min(members, key=_strength)
+        prefer = index.get(g.get("keep")) if isinstance(g.get("keep"), str) else None
+        keep = prefer if (prefer is not None and id(prefer) in seen and SEVERITY_RANK.get(prefer.severity, 9)
+                          <= SEVERITY_RANK.get(strongest.severity, 9)) else strongest
+        reason = str(g.get("reason") or "the same root cause").strip().rstrip(".")
+        for o in members:
+            if o is keep:
+                continue
+            _absorb(keep, o, f"same root cause: {reason}")
+            if o.quote and normalize(o.quote) != normalize(keep.quote or "") and not any(
+                    isinstance(q, dict) and q.get("quote") == o.quote for q in keep.related_quotes):
+                keep.related_quotes.append({"quote": o.quote, "block": o.locations[0].block if o.locations else None})
+            keep.locations.extend(l for l in o.locations if l.block not in {x.block for x in keep.locations})
+            drop.add(id(o))
+            merged += 1
+        keep.trajectory.append(f"Consolidated with {len(members) - 1} finding(s) from other checks that report the "
+                               f"same root cause: {reason}.")
+    if merged:
+        notes.insert(0, f"Consolidated {merged} findings into others that report the same root cause "
+                        "(consolidation.json).")
+    return [f for f in findings if id(f) not in drop], notes
 
 
 def _refuted(f) -> bool:
@@ -538,9 +610,13 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
         for c in fs.coverage:
             c.producer = c.producer or fs.producer
             coverage[c.check_id].append(c)
+    for f in findings:
+        f.extra["key"] = _key(f)
     dropped = [f for f in findings if f.status == "dropped" and not _refuted(f)]
     refuted = [f for f in findings if _refuted(f)]
     kept = _dedupe([f for f in findings if f.status != "dropped" and not _refuted(f)], pm)
+    kept, consolidation_notes = _consolidate(kept, work)
+    warnings.extend(n for n in consolidation_notes if "does not have" in n)
     min_rank = SEVERITY_RANK.get(settings.min_severity, 3)
     below = [f for f in kept if SEVERITY_RANK.get(f.severity, 9) > min_rank]
     kept = [f for f in kept if SEVERITY_RANK.get(f.severity, 9) <= min_rank]
@@ -733,6 +809,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     out_findings = []
     for f in kept:
         d = f.to_dict()
+        d["key"] = f.extra.get("key")
         d["dimension"] = f.dimension
         d["where"] = loc.where(f)
         out_findings.append(d)
@@ -755,6 +832,8 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     print(f"Wrote {paper_dir / OUTPUT_REPORT} and {paper_dir / OUTPUT_FINDINGS}: {len(kept)} findings "
           f"({', '.join(f'{counts.get(s, 0)} {s}' for s in SEVERITY_RANK)}), {len(refuted)} refuted, "
           f"{len(dropped)} dropped.")
+    for note in consolidation_notes:
+        print(note)
     for name, err in unreadable:
         print(f"WARNING: {name} could not be read: {err}")
     return 0
