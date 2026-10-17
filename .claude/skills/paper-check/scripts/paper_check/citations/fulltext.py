@@ -542,7 +542,8 @@ def index_sources_folder(folder: Path, cache_file: Optional[Path] = None) -> lis
         except Exception:
             cache = {}
     entries, fresh = [], {}
-    for path in sorted(p for p in Path(folder).rglob("*") if p.is_file() and p.suffix.lower() == ".pdf"):
+    folder = Path(folder).resolve()
+    for path in sorted(p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() == ".pdf"):
         st = path.stat()
         key = str(path.resolve())
         hit = cache.get(key)
@@ -586,16 +587,20 @@ def match_sources(folder: Optional[Path], references: list, cache_file: Optional
               "pdfs": [], "matches": {}, "unmatched_pdfs": [], "warnings": []}
     if not result["exists"]:
         return result
-    entries = index_sources_folder(Path(folder), cache_file)
+    entries = index_sources_folder(Path(folder).resolve(), cache_file)
     pairs = []
     for i, entry in enumerate(entries):
         if not entry.get("has_text"):
             continue
+        words = set(norm_text(entry["first_text"][:15000] + " " + (entry.get("meta_title") or "")).split())
         for ref in references:
             fields = ref.fields or {}
-            ident = identify(fields, entry["first_text"])
             doi = norm_doi(fields.get("doi"))
             doi_hit = bool(doi and doi in entry.get("dois", []))
+            title_words = [w for w in norm_text(fields.get("title")).split() if len(w) >= 4]
+            if not doi_hit and (not title_words or sum(w in words for w in title_words) < 0.6 * len(title_words)):
+                continue  # cheap filter before the fuzzy alignment
+            ident = identify(fields, entry["first_text"])
             ts = ident["title_score"] or 0.0
             meta_ts = float(fuzz.ratio(norm_text(fields.get("title")), norm_text(entry.get("meta_title")))) if entry.get("meta_title") and fields.get("title") else 0.0
             au = ident["author_score"]
