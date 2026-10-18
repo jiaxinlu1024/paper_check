@@ -890,3 +890,14 @@ def test_coh05_ignores_variable_names_and_coh09_ignores_shared_citations(tmp_pat
     pm, _ = ingest_tex(tmp_path, body)
     found, _ = run(pm, "COH-05")
     assert found == []
+
+
+def test_fmt02_a_conceded_limitation_is_not_an_acknowledgment():
+    pm = make_pm([("title", "A Paper"), ("abstract", "We study things."), ("heading", "4 Method"),
+                  ("paragraph", "We acknowledge that a single survey wave limits what can be said about timing. "
+                                "Later waves would help."),
+                  ("heading", "5 Results"),
+                  ("paragraph", "We acknowledge financial support from the Example Foundation.")])
+    found, _ = run(pm, "FMT-02", venue="aer")
+    quotes = " ".join(f.quote or "" for f in found)
+    assert "Example Foundation" in quotes and "single survey wave" not in quotes

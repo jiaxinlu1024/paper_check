@@ -335,8 +335,12 @@ _OWN_REPO = re.compile(r"\b(?:our|my)\b|replication|(?:data|code|materials|progr
                        r"(?:are|is|will be) (?:available|posted|at|on|in)|available (?:at|from|on)|can be (?:found|downloaded)")
 _THIRD_PARTY = re.compile(r"\b(?:package|library|toolbox|software|module|developed by|written by|implemented by|"
                           r"maintained by)\b")
-_THANKS = re.compile(r"^\s*(?:we|i)\s+(?:are\s+(?:very\s+)?)?(?:thank|grateful|gratefully\s+acknowledge|acknowledge)\b"
-                     r"|^\s*acknowledge?ments?\b", re.I)
+# "We acknowledge financial support" thanks someone; "We acknowledge that the sample is small" concedes a limit.
+_CONCEDE = (r"(?!\s+(?:that|this|these|those|it|several|some|possible|potential|limitations?|"
+            r"the\s+(?:limitations?|possibility|caveats?|concerns?|fact|risks?|challenges?|difficult(?:y|ies))|"
+            r"our\s+(?:study|design|analysis|paper|data|results?|approach|estimates?))\b)")
+_THANKS = re.compile(r"^\s*(?:we|i)\s+(?:are\s+(?:very\s+)?)?(?:thank|grateful|gratefully\s+acknowledge|acknowledge"
+                     + _CONCEDE + r")\b|^\s*acknowledge?ments?\b", re.I)
 _SOFTWARE = re.compile(r"latex|tex\b|pdftex|xetex|luatex|microsoft|word|acrobat|overleaf|libreoffice|openoffice|"
                        r"google|pages|quartz|ghostscript|writer|distiller|pandoc|r markdown|knitr", re.I)
 
