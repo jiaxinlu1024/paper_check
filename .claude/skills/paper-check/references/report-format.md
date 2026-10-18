@@ -30,10 +30,11 @@ Each findings file is one FindingSet: `{"producer", "settings", "findings": [...
 ## Report sections
 
 1. **Header.** Paper title and file, input format, date and skill version, mode, network, venue profile and the date its rules were checked (with a warning when the profile is more than 180 days old), the sources folder, and the producers that contributed. Warnings follow: unreadable findings files, network off, ingestion problems, findings below the minimum severity.
-2. **Summary.** Counts by severity, split into confirmed, likely and needs human judgment; counts by dimension; the top five issues; and one line of coverage counts.
-3. **Findings.** Critical first, then Major, Minor and Suggestion. Within a level, findings follow the order of the paper, and each gets an ID such as F-012. An **index in paper order** follows, for writers fixing the draft from top to bottom.
-4. **Coverage.** One line lists the checks that ran in full. A table gives every other check its outcome: partly run, not applicable, skipped with the reason, or not run when no producer covered it; checks left out for one shared reason, such as the mode, share a row. A skipped check was not passed. `paper-check-findings.json` has every check's outcome, with the number of findings and any note.
-5. **Appendices.** The reference table with an evidence card per reference; the citation support table, one row per citation, with a per-section summary such as "Section 2: 14 of 31 citations not supported or contradicted"; the claim-evidence map; every recomputed number; refuted findings with the refuter's counter-evidence; dropped findings with the reason; and ingestion warnings.
+2. **Short answer.** When the user asked a specific question, two to five sentences answering it, with the finding IDs behind each claim, written by the orchestrator to `WORK/answer.md`.
+3. **Summary.** Counts by severity, split into confirmed, likely and needs human judgment; counts by dimension; the top five issues; and one line of coverage counts.
+4. **Findings.** Critical first, then Major, Minor and Suggestion. Within a level, findings follow the order of the paper, and each gets an ID such as F-012. An **index in paper order** follows, for writers fixing the draft from top to bottom.
+5. **Coverage.** One line lists the checks that ran in full. A table gives every other check its outcome: partly run, not applicable, skipped with the reason, or not run when no producer covered it; checks left out for one shared reason, such as the mode, share a row. A skipped check was not passed. `paper-check-findings.json` has every check's outcome, with the number of findings and any note.
+6. **Appendices.** The reference table with an evidence card per reference; the citation support table, one row per citation, with a per-section summary such as "Section 2: 14 of 31 citations not supported or contradicted"; the claim-evidence map; every recomputed number; refuted findings with the refuter's counter-evidence; dropped findings with the reason; and ingestion warnings.
 
 ## One finding
 

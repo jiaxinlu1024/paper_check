@@ -339,6 +339,15 @@ def _take_keys(keep, other) -> None:
             keys.append(k)
 
 
+def _fix_text(fx) -> str:
+    """A fix in one line, as the report prints it."""
+    if fx is None:
+        return ""
+    if fx.action == "replace" and fx.original and fx.replacement is not None:
+        return f'replace "{fx.original}" with "{fx.replacement}".' + (f" {fx.detail}" if fx.detail else "")
+    return fx.detail or ""
+
+
 def _absorb(keep, other, note: str) -> None:
     _take_keys(keep, other)
     keep.evidence.extend(e for e in other.evidence if e not in keep.evidence)
@@ -347,7 +356,7 @@ def _absorb(keep, other, note: str) -> None:
     keep.extra.setdefault("also", []).append({
         "check_id": other.check_id, "title": other.title, "severity": other.severity, "status": other.status,
         "producer": other.producer.get("name"), "source": list(_source(other)), "problem": other.problem,
-        "note": note})
+        "fix": _fix_text(other.fix) or None, "note": note})
     # A less severe finding cannot confirm a more severe claim: a confirmed Major "the DOI belongs to
     # another paper" does not confirm a likely Critical "the work does not exist".
     if SEVERITY_RANK.get(other.severity, 9) <= SEVERITY_RANK.get(keep.severity, 9):
@@ -657,6 +666,15 @@ def _render_finding(f, loc: Locator, checklist: dict, dimensions: dict, brief: b
             lines.append(f"Suggested fix ({fx.action}): {fx.detail or ''}".rstrip())
         if fx.resolved_when:
             lines.append(f"Resolved when: {fx.resolved_when}")
+    # A merged finding keeps the other problems' own fixes: one entry can need a fix for each fault.
+    main_fix = normalize(_fix_text(f.fix))
+    shown = set()
+    for a in also:
+        extra = normalize(a.get("fix") or "")
+        if extra and extra != main_fix and extra not in shown:
+            shown.add(extra)
+            lines.append(f"Also fix ({a.get('check_id')}): {a.get('fix')}")
+    if f.fix or shown:
         lines.append("")
     return "\n".join(lines)
 
@@ -695,8 +713,11 @@ def _coverage(checklist: dict, coverage: dict, kept: list, refuted: tuple = ()) 
             status, detail = "skipped", "; ".join(reasons) or "no reason given"
         if overturned.get(cid) and status in ("run", "partly run"):
             detail += f"; {overturned[cid]} later refuted (see the refuted list)"
+        caveats = sorted({c.caveat for c in entries if getattr(c, "caveat", None)})
+        if caveats and status in ("run", "partly run"):
+            detail += "; " + "; ".join(caveats)
         rows.append({"check_id": cid, "title": info["title"], "dimension": info.get("dimension"),
-                     "status": status, "detail": detail,
+                     "status": status, "detail": detail, "caveat": "; ".join(caveats) or None,
                      "producers": sorted({c.producer for c in entries if c.producer})})
     return rows
 
@@ -793,6 +814,12 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     if warnings:
         md += ["**Warnings**", ""] + [f"- {w}" for w in warnings] + [""]
 
+    # ---- the answer to the user's question, written by the orchestrator ----
+    answer_path = work / "answer.md"
+    answer = answer_path.read_text(encoding="utf-8").strip() if answer_path.is_file() else ""
+    if answer:
+        md += ["## Short answer", "", answer, ""]
+
     # ---- summary --------------------------------------------------------
     md += ["## Summary", ""]
     md += _md_table(["Severity", "Findings", "Confirmed", "Likely", "Needs human judgment"],
@@ -815,7 +842,9 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
         md.append("")
     else:
         md += ["No findings.", ""]
-    md.append(f"Coverage: of {len(cov_rows)} checks, {cov_counts.get('run', 0)} ran, "
+    n_caveat = sum(1 for r in cov_rows if r["status"] == "run" and r.get("caveat"))
+    md.append(f"Coverage: of {len(cov_rows)} checks, {cov_counts.get('run', 0)} ran"
+              + (f" ({n_caveat} against unconfirmed journal rules)" if n_caveat else "") + ", "
               f"{cov_counts.get('partly run', 0)} ran in part, {cov_counts.get('not applicable', 0)} did not apply, "
               f"{cov_counts.get('skipped', 0)} were skipped and {cov_counts.get('not run', 0)} were not run.")
     md.append("")
@@ -836,8 +865,9 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
                           SEVERITY_TITLE[f.severity], _cell(f.problem, 160)] for f in index_rows])
         md.append("")
 
-    full = [r for r in cov_rows if r["status"] == "run"]
-    rest = [r for r in cov_rows if r["status"] != "run"]
+    # A check that ran against unconfirmed rules is listed with its caveat, not as run in full.
+    full = [r for r in cov_rows if r["status"] == "run" and not r.get("caveat")]
+    rest = [r for r in cov_rows if r["status"] != "run" or r.get("caveat")]
     md += ["## Coverage", "",
            f"{len(full)} of {len(cov_rows)} checks ran in full: {', '.join(r['check_id'] for r in full) or 'none'}. "
            "The table lists the others and why. Skipped checks were not passed: they were not run. "
@@ -846,7 +876,8 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
         # Checks left out for one shared reason, such as the mode, share a row.
         groups: dict = defaultdict(list)
         for r in rest:
-            groups[(r["status"], r["detail"])].append(r)
+            outcome = "run, with a caveat" if r["status"] == "run" else r["status"]
+            groups[(outcome, r["detail"])].append(r)
         rows = []
         for (status, detail), members in groups.items():
             if len(members) >= 3:
@@ -975,6 +1006,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
         "findings": out_findings,
         "refuted": [f.to_dict() for f in refuted],
         "dropped": [f.to_dict() for f in dropped],
+        "answer": answer or None,
         "coverage": cov_rows,
         "appendices": appendices,
         "warnings": warnings,

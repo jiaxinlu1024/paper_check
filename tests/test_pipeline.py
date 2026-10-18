@@ -176,7 +176,9 @@ def test_related_findings_on_one_passage_are_merged(work_copy):
     ]})
     _write(work_copy, "agent_coherence.json", {"producer": "agent_coherence", "findings": [
         _finding(check_id="COH-02", title="Abstract number not in the body", severity="major", status="likely",
-                 quote="by 23% relative to the control group", problem="The body never reports 23%."),
+                 quote="by 23% relative to the control group", problem="The body never reports 23%.",
+                 fix={"action": "investigate", "detail": "Report the 23% in the results, or drop it.",
+                      "resolved_when": "The body supports the abstract's number."}),
         _finding(check_id="LANG-04", title="Vague wording", severity="minor", quote=ABSTRACT_23,
                  problem="A different problem on the same words."),
     ]})
@@ -190,6 +192,8 @@ def test_related_findings_on_one_passage_are_merged(work_copy):
     md = (work_copy.parent / "paper-check-report.md").read_text()
     assert "(Numbers inside the paper), also COH-02" in md
     assert "Also reported by agent_coherence under COH-02" in md
+    # The merged finding keeps the absorbed finding's own fix.
+    assert "Also fix (COH-02): Report the 23% in the results, or drop it." in md
     cov = {r["check_id"]: r for r in data["coverage"]}
     assert cov["COH-02"]["detail"].startswith("1 findings")
 
@@ -382,3 +386,34 @@ def test_quick_report_is_brief_and_coverage_lists_only_what_did_not_run(tmp_path
     assert "checks ran in full:" in coverage
     data = json.loads((tmp_path / "paper-check-findings.json").read_text())
     assert len(data["coverage"]) == 125 and len(data["findings"][0]["evidence"]) == 5
+
+
+def test_the_report_opens_with_the_answer_to_the_users_question(work_copy):
+    _write(work_copy, "agent_logic.json", {"producer": "agent_logic", "findings": [_finding()]})
+    (work_copy / "answer.md").write_text("No: the causal claim is not supported (F-001).\n", encoding="utf-8")
+    main(["verify", str(work_copy)])
+    main(["report", str(work_copy)])
+    md = (work_copy.parent / "paper-check-report.md").read_text()
+    assert md.index("## Short answer") < md.index("## Summary")
+    assert "No: the causal claim is not supported (F-001)." in md.split("## Summary")[0]
+    data = json.loads((work_copy.parent / "paper-check-findings.json").read_text())
+    assert data["answer"].startswith("No: the causal claim")
+
+
+def test_checks_against_unconfirmed_journal_rules_carry_a_caveat(tmp_path):
+    """A check that ran against rules the venue profile could not confirm is not listed as run in full."""
+    assert main(["ingest", str(FIXTURES / "latex_basic"), "--out", str(tmp_path), "--venue", "jebo",
+                 "--offline"]) == 0
+    work = tmp_path / "paper-check-work"
+    assert main(["checks", str(work)]) == 0
+    main(["verify", str(work)])
+    main(["report", str(work)])
+    data = json.loads((tmp_path / "paper-check-findings.json").read_text())
+    cov = {r["check_id"]: r for r in data["coverage"]}
+    assert cov["FMT-01"]["status"] == "run" and "unconfirmed JEBO rule" in (cov["FMT-01"]["caveat"] or "")
+    assert "abstract_max_words" in cov["FMT-01"]["caveat"]
+    md = (tmp_path / "paper-check-report.md").read_text()
+    coverage = md.split("## Coverage")[1].split("\n## ")[0]
+    ran_in_full = coverage.split("checks ran in full:")[1].split(".")[0]
+    assert "FMT-01" not in ran_in_full and "run, with a caveat" in coverage
+    assert "against unconfirmed journal rules" in md.split("## Summary")[1].split("\n## ")[0]

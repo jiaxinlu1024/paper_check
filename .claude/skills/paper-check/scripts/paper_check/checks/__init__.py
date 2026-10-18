@@ -48,6 +48,7 @@ class Context:
     notes: dict = field(default_factory=dict)
     current: Optional[str] = None  # name of the check function running now
     partial: set = field(default_factory=set)  # checks that ran on part of what they cover
+    unconfirmed: dict = field(default_factory=dict)  # check function -> venue rules it used that are unconfirmed
 
     def finding(self, check_id: str, title: str, severity: str, problem: str, *,
                 block=None, quote: Optional[str] = None, related=None, evidence=None,
@@ -113,12 +114,17 @@ def run_checks(pm: PaperMap, ctx: Context, only: Optional[set] = None) -> Findin
         for f in found:
             f.producer.setdefault("check", name)
         out.findings.extend(found)
+        rules = sorted(ctx.unconfirmed.get(name) or ())
+        venue = ctx.venue or {}
+        label = venue.get("abbreviation") or venue.get("name") or "venue"
+        caveat = (f"rests on {len(rules)} unconfirmed {label} rule(s): "
+                  f"{', '.join(rules)}; findings that depend on them are not marked confirmed") if rules else None
         for cid in check_ids:
             n = sum(1 for f in found if f.check_id == cid)
             if cid not in ctx.coverage:
-                ctx.coverage[cid] = Coverage(cid, "run", ctx.notes.get(cid), name, n)
+                ctx.coverage[cid] = Coverage(cid, "run", ctx.notes.get(cid), name, n, caveat)
             elif cid in ctx.partial:
-                ran_in_part.append(Coverage(cid, "run", ctx.notes.get(cid), name, n))
+                ran_in_part.append(Coverage(cid, "run", ctx.notes.get(cid), name, n, caveat))
     for name, tb in errors:
         out.settings.setdefault("module_errors", {})[name] = tb
     # The part that ran comes first, so a lookup by check id keeps the entry that says what was left out.

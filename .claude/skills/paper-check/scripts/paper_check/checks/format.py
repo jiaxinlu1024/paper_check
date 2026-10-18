@@ -211,14 +211,24 @@ def venue_name(ctx) -> str:
     return v.get("abbreviation") or v.get("name") or v.get("id") or "the venue"
 
 
+def _note_unconfirmed(ctx, key: str, r: Optional[dict]) -> None:
+    """Remember that the running check used a venue rule the profile could not confirm; the coverage
+    table then says so, instead of listing the check as run in full."""
+    if r and r.get("status") != "confirmed" and hasattr(ctx, "unconfirmed"):
+        ctx.unconfirmed.setdefault(ctx.current, set()).add(key)
+
+
 def venue_rule(ctx, key: str) -> Optional[dict]:
     from ..venues import rule
-    return rule(ctx.venue, key)
+    r = rule(ctx.venue, key)
+    _note_unconfirmed(ctx, key, r)
+    return r
 
 
 def venue_other(ctx, name: str) -> Optional[dict]:
     for item in (((ctx.venue or {}).get("rules") or {}).get("other") or []):
         if item.get("name") == name and item.get("status") != "not_stated":
+            _note_unconfirmed(ctx, f"other.{name}", item)
             return item
     return None
 
@@ -246,7 +256,7 @@ def rule_caveat(r) -> str:
     if len(note) > 220:
         note = note[:217].rstrip() + "..."
     return (" This venue rule is unconfirmed" + (f" ({note})" if note else "")
-            + ", so the finding is marked likely; check the journal's current guidelines.")
+            + ", so the finding is not marked confirmed; check the journal's current guidelines.")
 
 
 def rule_evidence(ctx, key: str, r: dict) -> Evidence:
@@ -519,7 +529,7 @@ def anonymization(pm, ctx):
     if double:
         sev, status = "critical", rule_status(rrule)
         caveat = rule_caveat(rrule)
-        why = f"{vname} reviews submissions double-anonymously, so the manuscript must not identify its authors."
+        why = f"{vname} asks for an anonymized manuscript, so the manuscript must not identify its authors."
     elif rtype is None:
         sev, status, caveat = "minor", "likely", ""  # self-citations; other identifying details become a suggestion
         why = ("No venue profile was given, so the review type is unknown. Under double-anonymous review "

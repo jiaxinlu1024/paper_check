@@ -3,7 +3,8 @@
 Every request to a scholarly service goes through `HttpClient.get`, which:
 
 - identifies the skill as ``paper-check/<version> (+https://github.com/jiaxinlu1024/paper_check;
-  mailto:<contact>)``, the mailto part only when a contact email is configured;
+  mailto:<contact>)``, the mailto part only when a contact email is configured and only to
+  Crossref and OpenAlex, which ask for one; every other host gets the project URL alone;
 - keeps a minimum interval between requests in the same rate bucket. There is one bucket
   per service, and two for Crossref, whose searches have a lower limit than DOI lookups.
   A service's own rate-limit headers can only make the interval longer;
@@ -80,6 +81,9 @@ RATE_LIMITS = {
     "archive.org": 1.0,
     "default": 1.0,
 }
+# Services that ask clients to name a contact, in return for a more reliable pool.
+CONTACT_HOSTS = frozenset({"api.crossref.org", "api.openalex.org"})
+
 HOST_BUCKETS = {
     "api.crossref.org": "crossref",
     "api.openalex.org": "openalex",
@@ -400,8 +404,17 @@ class HttpClient:
     # ---- identity and redaction -----------------------------------------
     @property
     def user_agent(self) -> str:
+        """The user agent for a service that asks for a contact (Crossref and OpenAlex)."""
         tail = f"; mailto:{self.contact}" if self.contact else ""
         return f"paper-check/{__version__} (+{PROJECT_URL}{tail})"
+
+    def user_agent_for(self, url: str) -> str:
+        """The contact email goes only to the services that ask for one for their polite pools;
+        every other host, such as doi.org, NBER pages or data repositories, gets the project URL alone."""
+        host = urllib.parse.urlsplit(url).netloc.lower().split("@")[-1].split(":")[0]
+        if host in CONTACT_HOSTS:
+            return self.user_agent
+        return f"paper-check/{__version__} (+{PROJECT_URL})"
 
     def redact(self, text: Optional[str]) -> str:
         if not text:
@@ -507,7 +520,7 @@ class HttpClient:
 
     def _fetch(self, full: str, shown: str, headers: dict, bucket: str, max_retries: int,
                retry_after_cap: float, max_bytes: Optional[int], timeout: float) -> Response:
-        req_headers = {"User-Agent": self.user_agent, "Accept": "*/*"}
+        req_headers = {"User-Agent": self.user_agent_for(full), "Accept": "*/*"}
         req_headers.update(headers)
         attempts = 0
         status, hdrs, body, final = None, {}, b"", None
@@ -597,7 +610,7 @@ class HttpClient:
         dest = Path(dest)
         dest.parent.mkdir(parents=True, exist_ok=True)
         tmp = dest.with_name(dest.name + f".{os.getpid()}.part")
-        req = urllib.request.Request(url, headers={"User-Agent": self.user_agent, "Accept": "*/*"})
+        req = urllib.request.Request(url, headers={"User-Agent": self.user_agent_for(url), "Accept": "*/*"})
         limit_mb = max_bytes / 1e6
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:

@@ -170,6 +170,8 @@ PC status WORK            # confirms coverage
 
 Then read the report yourself before handing it over. Look for findings that contradict each other, duplicates the merge missed, and anything that reads as generic advice rather than a specific problem with a quote. Fix the findings files and rerun `PC verify` and `PC report` if needed.
 
+**Answer the question that was asked.** When the user asked something specific, such as "do the references hold up?" or "is it ready for the AER?", write the answer in two to five plain sentences to `WORK/answer.md`, pointing to the finding IDs that support each claim ("No: two references do not exist (F-004, F-005) and ..."), and run `PC report WORK` once more. The report then opens with it under "Short answer", so a reader who stops there still has the answer. Write it after the last consolidation, since the IDs come from the final report.
+
 Finally, tell the user, briefly:
 
 - where the report is (`paper-check-report.md` beside the paper) and the findings file for agents (`paper-check-findings.json`);
@@ -191,6 +193,8 @@ Don't paste the whole report into the chat.
 | Refuter | yes | yes | yes |
 
 A mode sets how deep the check goes; the user's request sets what it must answer. If the user asks about something the mode leaves out, also run the steps that answer it, and say so in the summary. For "do the references hold up?" in a quick check, run citation support as in standard mode (judges on every citation, without digests), because whether a cited work says what the sentence claims is the larger part of that question.
+
+A quick check still mentions a serious problem that the reading turns up outside its checks, such as participants who were deceived, or a human-subjects study with no ethics approval: one finding under the check it belongs to, with status needs_human and a trajectory step saying it was noticed in passing and that the check itself was not run. Don't search for such problems; a reader who saw one and stayed silent would not be doing the user a favor.
 
 In quick and standard modes, record what the mode leaves out with `PC skip WORK --checks <ids or dimensions> --reason "not run in <mode> mode"`.
 

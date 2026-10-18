@@ -323,6 +323,7 @@ class Coverage(_Base):
     reason: Optional[str] = None
     producer: Optional[str] = None
     count: Optional[int] = None
+    caveat: Optional[str] = None  # the check ran, but its verdicts rest on something unconfirmed
 
 
 @dataclass

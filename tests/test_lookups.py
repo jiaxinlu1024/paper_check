@@ -155,6 +155,19 @@ def test_user_agent_names_the_project_and_contact(tmp_path):
     assert HttpClient(tmp_path).user_agent.endswith("(+https://github.com/jiaxinlu1024/paper_check)")
 
 
+def test_contact_email_goes_only_to_services_that_ask_for_it(tmp_path):
+    """Crossref and OpenAlex ask for a contact for their polite pools; doi.org, NBER pages and data
+    repositories get the project URL alone."""
+    c, t, _ = client(tmp_path, lambda url, h, n: (200, {"Content-Type": "application/json"}, {"ok": True}))
+    for url in ("https://api.crossref.org/works/10.1/x", "https://api.openalex.org/works/W1",
+                "https://doi.org/10.1/x", "https://www.nber.org/papers/w1", "https://osf.io/abcd/"):
+        c.get(url)
+    agents = {url.split("/")[2]: headers["User-Agent"] for url, headers in t.calls}
+    assert all(EMAIL in agents[h] for h in ("api.crossref.org", "api.openalex.org"))
+    assert not any(EMAIL in agents[h] for h in ("doi.org", "www.nber.org", "osf.io"))
+    assert agents["doi.org"].endswith("(+https://github.com/jiaxinlu1024/paper_check)")
+
+
 def test_secrets_never_reach_cache_keys_urls_or_bodies(tmp_path):
     c, t, _ = client(tmp_path, lambda url, h, n: (200, {"Content-Type": "application/json"},
                                                  {"echo": f"key {KEY} mail {EMAIL}"}))
