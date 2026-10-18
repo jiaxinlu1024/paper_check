@@ -147,6 +147,7 @@ def run_reference_checks(work: Path, offline: bool = False, limit: Optional[int]
     for card in cards:
         builder.existence(card)
         builder.metadata(card)
+        builder.editions(card)
         builder.missing_parts(card)
         if not quick:
             builder.versions(card)

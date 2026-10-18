@@ -957,3 +957,49 @@ def test_a_wrong_year_and_a_missing_doi_in_one_entry_are_one_finding():
     f = cit03[0]
     assert "year" in f.title and "DOI missing" in f.title and "10.5555/ferry.1" in f.problem
     assert "10.5555/ferry.1" in f.fix.detail and f.fix.replacement == "2011"
+
+
+def _book_card(tmp_path, raw, year="2021"):
+    book = {"DOI": "10.5555/book.1", "type": "book", "title": ["Methods for Counting Ferries"],
+            "author": [{"family": "Doe", "given": "Jane"}], "issued": {"date-parts": [[2009]]},
+            "publisher": "Example Press"}
+
+    def answer(url, headers, n):
+        if "api.crossref.org/works?" in url:
+            return 200, {}, {"message": {"items": [book]}}
+        return empty_answers(url, headers, n)
+    card, rc, _ = stub_check(tmp_path, {"type": "book", "title": "Methods for Counting Ferries",
+                                        "authors": [{"family": "Doe"}], "year": year, "publisher": "Example Press"},
+                             raw, answer)
+    return card
+
+
+def test_a_later_year_for_a_book_is_an_edition_question_not_a_wrong_year(tmp_path):
+    from paper_check.checks import Context
+    from paper_check.lookups.findings import Builder
+    raw = "Doe, J. (2021) Methods for Counting Ferries. Example Press."
+    card = _book_card(tmp_path, raw)
+    assert card["verdict"] != "metadata_drift", card["field_checks"]
+    year = next(c for c in card["field_checks"] if c["field"] == "year")
+    assert year["status"] == "edition" and not year["edition_named"]
+    assert not [c for c in card["field_checks"] if c["status"] == "missing"]     # no first-edition DOI proposed
+    block = Block(id="b0001", kind="reference", text=raw, anchor=Anchor(file="x.bib", line=1))
+    b = Builder(Context(work=Path("."), producer="refs"), {card["ref"]: block})
+    b.metadata(card)
+    b.editions(card)
+    assert [(f.check_id, f.severity, f.status) for f in b.findings] == [("CIT-03", "suggestion", "needs_human")]
+    assert "2009" in b.findings[0].problem and "2nd ed." in b.findings[0].fix.detail
+
+
+def test_a_book_that_names_its_edition_needs_no_finding(tmp_path):
+    from paper_check.checks import Context
+    from paper_check.lookups.findings import Builder
+    raw = "Doe, J. (2021) Methods for Counting Ferries (2nd ed.). Example Press."
+    card = _book_card(tmp_path, raw)
+    year = next(c for c in card["field_checks"] if c["field"] == "year")
+    assert year["status"] == "edition" and year["edition_named"]
+    block = Block(id="b0001", kind="reference", text=raw, anchor=Anchor(file="x.bib", line=1))
+    b = Builder(Context(work=Path("."), producer="refs"), {card["ref"]: block})
+    b.metadata(card)
+    b.editions(card)
+    assert not b.findings

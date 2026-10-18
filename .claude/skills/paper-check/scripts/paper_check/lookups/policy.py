@@ -146,6 +146,11 @@ def record_is_published_version(rec, cited_year: Optional[int]) -> bool:
     return cited_year is not None and bool(years) and min(years) >= cited_year
 
 
+BOOK_ENTRY_TYPES = {"book", "inbook", "incollection", "chapter", "monograph", "edited-book", "reference-book"}
+EDITION = re.compile(r"\b(?:\d+(?:st|nd|rd|th)|second|third|fourth|fifth|sixth|seventh|eighth|revised|new|updated)"
+                     r"\s+(?:ed\.?|edn\.?|edition)(?![a-z])", re.I)
+
+
 # Copies deposited in a data or document repository. Their date is the deposit's and their DOI the copy's,
 # so neither can correct the entry of the work they copy.
 REPOSITORY_DOIS = ("10.3886/", "10.5281/", "10.7910/", "10.6084/", "10.17605/", "10.17632/", "10.5061/")
@@ -410,6 +415,13 @@ def field_checks(cited: dict, evs: list, raw: str = "") -> list:
                 check["difference"] = dy
                 if dy is not None and abs(dy) > T["year_window"]:
                     check["detail"] = "a difference of several years; check whether another edition or reprint is meant"
+                # Databases often hold only a book's first edition: an older record does not show that the
+                # year of a later edition is wrong.
+                if (cy is not None and (cited.get("type") or "").lower() in BOOK_ENTRY_TYPES
+                        and all(y < cy - T["year_tolerance"] for y in years)):
+                    check["status"] = "edition"
+                    check["edition_named"] = bool(EDITION.search(" ".join([raw or "", str(cited.get("title") or "")])))
+                    check["detail"] = "the databases hold only an earlier edition or printing of this book"
             checks.append(check)
     # venue
     if cited.get("container"):
@@ -452,7 +464,10 @@ def field_checks(cited: dict, evs: list, raw: str = "") -> list:
                                "detail": "the DOI belongs to a working-paper or preprint version, not to the journal "
                                          "article"})
                 break
-    # parts the entry leaves out that the matched record gives (missing DOI, volume, issue, pages, ...)
+    # parts the entry leaves out that the matched record gives (missing DOI, volume, issue, pages, ...);
+    # not from an earlier edition of the book cited
+    if any(c.get("status") == "edition" for c in checks):
+        return checks
     rec = primary["record"]
     rtype = (rec.type or "").lower()
     is_article = rtype in ("journal-article", "article", "article-journal") or \

@@ -375,6 +375,31 @@ class Builder:
                   status="confirmed" if card.get("verdict") == "verified" else "likely",
                   extra={"missing": [c["field"] for c in missing], "values": {c["field"]: c["found"] for c in missing}})
 
+    # ---- CIT-03, editions -------------------------------------------------------
+    def editions(self, card: dict) -> None:
+        """A book cited with a later year than every record of it: the entry may cite a later edition,
+        which it should then name; otherwise its year is wrong."""
+        check = next((c for c in card.get("field_checks") or [] if c.get("field") == "year"
+                      and c.get("status") == "edition"), None)
+        if check is None or check.get("edition_named"):
+            return
+        matched = card.get("matched") or {}
+        srcs = _join(sorted(display_name(s) for s in check.get("sources") or {}))
+        problem = (f"The entry dates this book {check['cited']}, but {srcs} {'know' if ' and ' in srcs else 'knows'} it "
+                   f"only from {check['found']} ({_label(matched)}). Databases often hold only a book's first edition, "
+                   f"so the year may be right for a later edition, which the entry does not name.")
+        fix = Fix(action="investigate",
+                  detail=f"If a later edition is cited, name it in entry {card.get('key') or card['ref']} (for example "
+                         f"\"2nd ed.\"); if not, the year should be {check['found']}.",
+                  resolved_when="The entry names the edition it cites, or its year matches the edition cited.")
+        evidence = [_lookup(matched.get("source", ""), card["raw"][:200], matched, matched.get("api_url"))] if matched else []
+        self.make(card, "CIT-03", "Book cited with a later year than any edition found; edition not named", "suggestion",
+                  problem, evidence=evidence, fix=fix, confidence="medium", status="needs_human",
+                  trajectory=[f"Matched in {_join(card.get('matched_in') or [])}.",
+                              f"Compared years: the entry gives {check['cited']}, every record gives an earlier year.",
+                              "Looked for an edition statement in the entry: none."],
+                  extra={"field_checks": [check]})
+
     # ---- CIT-04 --------------------------------------------------------------
     def versions(self, card: dict) -> None:
         info = card.get("version_check") or {}

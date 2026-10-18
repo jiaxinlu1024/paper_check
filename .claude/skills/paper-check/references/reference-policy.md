@@ -38,7 +38,14 @@ Positive results are cached for 7 days and negative results for 24 hours, so a t
    | Status drift | A working paper that has since been published | Suggestion |
 
 6. **Calibrated thresholds.** Start from the MIT tools' values and calibrate them on the evaluation sets (`evals/README.md`). RefChecker uses title similarity 0.8, a year within one, and author overlap 0.6. Crossref's preprint matcher accepts at 0.87, with a year window from one year before to three years after. A year off by one is metadata drift, never a sign of fabrication.
-7. **Evidence card for every reference.** The closest record found, the similarity of each field, every query made, and which databases were reached or failed. The cards are in `WORK/references/cards.json`, and the report prints them as an appendix. A card's `verdict` is one of: `verified` (two independent databases agree), `single_source` (one database matches), `metadata_drift`, `chimeric`, `not_found_in_databases` (no database matches; a web check is needed, so `needs_web_check` is true), and `unverified` (no database could be searched at all, so nothing is concluded).
+7. **Compare an entry only with the version it cites.** A record of another version says nothing about errors in the entry, so its fields are not compared and the card carries a version note instead:
+   - a journal article that the databases know only as its working paper;
+   - a working paper that they know only as its later article or chapter (CIT-04 then proposes that version);
+   - a copy deposited in a data or document archive (ICPSR, Zenodo, Dataverse and similar), dated by the deposit;
+   - a book whose only records are older than the cited year, which may be a later edition. The report asks the author to name the edition (a Suggestion) rather than to change the year.
+
+   Working-paper series names are not compared with an institution's name, because databases record them inconsistently. One entry gets one CIT-03 finding: the parts it leaves out are listed in the finding about the fields that differ.
+8. **Evidence card for every reference.** The closest record found, the similarity of each field, every query made, and which databases were reached or failed. The cards are in `WORK/references/cards.json`, and the report prints them as an appendix. A card's `verdict` is one of: `verified` (two independent databases agree), `single_source` (one database matches), `metadata_drift`, `chimeric`, `not_found_in_databases` (no database matches; a web check is needed, so `needs_web_check` is true), and `unverified` (no database could be searched at all, so nothing is concluded).
 
 ## The web check and the second review
 
@@ -58,7 +65,7 @@ No open tool handles economics working papers, so this part is new.
 
 1. Extract NBER, SSRN, IZA and CEPR identifiers from each entry, and resolve NBER DOIs.
 2. Search Crossref for journal articles, OpenAlex for other locations of the same work, and RePEc for linked versions once access is granted.
-3. Use a wide year window, and weight the author set above the title, because titles often change between versions.
+3. Use a wide year window, and weight the author set above the title, because titles often change between versions. A changed title must still keep half of its content words, because the same authors often write several papers together.
 4. Report a published version as a Suggestion. Pass the version actually read on to the citation support and baseline checks, because findings and numbers can change between versions.
 
 ## Retractions and replications (CIT-05, CIT-14)
