@@ -1,0 +1,30 @@
+\begin{table}[t]
+\centering
+\small
+\begin{threeparttable}
+\caption{Effects of contract offers and reminders on gym attendance}
+\label{tab:main}
+\begin{tabular}{@{}p{5.7cm}cccc@{}}
+\toprule
+ & (1) & (2) & (3) & (4) \\
+ & \multicolumn{2}{c}{Weeks 1--8} & \multicolumn{2}{c}{Weeks 9--20} \\
+ & Any visit & Visits per week & Any visit & Visits per week \\
+\midrule
+Commitment offer & $0.065^{***}$ & $0.310^{***}$ & $0.019$ & $0.112^{**}$ \\
+ & (0.017) & (0.071) & (0.013) & (0.059) \\
+Reminders & $0.012$ & $0.046$ & $-0.003$ & $0.009$ \\
+ & (0.015) & (0.052) & (0.012) & (0.044) \\
+Commitment offer × Reminders & $0.024$ & $0.152^{**}$ & $0.011$ & $0.038$ \\
+ & (0.024) & (0.076) & (0.019) & (0.064) \\
+\midrule
+Control mean & 0.380 & 0.84 & 0.335 & 0.71 \\
+Observations (participant-weeks) & 19,296 & 19,296 & 28,944 & 28,944 \\
+Participants & 2,412 & 2,412 & 2,412 & 2,412 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item[] Notes: Intention-to-treat estimates of equation~\eqref{eq:main} from linear regressions of weekly outcomes on the arm indicators, week fixed effects and randomization-stratum fixed effects. Any visit is an indicator for at least one visit in the week, so its mean is the share of weeks with a visit. Weeks 1--8 are the contract period and weeks 9--20 the twelve weeks after it. Control mean is the mean of the outcome in the control arm over the same weeks. Standard errors clustered by participant in parentheses. * $p<0.10$, ** $p<0.05$, *** $p<0.01$.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
