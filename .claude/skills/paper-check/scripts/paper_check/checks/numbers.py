@@ -2895,7 +2895,16 @@ def _table_summary_checks(pt: ParsedTable, ctx):
 
 
 # ================================================================ NUM-05: sample sizes and flow
-_N_MENTION = re.compile(rf"(?P<n>\d{{1,3}}(?:,\d{{3}})+|\d+)(?![\d.,%])\s+(?P<mods>(?:[A-Za-z][\w-]*\s+){{0,3}}?)(?P<noun>{_PEOPLE})\b", re.I)
+_N_MENTION = re.compile(rf"(?<![\d.,])(?P<n>\d{{1,3}}(?:,\d{{3}})+|\d+)(?![\d.,%])\s+(?P<mods>(?:[A-Za-z][\w-]*\s+){{0,3}}?)(?P<noun>{_PEOPLE})\b", re.I)
+# Words between a number and a noun that show the number does not count those people: "2.48 visits per
+# employee" is a rate, "week 8 if the participant" an index followed by a clause.
+_NOT_COUNT_MODS = re.compile(r"\b(?:per|if|the|a|an|and|or|to|of|for|in|at|on|by|with|when|than|that|as|from|is|are|"
+                             r"was|were|be|been|each|every)\b", re.I)
+_INDEX_BEFORE = re.compile(r"\b(?:week|day|month|year|wave|round|session|column|table|panel|section|figure|model|"
+                           r"specification|step|stage|phase|part|grade|level|item|question|line|page|footnote|appendix|"
+                           r"arm|group|cohort|block|period|quarter|semester)s?\s+$", re.I)
+_TOGETHER_BEFORE = re.compile(r"\b(?:together|between\s+them|combined|jointly|in\s+all)\s+(?:have|had|has|hold|held|"
+                              r"contain\w*|account\s+for|make\s+up|number)\s+$", re.I)
 _SUBSET_AFTER = re.compile(r"^\s*(?:who|that|whom|of\s+whom|of\s+which|in\s+the\s+(?:treatment|control|pilot|first|second|"
                            r"comparison)|in\s+each|per\b|each\b|assigned\s+to|in\s+(?:our\s+)?(?:pilot|treatment|control)|"
                            r"from\s+the|with(?:out)?\s+(?:a|an|no|missing|complete|zero)|did\b|were\s+(?:excluded|dropped|"
@@ -2921,8 +2930,14 @@ def _sample_mentions(paper: _Paper) -> list:
             tok = _tok_at(sent, m.start("n"))
             if tok is None or tok.kind not in ("count", "result") or tok.unit or tok.cur:
                 continue  # "94 percent of households" and "$2,000 ... for a household" are not head counts
+            if "." in (tok.raw or "") or tok.rep.value != int(tok.rep.value):
+                continue  # a decimal such as 2.48 is never a head count
             if re.match(r"\s*(?:percent|per\s+cent|percentage|pct)\b", m.group("mods") or "", re.I):
                 continue
+            if _NOT_COUNT_MODS.search(m.group("mods") or ""):
+                continue
+            if _INDEX_BEFORE.search(norm[max(0, m.start() - 20):m.start()]):
+                continue  # "week 8", "column 3": an index, not a number of people
             noun = m.group("noun").lower()
             key = noun.rstrip("s") if noun not in ("people", "children", "women", "men", "families") else noun
             group = _PERSON_GROUP.get(key)
@@ -2935,7 +2950,8 @@ def _sample_mentions(paper: _Paper) -> list:
             depth = norm[:m.start()].count("(") - norm[:m.start()].count(")")
             if depth > 0:
                 kind = "statistic"  # "(N = 25 participants)": the N of one statistic
-            elif _SUBSET_AFTER.match(after) or _SUBSET_MODS.search(m.group("mods") or "") or _OF_BEFORE.search(before):
+            elif (_SUBSET_AFTER.match(after) or _SUBSET_MODS.search(m.group("mods") or "") or _OF_BEFORE.search(before)
+                  or _TOGETHER_BEFORE.search(before)):
                 kind = "subset"
             elif _STAGE.search(clause):
                 kind = "stage"
@@ -3087,6 +3103,11 @@ _SUPERLATIVE = re.compile(r"\b(?:largest|highest|biggest|strongest|greatest|smal
 _NOT_IN_TABLE = re.compile(r"\b(?:(?:not|never)\s+(?:shown|reported|included|presented|listed|displayed|tabulated)\s+"
                            r"(?:in|on)|(?:omitted|excluded|absent)\s+from)\s+(?:the\s+)?(?:Tables?\b|" + MASK + ")", re.I)
 _NOTE_NUMBER = re.compile(r"(?<![\w.])[-\u2212\u2013]?\d+\.\d+(?![\w.]*\d)")
+# A sentence that says it derives its number from the table's cells ("the average of the effects ... in
+# Table 2", "the pooled effect") need not find that number in a cell; the reading agent checks the arithmetic.
+_DERIVED = re.compile(r"\b(?:average|mean|sum|difference|ratio|combination)\s+of\s+(?:the\s+)?(?:two\s+|three\s+|"
+                      r"first\s+|second\s+)?(?:effects?|coefficients?|estimates?|columns?|values?|rows?)\b|\bpooled\b|"
+                      r"\bderived\s+from\b|\bimplied\s+by\b", re.I)
 
 
 def _in_notes(tok: Tok, pt: ParsedTable) -> bool:
@@ -3179,7 +3200,8 @@ def text_against_tables(pm, ctx):
         tables = paper.tables_for(sent)
         if not tables or sent.has_citation:
             continue
-        if re.search(r"\bFig(?:ure|\.)?s?\b", sent.norm) or _NOT_IN_TABLE.search(sent.norm):
+        if re.search(r"\bFig(?:ure|\.)?s?\b", sent.norm) or _NOT_IN_TABLE.search(sent.norm) \
+                or _DERIVED.search(sent.norm):
             continue
         toks = [t for t in sent.tokens if t.kind == "result" and t.rep.decimals > 0]
         for tok in toks:

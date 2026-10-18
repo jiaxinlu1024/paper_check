@@ -111,10 +111,19 @@ LONG_ABSTRACT = " ".join(["word"] * 120)
 def test_fmt01_abstract_over_the_aer_limit(tmp_path):
     pm, _ = ingest_tex(tmp_path, "\\begin{abstract}\n" + LONG_ABSTRACT + ".\n\\end{abstract}\n\\section{Intro}\nText.")
     found, cov = run(pm, "FMT-01", venue="aer")
-    assert [f.severity for f in found] == ["critical"]
+    # 20% over: the manuscript comes back for a fix, so Major, not Critical.
+    assert [f.severity for f in found] == ["major"]
     assert "120 words" in found[0].problem and "100" in found[0].problem
     assert_well_formed(pm, found)
-    assert "not computable" in (cov["FMT-01"].reason or "")
+    # The page count cannot be computed from LaTeX source, so the check ran only in part.
+    assert cov["FMT-01"].status == "skipped" and "not computable" in (cov["FMT-01"].reason or "")
+
+
+def test_fmt01_abstract_a_little_over_the_limit_is_minor(tmp_path):
+    pm, _ = ingest_tex(tmp_path, "\\begin{abstract}\n" + " ".join(["word"] * 105) + ".\n\\end{abstract}\n"
+                                 "\\section{Intro}\nText.")
+    found, _ = run(pm, "FMT-01", venue="aer")
+    assert [f.severity for f in found] == ["minor"]
 
 
 def test_fmt01_skipped_without_venue(latex_map):
@@ -897,7 +906,10 @@ def test_answer_key(fixture_maps, paper, venue):
     if venue is None:
         assert all(coverage[c].status == "skipped" for c in venue_checks)
     else:
-        assert all(coverage[c].status == "run" for c in venue_checks)
+        # FMT-01 runs only in part where the input has no page count (LaTeX and Word source).
+        assert all(coverage[c].status == "run" or (c == "FMT-01" and fmt != "pdf"
+                                                    and "not checked" in (coverage[c].reason or ""))
+                   for c in venue_checks), {c: (coverage[c].status, coverage[c].reason) for c in venue_checks}
         sev = {f.title: f.severity for f in findings if f.check_id == "FMT-02"}
         assert sev["Self-revealing citation"] == "critical" and sev["Author names in an anonymized manuscript"] == "critical"
     assert {c for c in MINE if c not in coverage} == set()

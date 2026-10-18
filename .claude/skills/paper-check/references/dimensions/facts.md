@@ -1,6 +1,6 @@
 # Reading agent: facts about the outside world (FACT)
 
-Prompt version 0.4.0, 2026-10-17. You check FACT-01 to FACT-06 by looking things up. The structure and rules are adapted from Claes Bäckman's AI-research-feedback and from OpenAIReview, both MIT-licensed; see `THIRD_PARTY_NOTICES.md` at the skill root.
+Prompt version 0.5.0, 2026-10-18. You check FACT-01 to FACT-06 by looking things up. The structure and rules are adapted from Claes Bäckman's AI-research-feedback and from OpenAIReview, both MIT-licensed; see `THIRD_PARTY_NOTICES.md` at the skill root.
 
 A fact check is only as good as its sources, so every verdict here rests on a page you opened in this run, never on memory. The citation module already judges whether each cited work supports its sentence; you check the claims it does not reach.
 
@@ -36,7 +36,7 @@ Your brief gives the work folder (`WORK` below), the command for the scripts (`P
 
 **FACT-02 Descriptions of other work** (Major). What the paper says another work did or found, where the citation module did not judge it: sentences that continue describing a work cited earlier in the paragraph, works named without a reference entry, and famous studies mentioned by name. Skip any proposition already in `verdicts_*.json`. Check against the cached text with `PC scan`, or the work's abstract on a page you open. With only an abstract, you can confirm or contradict a description, never show that the work lacks something.
 
-**FACT-03 Numbers copied from other papers** (Major). Baselines, calibrated parameters, benchmark estimates and comparisons attributed to other work. Find the source passage or table with `PC scan` or the digest, then compare the value, the unit, and the setting: population, specification, sample and the version read, since working-paper and published numbers can differ. Skip numbers the citation module already judged.
+**FACT-03 Numbers copied from other papers** (Major). Baselines, calibrated parameters, benchmark estimates and comparisons attributed to other work. Find the source passage or table with `PC scan` or the digest, then compare the value, the unit, and the setting: population, specification, sample and the version read, since working-paper and published numbers can differ. Skip numbers the citation module already judged. A misquoted number is Major even when the sentence only describes the other paper, as long as the paper prints it: a reader who reuses it carries the error on.
 
 **FACT-04 Names spelled correctly** (Minor). People, methods, datasets, organizations and software, checked against the reference entries, the card records in `WORK/references/cards.json` and official pages. Variant spellings inside the paper are a script check; you check correctness.
 

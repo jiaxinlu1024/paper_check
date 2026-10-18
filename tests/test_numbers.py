@@ -947,3 +947,30 @@ def test_a_table_named_by_a_cross_reference_field_is_masked_but_still_read_as_no
     assert num._NOT_IN_TABLE.search("two estimates, not reported in " + num.MASK * 7 + ", are 0.1 and 0.2")
     assert num._NOT_IN_TABLE.search("values omitted from Table 3 are small")
     assert not num._NOT_IN_TABLE.search("the estimates reported in Table 3 are 0.1 and 0.2")
+
+
+def test_rates_indexes_decimals_and_dropped_groups_are_not_head_counts(run, tmp_path):
+    """From the hard test paper: none of these numbers counts the sample, so nothing disagrees with 2,412."""
+    pm = make_map(paragraphs=[
+        ("paragraph", "1 Introduction", "This paper reports a field experiment with 2,412 employees of a large university."),
+        ("paragraph", "3 Design", "The stake was refunded after week 8 if the participant met the target."),
+        ("paragraph", "6 Robustness", "Dropping the nine departments with fewer than five participants, which together "
+                                       "have 31 participants, gives 0.318."),
+        ("paragraph", "7 Costs", "Administering the contracts cost 9.80 dollars per employee offered a contract, "
+                                 "or 2.48 visits per employee offered a contract."),
+        ("paragraph", "5 Results", "The estimates use all 2,412 randomized employees."),
+    ])
+    findings, _ = run(pm)
+    assert not by_check(findings, "NUM-05"), [(f.title, f.problem) for f in by_check(findings, "NUM-05")]
+
+
+def test_a_number_the_text_derives_from_the_table_is_not_missing_from_it(run, tmp_path):
+    rows = [["", "(1)"], ["Offer", "0.310***"], ["", "(0.071)"], ["Offer x Reminders", "0.152**"], ["", "(0.076)"]]
+    pm = make_map(paragraphs=[
+        ("paragraph", "5 Results", "The pooled effect is 0.386 visits per week, the average of the effects of the "
+                                   "offer with and without reminders in Table 2."),
+        ("paragraph", "5 Results", "Table 2 reports an effect of the offer of 0.410 visits per week."),
+    ], tables=[(rows, "Standard errors in parentheses.", "2")])
+    findings, _ = run(pm)
+    flagged = [f.extra.get("value") for f in by_check(findings, "NUM-06")]
+    assert "0.386" not in flagged and "0.410" in flagged

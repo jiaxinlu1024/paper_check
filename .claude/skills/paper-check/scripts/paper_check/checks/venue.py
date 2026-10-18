@@ -195,7 +195,8 @@ def venue_limits(pm, ctx):
                 quote = sentence_quote(b, max(0, len(b.text) - 2), 30)
                 yield ctx.finding(
                     "FMT-01", "Abstract over the word limit" if over else "Abstract at the word limit",
-                    "critical" if over else "suggestion",
+                    # An abstract over the limit gets the manuscript sent back for a quick fix, not rejected.
+                    ("major" if min(n_ws, n_tok) > limit * 1.1 else "minor") if over else "suggestion",
                     f"The abstract has {n_ws} words (whitespace-delimited; {n_tok} by word tokens), and {vname} allows "
                     f"at most {limit}." + ("" if over else " The two counts straddle the limit, so check with the "
                                            "journal's own counter.") + rule_caveat(r),
@@ -353,8 +354,10 @@ def venue_limits(pm, ctx):
     if not any_rule:
         ctx.skip("FMT-01", f"the {vname} profile records no length, exhibit or file limits")
         return
-    note_coverage(ctx, "FMT-01", "; ".join(["compared " + ", ".join(compared)] if compared else [])
-                  + ("; not checked: " + "; ".join(not_checked) if not_checked else ""))
+    note_coverage(ctx, "FMT-01", "; ".join(["compared " + ", ".join(compared)] if compared else []))
+    if not_checked:
+        # Part of the check could not be done from this input: the table says so, instead of "ran in full".
+        ctx.partly("FMT-01", "not checked: " + "; ".join(not_checked))
 
 
 # =============================================================== FMT-03 required statements

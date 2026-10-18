@@ -361,6 +361,9 @@ def _absorb(keep, other, note: str) -> None:
     # another paper" does not confirm a likely Critical "the work does not exist".
     if SEVERITY_RANK.get(other.severity, 9) <= SEVERITY_RANK.get(keep.severity, 9):
         if STATUS_RANK.get(other.status, 9) < STATUS_RANK.get(keep.status, 9):
+            keep.trajectory.append(f"Status raised from {keep.status.replace('_', ' ')} to "
+                                   f"{other.status.replace('_', ' ')}: {other.check_id} ({other.title}) "
+                                   f"is {other.status.replace('_', ' ')} on the same point.")
             keep.status = other.status
         if CONF_RANK.get(other.confidence, 9) < CONF_RANK.get(keep.confidence, 9):
             keep.confidence = other.confidence
@@ -967,9 +970,10 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
                           _cell((e.data or {}).get("output"), 40)] for f, e in numeric])
         md.append("")
     if refuted:
-        md += ["## Appendix: refuted findings", "",
-               "An independent refuter overturned these with quoted counter-evidence. They are listed so nothing "
-               "disappears silently.", ""]
+        who = ("The refuter pass overturned these with quoted counter-evidence. In this sequential run the same "
+               "agent did the reading and the refuting, so the pass was not independent." if settings.sequential else
+               "An independent refuter overturned these with quoted counter-evidence.")
+        md += ["## Appendix: refuted findings", "", who + " They are listed so nothing disappears silently.", ""]
         md += _md_table(["Check", "Title", "Where", "Refuter's evidence"],
                         [[f.check_id, f.title, loc.where(f), _cell(f.verification.get("refuter_note"), 200)]
                          for f in refuted])

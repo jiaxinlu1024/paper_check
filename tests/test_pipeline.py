@@ -189,6 +189,8 @@ def test_related_findings_on_one_passage_are_merged(work_copy):
     assert set(by_check) == {"NUM-01", "LANG-04"}
     merged = by_check["NUM-01"]
     assert merged["status"] == "confirmed" and merged["extra"]["also"][0]["check_id"] == "COH-02"
+    lang = by_check["LANG-04"]
+    assert not any(t.startswith("Status raised") for t in lang.get("trajectory", []))
     md = (work_copy.parent / "paper-check-report.md").read_text()
     assert "(Numbers inside the paper), also COH-02" in md
     assert "Also reported by agent_coherence under COH-02" in md
@@ -349,7 +351,12 @@ def test_a_sequential_run_is_labelled_and_never_merges_runs(tmp_path, capsys):
     assert main(["ingest", str(FIXTURES / "latex_basic"), "--out", str(tmp_path), "--sequential"]) == 0
     work = tmp_path / "paper-check-work"
     assert PaperSettings.for_work(work).sequential is True
-    _write(work, "agent_logic.json", {"producer": "agent_logic", "findings": [_finding()]})
+    _write(work, "agent_logic.json", {"producer": "agent_logic", "findings": [
+        _finding(),
+        _finding(check_id="LOG-04", title="Sessions", quote=SESSIONS, verification={
+            "refuter": "refuted", "refuter_note": "The appendix counts pilot sessions separately."},
+            evidence=[{"type": "quote", "text": "We ran 10 survey sessions in total.",
+                       "data": {"role": "counter-evidence"}}])]})
     _write(work, "agent_logic_run2.json", {"producer": "agent_logic", "findings": [_finding()]}, folder="runs")
     capsys.readouterr()
     assert main(["merge-runs", str(work), "--dimension", "logic"]) == 2
@@ -358,6 +365,8 @@ def test_a_sequential_run_is_labelled_and_never_merges_runs(tmp_path, capsys):
     main(["report", str(work)])
     report = (tmp_path / "paper-check-report.md").read_text()
     assert "**Run:** sequential" in report.split("## Summary")[0]
+    appendix = report.split("## Appendix: refuted findings")[1]
+    assert "not independent" in appendix and "An independent refuter" not in appendix
     first = json.loads((work / "findings" / "agent_logic.json").read_text())["findings"][0]
     assert "runs" not in (first.get("verification") or {})
 
@@ -410,10 +419,34 @@ def test_checks_against_unconfirmed_journal_rules_carry_a_caveat(tmp_path):
     main(["report", str(work)])
     data = json.loads((tmp_path / "paper-check-findings.json").read_text())
     cov = {r["check_id"]: r for r in data["coverage"]}
-    assert cov["FMT-01"]["status"] == "run" and "unconfirmed JEBO rule" in (cov["FMT-01"]["caveat"] or "")
-    assert "abstract_max_words" in cov["FMT-01"]["caveat"]
+    # FMT-01 also ran only in part (no page count from LaTeX); its caveat names the unconfirmed rule.
+    assert cov["FMT-01"]["status"] == "partly run" and "abstract_max_words" in (cov["FMT-01"]["caveat"] or "")
+    caveated = [cid for cid, r in cov.items() if r["status"] == "run" and r.get("caveat")]
+    assert caveated and all("unconfirmed JEBO rule" in cov[c]["caveat"] for c in caveated)
     md = (tmp_path / "paper-check-report.md").read_text()
     coverage = md.split("## Coverage")[1].split("\n## ")[0]
     ran_in_full = coverage.split("checks ran in full:")[1].split(".")[0]
-    assert "FMT-01" not in ran_in_full and "run, with a caveat" in coverage
+    assert not any(c in ran_in_full for c in caveated + ["FMT-01"]) and "run, with a caveat" in coverage
     assert "against unconfirmed journal rules" in md.split("## Summary")[1].split("\n## ")[0]
+
+
+def test_a_status_raised_by_merging_is_explained_in_the_trajectory(work_copy):
+    """When a group's lead finding is likely and another member is confirmed on the same point, the lead
+    becomes confirmed, and its trajectory says why, so the status and the steps agree."""
+    _write(work_copy, "agent_logic.json", {"producer": "agent_logic", "findings": [
+        _finding(check_id="LOG-03", title="Causal claim", severity="major", status="likely",
+                 trajectory=["Compared the claim with the design; the status is likely rather than confirmed."])]})
+    _write(work_copy, "agent_numbers.json", {"producer": "agent_numbers", "findings": [
+        _finding(check_id="LOG-04", title="Session counts disagree", severity="major", status="confirmed",
+                 quote=SESSIONS, problem="Twelve sessions here, ten in the appendix.")]})
+    main(["verify", str(work_copy)])
+    main(["report", str(work_copy)])
+    first = json.loads((work_copy.parent / "paper-check-findings.json").read_text())["findings"]
+    keys = {f["check_id"]: f["key"] for f in first}
+    (work_copy / "consolidation.json").write_text(json.dumps({"groups": [
+        {"keys": [keys["LOG-03"], keys["LOG-04"]], "keep": keys["LOG-03"], "reason": "one design problem"}]}))
+    main(["report", str(work_copy)])
+    data = json.loads((work_copy.parent / "paper-check-findings.json").read_text())
+    lead = next(f for f in data["findings"] if f["check_id"] == "LOG-03")
+    assert lead["status"] == "confirmed"
+    assert any(t.startswith("Status raised from likely to confirmed: LOG-04") for t in lead["trajectory"])

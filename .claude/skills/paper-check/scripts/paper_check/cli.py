@@ -99,6 +99,9 @@ def cmd_cite_prepare(args):
         raise SystemExit(f"Citation support is not available in this version: {exc}")
     work = _work(args.work)
     settings = _settings(work, sources=args.sources)
+    if args.sources:
+        # Saved, so the report's header names the folder the citation verdicts were read from.
+        settings.save(work)
     return prepare(work, sources=settings.sources, offline=args.offline or not settings.network)
 
 
