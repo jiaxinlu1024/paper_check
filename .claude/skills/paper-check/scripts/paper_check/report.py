@@ -616,9 +616,12 @@ def _render_finding(f, loc: Locator, checklist: dict, dimensions: dict) -> str:
     return "\n".join(lines)
 
 
-def _coverage(checklist: dict, coverage: dict, kept: list) -> list:
+def _coverage(checklist: dict, coverage: dict, kept: list, refuted: tuple = ()) -> list:
     rows = []
     found = Counter(f.check_id for f in kept)
+    # Producers write their coverage notes before the refuters run, so a note can describe a verdict
+    # that was later overturned; the count tells the reader so.
+    overturned = Counter(f.check_id for f in refuted)
     for f in kept:
         for cid in {a.get("check_id") for a in f.extra.get("also", [])} - {f.check_id}:
             found[cid] += 1
@@ -645,6 +648,8 @@ def _coverage(checklist: dict, coverage: dict, kept: list) -> list:
             status, detail = "not applicable", "; ".join(reasons)
         else:
             status, detail = "skipped", "; ".join(reasons) or "no reason given"
+        if overturned.get(cid) and status in ("run", "partly run"):
+            detail += f"; {overturned[cid]} later refuted (see the refuted list)"
         rows.append({"check_id": cid, "title": info["title"], "dimension": info.get("dimension"),
                      "status": status, "detail": detail,
                      "producers": sorted({c.producer for c in entries if c.producer})})
@@ -708,7 +713,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
 
     counts = Counter(f.severity for f in kept)
     by_dim = Counter(f.dimension for f in kept)
-    cov_rows = _coverage(checklist, coverage, kept)
+    cov_rows = _coverage(checklist, coverage, kept, refuted)
     cov_counts = Counter(r["status"] for r in cov_rows)
     now = dt.datetime.now().strftime("%Y-%m-%d %H:%M")
 
@@ -726,6 +731,9 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     else:
         md.append("- **Venue profile:** none, so journal-specific rules were not checked.")
     md.append(f"- **Cited-work PDFs:** {settings.sources or 'no sources folder'}")
+    if settings.sequential:
+        md.append("- **Run:** sequential. One agent did every step in turn, so no step was checked by an "
+                  "independent second run, and the refuter pass was not independent of the reading.")
     md.append(f"- **Producers:** {', '.join(sorted({fs.producer for fs in sets})) or 'none'}")
     md += ["", HOW_TO_READ, ""]
     for name, err in unreadable:

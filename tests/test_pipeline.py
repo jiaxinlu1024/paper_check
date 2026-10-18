@@ -131,6 +131,8 @@ def test_report_layout_order_coverage_and_appendices(work_copy):
     # Coverage: run by one producer and skipped by another reads "partly run".
     cov = {r["check_id"]: r for r in data["coverage"]}
     assert cov["LOG-02"]["status"] == "partly run" and "agent ran out of time" in cov["LOG-02"]["detail"]
+    # Coverage notes are written before the refuters run, so the row says how many were overturned.
+    assert "1 later refuted" in cov["LOG-02"]["detail"]
     assert cov["LOG-03"]["status"] == "run" and cov["FIG-01"]["status"] == "not run"
     # Verdict files are merged, and the JSON carries ids, dimensions and labels.
     assert [v["id"] for v in data["appendices"]["citation_support"]] == ["c001", "c002"]
@@ -335,3 +337,22 @@ def test_index_follows_sentence_order_and_places_anchor_only_findings(work_copy)
     order = [problems.index(p) for p in ("About the first sentence.", "About the second sentence.",
                                          "A comment is left in the source.", "About a later paragraph.")]
     assert order == sorted(order), problems
+
+
+def test_a_sequential_run_is_labelled_and_never_merges_runs(tmp_path, capsys):
+    """One agent doing every step cannot produce independent second runs: merge-runs refuses, and the
+    report's header says how the run was done."""
+    assert main(["ingest", str(FIXTURES / "latex_basic"), "--out", str(tmp_path), "--sequential"]) == 0
+    work = tmp_path / "paper-check-work"
+    assert PaperSettings.for_work(work).sequential is True
+    _write(work, "agent_logic.json", {"producer": "agent_logic", "findings": [_finding()]})
+    _write(work, "agent_logic_run2.json", {"producer": "agent_logic", "findings": [_finding()]}, folder="runs")
+    capsys.readouterr()
+    assert main(["merge-runs", str(work), "--dimension", "logic"]) == 2
+    assert "sequential" in capsys.readouterr().out
+    main(["verify", str(work)])
+    main(["report", str(work)])
+    report = (tmp_path / "paper-check-report.md").read_text()
+    assert "**Run:** sequential" in report.split("## Summary")[0]
+    first = json.loads((work / "findings" / "agent_logic.json").read_text())["findings"][0]
+    assert "runs" not in (first.get("verification") or {})

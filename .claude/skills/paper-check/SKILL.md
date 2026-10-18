@@ -39,7 +39,7 @@ These keep the report trustworthy. They matter more than any single check.
 ## 1. Read the paper
 
 ```
-PC ingest "<paper>" [--venue ID] [--mode deep] [--sources "<folder>"] [--study-type "..."] [--language US|UK] [--out "<folder>"]
+PC ingest "<paper>" [--venue ID] [--mode deep] [--sources "<folder>"] [--study-type "..."] [--language US|UK] [--out "<folder>"] [--sequential]
 ```
 
 This writes `WORK/paper_map.json` and two files written for readers:
@@ -194,7 +194,7 @@ In quick and standard modes, record what the mode leaves out with `PC skip WORK 
 
 ## 9. When you cannot launch subagents
 
-If the Agent tool is unavailable, for example when this skill itself runs inside a subagent, do each agent's task yourself, one after another, following the same prompt files and writing the same output files. Keep each dimension's reading separate, and still verify every quote. Skip the second runs: a second pass by the same reader is not independent, and merging it would label findings as found by two runs. Do the refuter's job after the reading, as a fresh pass that tries to overturn your own Critical and Major findings. Say in the final summary that the run was sequential, that the second runs were skipped for that reason, and that the refuter pass was not independent of the reading.
+If the Agent tool is unavailable, for example when this skill itself runs inside a subagent, ingest with `--sequential` (run `PC ingest` again with it if you have already ingested) and do each agent's task yourself, one after another, following the same prompt files and writing the same output files. The flag puts the run mode in the report's header and stops `PC merge-runs` from merging runs that are not independent. Keep each dimension's reading separate, and still verify every quote. Skip the second runs: a second pass by the same reader is not independent, and merging it would label findings as found by two runs. Do the refuter's job after the reading, as a fresh pass that tries to overturn your own Critical and Major findings. Say in the final summary that the run was sequential, that the second runs were skipped for that reason, and that the refuter pass was not independent of the reading.
 
 ## 10. Troubleshooting
 

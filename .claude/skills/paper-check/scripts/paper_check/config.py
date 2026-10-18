@@ -81,6 +81,7 @@ class PaperSettings:
     sources: Optional[str] = None
     paid_pdfs: bool = False
     min_severity: str = "suggestion"
+    sequential: bool = False   # one agent does every step in turn: no independent second runs or refuter
     extra: dict = field(default_factory=dict)
 
     @classmethod
@@ -137,6 +138,8 @@ class PaperSettings:
             bits.append("paid PDFs allowed")
         if self.min_severity != "suggestion":
             bits.append(f"minimum severity {self.min_severity}")
+        if self.sequential:
+            bits.append("sequential (one agent does every step)")
         return ", ".join(bits)
 
 

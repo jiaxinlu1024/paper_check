@@ -43,7 +43,8 @@ def cmd_ingest(args):
     overrides = {"venue": args.venue, "mode": args.mode, "sources": args.sources,
                  "language_variant": args.language, "study_type": args.study_type,
                  "min_severity": args.min_severity,
-                 "network": False if args.offline else None, "paid_pdfs": True if args.paid_pdfs else None}
+                 "network": False if args.offline else None, "paid_pdfs": True if args.paid_pdfs else None,
+                 "sequential": True if args.sequential else None}
     settings = PaperSettings.load(paper_dir_of(paper), overrides)
     load_venue(settings.venue)  # fail early on an unknown venue id
     code = ingest(paper, output=args.out, main_file=args.main)
@@ -179,7 +180,12 @@ def cmd_skip(args):
 
 def cmd_merge_runs(args):
     from .runs import merge_runs
-    return merge_runs(_work(args.work), args.dimension)
+    work = _work(args.work)
+    if _settings(work).sequential:
+        print("Not merged: this run is sequential (ingest --sequential), so a second run by the same agent is not "
+              "independent. Leave the first run's file as it is.")
+        return 2
+    return merge_runs(work, args.dimension)
 
 
 def cmd_validate(args):
@@ -267,6 +273,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--min-severity", dest="min_severity", choices=["critical", "major", "minor", "suggestion"])
     s.add_argument("--offline", action="store_true", help="no network: lookup checks are reported as skipped")
     s.add_argument("--paid-pdfs", dest="paid_pdfs", action="store_true", help="allow OpenAlex paid PDFs")
+    s.add_argument("--sequential", action="store_true",
+                   help="one agent does every step in turn (no subagents): second runs are skipped and the report "
+                        "says the refuter pass was not independent")
     s.set_defaults(func=cmd_ingest)
 
     s = sub.add_parser("checks", help="run the deterministic checks")
