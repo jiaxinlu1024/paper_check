@@ -929,3 +929,15 @@ def test_percentages_and_money_are_not_head_counts(run):
              ("paragraph", "4 Results", "Only 24 percent of households borrowed.")]
     findings, _ = run(make_map(paras, []))
     assert not by_check(findings, "NUM-05"), [(f.title, f.problem) for f in by_check(findings, "NUM-05")]
+
+
+def test_numbers_the_sentence_places_outside_the_table_or_in_its_note(run):
+    rows = [["", "(1)", "(2)"], ["Treatment", "0.051**", "0.047**"], ["", "(0.020)", "(0.021)"]]
+    note = "Robust standard errors in parentheses. ** p<0.05. The break-even rate implied by column (2) is 0.37."
+    pm = make_map([
+        ("paragraph", "3 Results", "Two further estimates, not reported in Table 1, are 0.0061 and 0.0275."),
+        ("paragraph", "3 Results", "The break-even rate is 0.37 (Table 1)."),
+        ("paragraph", "3 Results", "Table 1 reports a coefficient of 0.066 in column (1)."),
+    ], [(rows, note, "1")])
+    findings, _ = run(pm)
+    assert {f.extra["value"] for f in by_check(findings, "NUM-06")} == {"0.066"}

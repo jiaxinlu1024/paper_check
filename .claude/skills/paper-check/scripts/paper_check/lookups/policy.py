@@ -83,6 +83,7 @@ THRESHOLDS = {
     "version_score": 0.85,     # Crossref preprint matcher accepts at 0.87 on an equal-weight mean
     "version_author": 0.75,    # author sets must largely agree
     "version_title": 0.50,     # titles often change between versions
+    "version_words": 0.50,     # ... but a changed title keeps half its content words (same-author papers differ)
     "version_weights": {"author": 0.5, "title": 0.3, "year": 0.2},
     "version_years": [-1, 8],  # Crossref uses -1..+3; economics publication lags are longer
 }
@@ -118,6 +119,45 @@ def record_is_working_paper(rec) -> bool:
     if (rec.doi or "").lower().startswith(("10.3386/", "10.2139/", "10.48550/")):
         return True
     return bool(_WP_SERIES.search(" ".join([rec.container or "", rec.publisher or ""])))
+
+
+_CITED_WP_TYPES = {"techreport", "report", "unpublished", "preprint", "posted-content", "working-paper", "manuscript"}
+_REPEC_PAPER = re.compile(r"repec\.org/+(?:p|paper)/", re.I)
+PUBLISHED_RECORD_TYPES = {"journal-article", "article", "book-chapter", "proceedings-article"}
+
+
+def cited_is_working_paper(cited: dict, raw: str = "") -> bool:
+    """The entry cites a working paper or preprint: its DOI, type or series says so, or it links a RePEc paper page."""
+    if cited_is_article(cited):
+        return False
+    if (cited.get("doi") or "").lower().startswith(("10.3386/w", "10.2139/ssrn", "10.48550/")):
+        return True
+    if (cited.get("type") or "").lower() in _CITED_WP_TYPES:
+        return True
+    venue = " ".join(str(cited.get(k) or "") for k in ("container", "publisher"))
+    return bool(_WP_SERIES.search(venue) or _REPEC_PAPER.search(raw or ""))
+
+
+def record_is_published_version(rec, cited_year: Optional[int]) -> bool:
+    """A journal article or book chapter dated no earlier than the cited working paper."""
+    if (rec.type or "").lower() not in PUBLISHED_RECORD_TYPES or record_is_working_paper(rec):
+        return False
+    years = rec.all_years()
+    return cited_year is not None and bool(years) and min(years) >= cited_year
+
+
+# Copies deposited in a data or document repository. Their date is the deposit's and their DOI the copy's,
+# so neither can correct the entry of the work they copy.
+REPOSITORY_DOIS = ("10.3886/", "10.5281/", "10.7910/", "10.6084/", "10.17605/", "10.17632/", "10.5061/")
+_REPOSITORY = re.compile(r"\bicpsr\b|inter-university consortium|\bzenodo\b|\bdataverse\b|\bfigshare\b|"
+                         r"open science framework|mendeley data|\bdryad\b|data holdings", re.I)
+
+
+def record_is_deposit(rec) -> bool:
+    if (rec.doi or "").lower().startswith(REPOSITORY_DOIS):
+        return True
+    names = " ".join([rec.container or ""] + list(rec.containers or []) + [rec.publisher or ""])
+    return bool(_REPOSITORY.search(names))
 POORLY_INDEXED = ("book", "inbook", "incollection", "booklet", "misc", "techreport", "unpublished", "manual", "online",
                   "phdthesis", "mastersthesis", "dataset", "software", "electronic", "report")
 DATA_HINT = re.compile(r"\b(data ?set|data|software|replication (?:package|data)|zenodo|dataverse|icpsr|osf)\b", re.I)
@@ -258,19 +298,28 @@ def _primary(evs: list) -> Optional[dict]:
                                        -e["score"]))[0]
 
 
-def field_checks(cited: dict, evs: list) -> list:
+def field_checks(cited: dict, evs: list, raw: str = "") -> list:
     """Compare each cited field with every record that matched the work."""
     T = THRESHOLDS
     checks = []
     primary = _primary(evs)
     if primary is None:
         return checks
+    by_doi = any(e["via"] == "doi" for e in evs)
     # A journal article that the databases know only as its working paper (Card and Krueger's 1994 AER
     # article as NBER WP 4509, 1993): the record is a version of the cited work, so its year, series and
     # missing journal details say nothing about errors in the entry.
     # (An entry that gives the working paper's DOI itself is wrong, and is reported below as a version error.)
-    wp_version = (cited_is_article(cited) and all(record_is_working_paper(e["record"]) for e in evs)
-                  and not any(e["via"] == "doi" for e in evs))
+    wp_version = cited_is_article(cited) and all(record_is_working_paper(e["record"]) for e in evs) and not by_doi
+    # The converse: a working paper that the databases know only as its later article or chapter (a working
+    # paper published years later as a book chapter). CIT-04 reports the published version.
+    cited_year = parse_year(cited.get("year"))
+    published_version = (not wp_version and not by_doi and cited_is_working_paper(cited, raw)
+                         and all(record_is_published_version(e["record"], cited_year) for e in evs))
+    # A copy of the cited work in a data or document repository (an agency report re-deposited in a data archive).
+    deposit_copy = (not wp_version and not published_version and not by_doi
+                    and all(record_is_deposit(e["record"]) for e in evs))
+    other_version = wp_version or published_version or deposit_copy
 
     def values(attr):
         return {e["record"].source: getattr(e["record"], attr) for e in evs if getattr(e["record"], attr)}
@@ -287,6 +336,8 @@ def field_checks(cited: dict, evs: list) -> list:
                 mc, mf = main_title(cited["title"]), main_title(primary["record"].title)
                 if mf and not mc and fold(cited["title"]) == mf:
                     check["detail"] = "the subtitle is missing"
+                if other_version:
+                    check["status"] = "note"   # titles change between versions; the version note says which
             checks.append(check)
     # authors
     if cited.get("authors"):
@@ -312,16 +363,30 @@ def field_checks(cited: dict, evs: list) -> list:
                 elif not au["same_order"]:
                     problems.append("the order differs")
                 check["detail"] = "; ".join(problems)
-                check["severity"] = ("major" if (au["fraction"] or 0) < T["author"] or not au["first_author"]
-                                     else "minor")
+                if other_version:
+                    check["status"] = "note"   # co-authors join or leave between versions; a depositor is no author
+                else:
+                    check["severity"] = ("major" if (au["fraction"] or 0) < T["author"] or not au["first_author"]
+                                         else "minor")
             checks.append(check)
-    if wp_version:
+    if other_version:
         rec = primary["record"]
         where = rec.container or rec.publisher or display_name(rec.source)
-        checks.append({"field": "version", "cited": "journal article", "found": f"{rec.type or 'working paper'} ({where}, "
-                       f"{rec.year or 'no year'})", "status": "note", "sources": {rec.source: rec.type},
-                       "detail": "only a working-paper or preprint version of the cited article was found, so the "
-                                 "entry's year, journal, volume and pages could not be checked against a record"})
+        when = rec.year or "no year"
+        if wp_version:
+            cited_as, found = "journal article", f"{rec.type or 'working paper'} ({where}, {when})"
+            detail = ("only a working-paper or preprint version of the cited article was found, so the entry's year, "
+                      "journal, volume and pages could not be checked against a record")
+        elif published_version:
+            cited_as, found = "working paper", f"{rec.type} ({where}, {when})"
+            detail = ("only the published version of the cited working paper was found, so the entry's year, series "
+                      "and DOI were not compared with it; CIT-04 reports the published version")
+        else:
+            cited_as, found = cited.get("type") or "cited work", f"deposited copy ({where}, {when})"
+            detail = ("only a copy deposited in a data or document repository was found; its date is the deposit's "
+                      "and its DOI the copy's, so the entry's year, venue and DOI were not compared with it")
+        checks.append({"field": "version", "cited": cited_as, "found": found, "status": "note",
+                       "sources": {rec.source: rec.type}, "detail": detail})
         return checks
     # year
     if cited.get("year"):
@@ -353,8 +418,15 @@ def field_checks(cited: dict, evs: list) -> list:
             best = max(sims.values())
             status = "match" if best >= T["container_drift"] else (
                 "unknown" if looks_abbreviated(cited["container"]) else "differs")
-            checks.append({"field": "container", "cited": cited["container"], "found": primary["record"].container,
-                           "status": status, "similarity": best, "sources": values("container")})
+            found = primary["record"].container or next(iter(values("container").values()), None)
+            check = {"field": "container", "cited": cited["container"], "found": found, "status": status,
+                     "similarity": best, "sources": values("container")}
+            # Databases name a working paper's series inconsistently: a series, the institution, or nothing.
+            if (status == "differs" and cited_is_working_paper(cited, raw)
+                    and all(record_is_working_paper(e["record"]) for e in evs)):
+                check["status"] = "unknown"
+                check["detail"] = "working-paper series are named inconsistently across databases"
+            checks.append(check)
     # volume, issue, pages
     for name, attr, func in (("volume", "volume", lambda a, b: compare_simple(a, b)),
                              ("issue", "issue", lambda a, b: compare_simple(a, b, numeric_only=True)),
@@ -574,7 +646,7 @@ class ReferenceCheck:
                 continue
             conflicts[via] = evs
         title_only = [e for e in self.evals if e["title_only"]] if not groups else []
-        checks = field_checks(self.cited, identity_evs) if identity_evs else []
+        checks = field_checks(self.cited, identity_evs, self.ref.raw or "") if identity_evs else []
         drift = [c for c in checks if c["status"] == "differs"]
         searched = self.searched_databases()
         verdict, kind, basis, exists = "unverified", None, None, None

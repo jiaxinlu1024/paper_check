@@ -27,7 +27,7 @@ from __future__ import annotations
 import re
 from typing import Optional
 
-from .matching import compare_authors, family_key, fold, parse_year, title_similarity
+from .matching import compare_authors, family_key, fold, parse_year, title_similarity, title_word_overlap
 from .policy import THRESHOLDS, ReferenceCheck
 from .records import Record
 
@@ -97,18 +97,20 @@ def version_score(wp: dict, rec: Record) -> dict:
     au = compare_authors(wp.get("authors"), rec.authors) if wp.get("authors") and rec.authors else None
     a = (au or {}).get("jaccard") or 0.0
     t = title_similarity(wp.get("title"), rec.title) if wp.get("title") and rec.title else 0.0
+    words = title_word_overlap(wp.get("title"), rec.title) if wp.get("title") and rec.title else 0.0
     wy = parse_year(wp.get("year"))
     years = rec.all_years()
     lo, hi = T["version_years"]
     dy = min((y - wy for y in years), key=abs) if (wy and years) else None
     year_ok = 1.0 if dy is not None and lo <= dy <= hi else 0.0
     score = w["author"] * a + w["title"] * t + w["year"] * year_ok
+    # The same authors often write several papers together, so a changed title must keep its words.
     accepted = (a >= T["version_author"] and t >= T["version_title"] and year_ok == 1.0
-                and score >= T["version_score"])
+                and score >= T["version_score"] and (t >= T["title_strong"] or words >= T["version_words"]))
     if accepted and RESPONSE_TITLE.search(rec.title or "") and not RESPONSE_TITLE.search(wp.get("title") or ""):
         accepted = False  # "...: Reply" answers the paper; it is not its published version
-    return {"score": round(score, 3), "authors": round(a, 3), "title": round(t, 3), "year_difference": dy,
-            "accepted": accepted}
+    return {"score": round(score, 3), "authors": round(a, 3), "title": round(t, 3), "title_words": words,
+            "year_difference": dy, "accepted": accepted}
 
 
 def _link(rec: Record, sc: dict, basis: str) -> dict:
@@ -135,7 +137,9 @@ def find_published_versions(rc: ReferenceCheck, services) -> dict:
         wp["year"] = wp.get("year") or (str(primary.year) if primary.year else None)
         if not wp.get("authors"):
             wp["authors"] = primary.authors
-    own_dois = {d for d in [rc.ids.get("doi")] + [r.doi for r in rc.identity_records()] if d}
+    # A matched record that is a journal article or chapter is the published version the databases matched
+    # by title and authors (step 0 below), not the working paper's own record.
+    own_dois = {d for d in [rc.ids.get("doi")] + [r.doi for r in rc.identity_records() if _wp_like(r)] if d}
     found: dict = {}
 
     def consider(rec: Record, basis: str, require: Optional[dict] = None) -> None:
@@ -157,6 +161,10 @@ def find_published_versions(rc: ReferenceCheck, services) -> dict:
             return
         found[key] = _link(rec, sc, basis)
 
+    # 0. Records matched as the cited work that are its published version
+    for rec in rc.identity_records():
+        if not _wp_like(rec):
+            consider(rec, "matched as the cited work by title and authors; the record is the published version")
     # 1. NBER's own page
     number = rc.ids.get("nber")
     if not number:

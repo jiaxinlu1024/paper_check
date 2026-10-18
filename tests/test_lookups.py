@@ -857,3 +857,78 @@ def test_a_record_that_lists_its_authors_twice_is_not_an_author_mismatch():
     found = [{"family": "Carlson", "given": "Andrea"}, {"family": "Page", "given": "Elina"}] * 2
     au = compare_authors([{"family": "Carlson"}, {"family": "Page"}], found)
     assert au["record_not_cited"] == [] and au["fraction"] == 1.0 and au["record_count"] == 2
+
+
+def test_a_working_paper_known_only_as_its_later_chapter_is_a_version_not_drift(tmp_path):
+    """A 2011 working paper that the databases know only as its 2015 book chapter, with the title's words
+    reordered: the chapter's year, book and DOI are not errors in the entry, and CIT-04 proposes the chapter."""
+    chapter = {"DOI": "10.5555/chapter.7", "type": "book-chapter",
+               "title": ["Labor Supply over the Life Cycle and Commuting Time"],
+               "author": [{"family": "Doe", "given": "Jane"}, {"family": "Roe", "given": "Rex"}],
+               "issued": {"date-parts": [[2015]]}, "container-title": ["Essays on Work and Travel"]}
+
+    def answer(url, headers, n):
+        if "api.crossref.org/works?" in url:
+            return 200, {}, {"message": {"items": [chapter]}}
+        return empty_answers(url, headers, n)
+    raw = ("Doe, J., & Roe, R. (2011). Commuting Time and Labor Supply over the Life Cycle. Working Papers. "
+           "https://ideas.repec.org/p/xyz/wpaper/012.html")
+    card, rc, _ = stub_check(tmp_path, {"type": "report", "title": "Commuting Time and Labor Supply over the Life Cycle",
+                                        "authors": [{"family": "Doe"}, {"family": "Roe"}], "year": "2011",
+                                        "container": "Working Papers"}, raw, answer)
+    assert card["verdict"] in ("verified", "single_source"), card["field_checks"]
+    fields = {c["field"]: c for c in card["field_checks"]}
+    assert fields["version"]["status"] == "note" and "published version" in fields["version"]["detail"]
+    assert not {"year", "container", "doi"} & set(fields)
+    out = versions.find_published_versions(rc, rc.s)
+    assert out["is_working_paper"] and out["links"] and out["links"][0]["doi"] == "10.5555/chapter.7"
+
+
+def test_a_copy_in_a_data_repository_does_not_correct_the_entry(tmp_path):
+    """A 2012 agency report whose only record is a copy deposited in a data repository in 2024: the
+    deposit's year and DOI are not proposed as corrections."""
+    deposit = {"DOI": "10.5281/zenodo.0000001", "type": "dataset", "title": ["Household Travel Survey Summary Tables, 2010"],
+               "author": [{"name": "Example Transit Agency"}], "issued": {"date-parts": [[2024]]},
+               "container-title": ["Zenodo"]}
+
+    def answer(url, headers, n):
+        if "api.crossref.org/works?" in url:
+            return 200, {}, {"message": {"items": [deposit]}}
+        return empty_answers(url, headers, n)
+    raw = ("Example Transit Agency. (2012). Household Travel Survey Summary Tables, 2010. "
+           "https://www.example.gov/travel/summary.html")
+    card, rc, _ = stub_check(tmp_path, {"type": "report", "title": "Household Travel Survey Summary Tables, 2010",
+                                        "authors": [{"family": "Example Transit Agency"}], "year": "2012"}, raw, answer)
+    assert card["verdict"] in ("verified", "single_source"), card["field_checks"]
+    fields = {c["field"]: c for c in card["field_checks"]}
+    assert fields["version"]["status"] == "note" and "deposited" in fields["version"]["found"]
+    assert not {"year", "doi"} & set(fields)
+    assert not [f for f in _findings_for(card) if f.check_id == "CIT-03"]
+
+
+def test_same_authors_other_paper_is_not_the_published_version():
+    """Unrelated titles of similar length score about 0.5 on edit distance; the same team's other
+    paper is not a published version of this one."""
+    wp = {"title": "Bus Rapid Transit and Commuter Welfare in Mid-Sized Cities",
+          "authors": [{"family": "Doe"}, {"family": "Roe"}, {"family": "Poe"}], "year": "2012"}
+    other = Record("crossref", "10.5555/other", title="Teacher Turnover, Class Size, and Student Welfare",
+                   authors=[{"family": "Doe"}, {"family": "Roe"}, {"family": "Poe"}], year=2011, type="journal-article")
+    assert not versions.version_score(wp, other)["accepted"]
+    retitled = Record("crossref", "10.5555/same", title="Commuter Welfare and Bus Rapid Transit: Evidence from Mid-Sized Cities",
+                      authors=[{"family": "Doe"}, {"family": "Roe"}, {"family": "Poe"}], year=2015,
+                      type="journal-article")
+    assert versions.version_score(wp, retitled)["accepted"]
+
+
+def test_a_working_paper_series_name_is_not_compared_with_the_institution():
+    cited = {"title": "Bus Rapid Transit and Commuter Welfare in Mid-Sized Cities", "authors": [{"family": "Doe"}],
+             "year": "2012", "container": "Working Paper Series", "type": "article",
+             "doi": "10.3386/w99999"}
+    cr = Record("crossref", "10.3386/w99999", title=cited["title"], authors=[{"family": "Doe"}], year=2012,
+                type="report", doi="10.3386/w99999", publisher="National Bureau of Economic Research")
+    oa = Record("openalex", "W9", title=cited["title"], authors=[{"name": "J. Doe"}], year=2012, type="article",
+                container="National Bureau of Economic Research")
+    evs = [policy.evaluate(cited, cr, "doi"), policy.evaluate(cited, oa, "doi")]
+    checks = {c["field"]: c for c in policy.field_checks(cited, evs)}
+    assert checks["container"]["status"] == "unknown" and checks["container"]["found"]
+    assert not [c for c in checks.values() if c["status"] == "differs"]

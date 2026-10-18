@@ -69,6 +69,30 @@ def squeeze(text: Optional[str]) -> str:
     return fold(text).replace(" ", "")
 
 
+_FUNCTION_WORDS = STOPWORDS | {"or", "from", "with", "by", "as", "is", "are", "its", "their", "into", "over", "under",
+                               "between", "about", "after", "before", "than", "vs", "versus", "how", "what", "why",
+                               "when", "does", "do", "new", "this", "that", "these", "those", "we", "our"}
+
+
+def content_words(text: Optional[str]) -> set:
+    """The folded content words of a title, plurals reduced to their singular."""
+    out = set()
+    for w in fold(text).split():
+        if len(w) <= 2 or w in _FUNCTION_WORDS:
+            continue
+        out.add(w[:-1] if w.endswith("s") and not w.endswith("ss") and len(w) > 4 else w)
+    return out
+
+
+def title_word_overlap(a: Optional[str], b: Optional[str]) -> float:
+    """Share of the shorter title's content words that the other title has (0 to 1). Edit-distance
+    ratios give unrelated titles of similar length about 0.5; shared words do not."""
+    wa, wb = content_words(a), content_words(b)
+    if not wa or not wb:
+        return 0.0
+    return round(len(wa & wb) / min(len(wa), len(wb)), 3)
+
+
 def main_title(text: Optional[str]) -> str:
     """The folded part of a title before its subtitle, or '' when it has none."""
     if not text:

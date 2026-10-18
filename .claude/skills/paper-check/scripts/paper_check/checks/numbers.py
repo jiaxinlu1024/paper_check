@@ -3082,6 +3082,22 @@ def _flow_findings(paper: _Paper, ctx):
 
 # ================================================================ NUM-06: text against tables
 _SUPERLATIVE = re.compile(r"\b(?:largest|highest|biggest|strongest|greatest|smallest|lowest|weakest|best|worst|maximum|minimum)\b", re.I)
+# "two further estimates, not reported in Table 2, are ...": the sentence itself says the numbers are elsewhere.
+_NOT_IN_TABLE = re.compile(r"\b(?:not|never)\s+(?:shown|reported|included|presented|listed|displayed|tabulated)\s+"
+                           r"(?:in|on)\s+(?:the\s+)?Tables?\b|\b(?:omitted|excluded|absent)\s+from\s+(?:the\s+)?Tables?\b",
+                           re.I)
+_NOTE_NUMBER = re.compile(r"(?<![\w.])[-\u2212\u2013]?\d+\.\d+(?![\w.]*\d)")
+
+
+def _in_notes(tok: Tok, pt: ParsedTable) -> bool:
+    """The number is printed in the table's notes, such as a break-even value the note derives from the rows."""
+    for m in _NOTE_NUMBER.finditer(pt.notes or ""):
+        text = m.group(0).replace("\u2212", "-").replace("\u2013", "-")
+        half = 0.5 * 10 ** -len(text.split(".")[1])
+        v = abs(float(text))
+        if st.overlaps(tok.rep.abs_interval, (v - half, v + half)):
+            return True
+    return False
 
 
 def _table_numbers(pt: ParsedTable) -> list:
@@ -3163,13 +3179,13 @@ def text_against_tables(pm, ctx):
         tables = paper.tables_for(sent)
         if not tables or sent.has_citation:
             continue
-        if re.search(r"\bFig(?:ure|\.)?s?\b", sent.norm):
+        if re.search(r"\bFig(?:ure|\.)?s?\b", sent.norm) or _NOT_IN_TABLE.search(sent.norm):
             continue
         toks = [t for t in sent.tokens if t.kind == "result" and t.rep.decimals > 0]
         for tok in toks:
             candidates += 1
             evaluated += 1
-            if any(_in_table(tok, pt) for pt in tables):
+            if any(_in_table(tok, pt) or _in_notes(tok, pt) for pt in tables):
                 continue
             others = [pt for pt in paper.tables if pt not in tables and _in_cells(tok, pt)]
             names = " and ".join(pt.name for pt in tables)
