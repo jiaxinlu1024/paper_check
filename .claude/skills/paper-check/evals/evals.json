@@ -17,7 +17,7 @@
         "Every finding quotes the passage, says where it is precisely enough to find it, and suggests a fix",
         "Finds at least 90% of the answer key's problems (for the skill run, score_answer_key.py on paper-check-findings.json, with near misses judged by hand; for a run without the skill, by hand)",
         "No correct passage in the answer key is presented as wrong or unsupported, at any severity (a pure wording suggestion does not count)",
-        "Where the answer key gives a severity, the report's severity for that problem is within one level of it",
+        "Where the answer key gives a severity, the report's severity for that problem is within one level of it (problems a report misses are not graded here; the recall assertion covers them)",
         "The report states how the check was run and does not claim independent second runs or an independent refuter that did not happen",
         "The report does not contradict itself, for example a coverage note or a finding that relies on a verdict the report elsewhere marks refuted or unverifiable",
         "Flags the fabricated reference (Smithson 2019) and the chimeric reference (Brown 2015, whose DOI belongs to Kahneman and Tversky 1979)",
@@ -47,7 +47,7 @@
         "Every finding quotes the passage, says where it is precisely enough to find it, and suggests a fix",
         "Finds at least 90% of the answer key's problems (for the skill run, score_answer_key.py on paper-check-findings.json, with near misses judged by hand; for a run without the skill, by hand)",
         "No correct passage in the answer key is presented as wrong or unsupported, at any severity (a pure wording suggestion does not count)",
-        "Where the answer key gives a severity, the report's severity for that problem is within one level of it",
+        "Where the answer key gives a severity, the report's severity for that problem is within one level of it (problems a report misses are not graded here; the recall assertion covers them)",
         "The report states how the check was run and does not claim independent second runs or an independent refuter that did not happen",
         "The report does not contradict itself, for example a coverage note or a finding that relies on a verdict the report elsewhere marks refuted or unverifiable",
         "Flags Madrian and Shea (2001) as not supporting the gym-attendance claim",
@@ -75,9 +75,9 @@
         "The report has an index of findings in paper order",
         "The report says which checks were not run or ran only in part, and why",
         "Every finding quotes the passage, says where it is precisely enough to find it, and suggests a fix",
-        "Finds at least 90% of the answer key's problems (for the skill run, score_answer_key.py on paper-check-findings.json, with near misses judged by hand; for a run without the skill, by hand)",
+        "Finds at least 90% of the answer key's number and reference problems, since the user asked only about those (P01, P02, P03, P04, P07, P08, P09, P10, P16, P18, P19, P20, P21, P22, P25, P28, P29 and D02; for the skill run, score_answer_key.py with near misses judged by hand; for a run without the skill, by hand)",
         "No correct passage in the answer key is presented as wrong or unsupported, at any severity (a pure wording suggestion does not count)",
-        "Where the answer key gives a severity, the report's severity for that problem is within one level of it",
+        "Where the answer key gives a severity, the report's severity for that problem is within one level of it (problems a report misses are not graded here; the recall assertion covers them)",
         "The report states how the check was run and does not claim independent second runs or an independent refuter that did not happen",
         "The report does not contradict itself, for example a coverage note or a finding that relies on a verdict the report elsewhere marks refuted or unverifiable",
         "Flags the abstract's 23% as inconsistent with the 18.2% implied by Table 1",
@@ -86,8 +86,7 @@
         "Flags Madrian and Shea (2001) as not supporting the gym-attendance claim, since the user asked whether the references hold up",
         "Flags the hidden one-point instruction to AI reviewers",
         "Gives page and line locations, and at least 90% of the answer key's anchored items found are within one line of the key's anchor (score_answer_key.py reports this for the skill run)",
-        "Answers the user's two questions, whether the numbers hold up and whether the references hold up, in a few lines at the top of the report or in the final reply",
-        "Says which checks a quick check leaves out, rather than implying they passed"
+        "Answers the user's two questions, whether the numbers hold up and whether the references hold up, in a few lines at the top of the report or in the final reply"
       ]
     },
     {
@@ -106,7 +105,7 @@
         "Every finding quotes the passage, says where it is precisely enough to find it, and suggests a fix",
         "Finds at least 90% of the answer key's problems (for the skill run, score_answer_key.py on paper-check-findings.json, with near misses judged by hand; for a run without the skill, by hand)",
         "No correct passage in the answer key is presented as wrong or unsupported, at any severity (a pure wording suggestion does not count)",
-        "Where the answer key gives a severity, the report's severity for that problem is within one level of it",
+        "Where the answer key gives a severity, the report's severity for that problem is within one level of it (problems a report misses are not graded here; the recall assertion covers them)",
         "The report states how the check was run and does not claim independent second runs or an independent refuter that did not happen",
         "The report does not contradict itself, for example a coverage note or a finding that relies on a verdict the report elsewhere marks refuted or unverifiable",
         "Catches at least 7 of the 9 citation problems that only the cited works' full texts settle (P01, P03, P04, P05, P06, P07, P08, P20 and P23 in the answer key)",

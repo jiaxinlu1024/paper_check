@@ -166,7 +166,7 @@ planted:
     about: ["too small", "implausib", "plausib", "0.017", "small for", "small given"]
     about_required: true
     severity: major
-    truth: "Not planted; both arms found it in round 1. Column (1)'s standard error is too small: with 1,150 employees and zero-contribution shares of 9.9% and 8.1%, the standard error of the difference is about 0.017, not 0.008, so t is about 1.1, not 2.25."
+    truth: "Not planted; both arms found it in round 1 in the LaTeX version of this paper. Column (1)'s standard error is too small: with 1,150 employees and zero-contribution shares of 9.9% and 8.1%, the standard error of the difference is about 0.017, not 0.008, so t is about 1.1, not 2.25."
   - id: W09
     origin: round-1
     checks: [FMT-04, FMT-17]
@@ -189,6 +189,18 @@ planted:
     about: ["sum", "total", "add up", "adds up", "100"]
     about_required: true
     truth: "Not planted; the baseline found it in round 1. The caption calls Figure 1 a distribution by arm, but the two arms' bars total different heights (1.85 and 2.60 in bar units), so they cannot both be shares of one total."
+  - id: P28
+    origin: round-2
+    checks: [COH-02, BEH-14, NUM-01, LOG-01]
+    quote: "explains the pattern"
+    truth: "Not planted; both arms found it in round 2. The abstract says a present-bias parameter of beta = 0.82 explains the pattern, but the body never estimates beta: no method, standard error or identification is given."
+  - id: P29
+    origin: round-2
+    checks: [NUM-06, LOG-04, NUM-02, NUM-01]
+    quote: "The participation rate rose from 20% to 25%"
+    about: ["zero contribution", "zero-contribution", "contradict", "90%", "92%", "inconsistent with the share"]
+    about_required: true
+    truth: "Not planted; both arms found it in round 2. A participation rate of 20% to 25% contradicts the zero-contribution shares of 9.9% and 8.1%, which imply that about 90% to 92% of employees contribute."
 negatives:
   - quote: "automatic enrollment sharply raised 401(k) participation in the firm studied by"
     truth: "Supported by Madrian and Shea (2001)."

@@ -173,9 +173,9 @@ def score(findings_path: Path, expected_path: Path) -> dict:
             want = (item["anchor"]["page"], item["anchor"]["page_line"])
             given = []
             for f in hits:
-                m = re.search(r"p\. (\d+), line (\d+)", f.get("where") or "")
-                if m:
-                    given.append((int(m.group(1)), int(m.group(2))))
+                # Every place the finding names, not only the first.
+                for pg, ln in re.findall(r"p\. (\d+), line (\d+)", f.get("where") or ""):
+                    given.append((int(pg), int(ln)))
             best = min(given, key=lambda g: (g[0] != want[0], abs(g[1] - want[1]))) if given else None
             row["anchor"] = {"expected": list(want), "given": list(best) if best else None,
                              "within_one": bool(best) and best[0] == want[0] and abs(best[1] - want[1]) <= 1}

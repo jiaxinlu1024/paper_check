@@ -125,6 +125,18 @@ planted:
     mentions: ["tablenotes", "threeparttable"]
     severity: major
     truth: "Not planted; found in round 1. Table 1 uses the tablenotes environment, but the threeparttable package is not loaded, so LaTeX stops with an undefined environment."
+  - id: P28
+    origin: round-2
+    checks: [COH-02, BEH-14, NUM-01, LOG-01]
+    quote: "explains the pattern"
+    truth: "Not planted; both arms found it in round 2. The abstract says a present-bias parameter of beta = 0.82 explains the pattern, but the body never estimates beta: no method, standard error or identification is given."
+  - id: P29
+    origin: round-2
+    checks: [NUM-06, LOG-04, NUM-02, NUM-01]
+    quote: "The participation rate rose from 20% to 25%"
+    about: ["zero contribution", "zero-contribution", "contradict", "90%", "92%", "inconsistent with the share"]
+    about_required: true
+    truth: "Not planted; both arms found it in round 2. A participation rate of 20% to 25% contradicts the zero-contribution shares of 9.9% and 8.1%, which imply that about 90% to 92% of employees contribute."
 negatives:
   - quote: "automatic enrollment sharply raised 401(k) participation in the firm studied by"
     truth: "Supported by Madrian and Shea (2001)."
