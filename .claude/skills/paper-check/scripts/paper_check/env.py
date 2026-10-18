@@ -35,7 +35,8 @@ PROBES = {
     "Crossref": "https://api.crossref.org/works?rows=0",
     "OpenAlex": "https://api.openalex.org/works?per_page=1",
     "Semantic Scholar": "https://api.semanticscholar.org/graph/v1/paper/search?query=nudge&limit=1&fields=title",
-    "Unpaywall": "https://api.unpaywall.org/v2/10.2307/1914185?email=paper-check@example.com",
+    # No email in the probe: Unpaywall's "email required" answer shows it is reachable.
+    "Unpaywall": "https://api.unpaywall.org/v2/10.2307/1914185",
     "arXiv": "https://export.arxiv.org/api/query?search_query=all:nudge&max_results=1",
     "NBER": "https://www.nber.org/",
 }
@@ -61,7 +62,9 @@ def _probe(url: str) -> str:
             return "reachable but rate-limited (HTTP 429): lookups will slow down, retry later or add the API key"
         if exc.code in (401, 403):
             return f"reachable, but access was refused (HTTP {exc.code}): check the key or the network policy"
-        return f"ok (HTTP {exc.code})"
+        if exc.code == 422:
+            return "reachable (it asks for a contact email, which the lookups add when one is set)"
+        return f"reachable (HTTP {exc.code})"
     except Exception as exc:
         return f"unreachable: {str(exc)[:60]}"
 

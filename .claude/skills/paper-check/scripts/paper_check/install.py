@@ -208,8 +208,9 @@ def run(email: Optional[str] = None, request_key: bool = False, link: bool = Tru
                                   "click its button, within 7 days.")
             print("  " + message)
     elif not config_value(config, "openalex_api_key"):
-        next_steps.append("Optional: run install again with --request-openalex-key for a free OpenAlex key, "
-                          "which makes literature searches faster.")
+        flags = "--request-openalex-key" if current else '--email "ADDRESS" --request-openalex-key'
+        next_steps.append(f"Optional: for a free OpenAlex key, which makes literature searches faster, run install "
+                          f"again with {flags}, then click the activation email OpenAlex sends.")
     if not config_value(config, "semantic_scholar_api_key"):
         next_steps.append("Optional: apply for a free Semantic Scholar key (docs/api-access.md has the form and "
                           "what to enter). When it arrives, put it in ~/.paper-check/config.yaml as "

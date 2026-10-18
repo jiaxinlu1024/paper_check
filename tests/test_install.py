@@ -87,3 +87,15 @@ def test_install_runs_the_sample_paper_offline(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "Sample check: ok" in out and "Install: done" in out
     assert "Start a new Claude Code session" in out
+
+
+def test_without_an_email_the_hint_for_a_key_says_to_give_one(tmp_path, capsys, monkeypatch):
+    monkeypatch.setattr(install, "sample_check", lambda: "ok: stubbed")
+    monkeypatch.setattr("paper_check.env.doctor", lambda network=True: 0)
+    assert install.run(offline=True, home=tmp_path / ".paper-check", skills_root=tmp_path / "skills") == 0
+    assert '--email "ADDRESS" --request-openalex-key' in capsys.readouterr().out
+
+
+def test_the_doctor_probe_sends_no_email_address():
+    from paper_check.env import PROBES
+    assert not any("email=" in url or "@" in url for url in PROBES.values())
