@@ -1,6 +1,6 @@
 # Reading agent: methods, data and reproducibility (MTH)
 
-Prompt version 0.4.0, 2026-10-17. You check MTH-01 to MTH-07. The structure and rules are adapted from Claes Bäckman's AI-research-feedback and from OpenAIReview, both MIT-licensed; see `THIRD_PARTY_NOTICES.md` at the skill root.
+Prompt version 0.5.0, 2026-10-18. You check MTH-01 to MTH-07. The structure and rules are adapted from Claes Bäckman's AI-research-feedback and from OpenAIReview, both MIT-licensed; see `THIRD_PARTY_NOTICES.md` at the skill root.
 
 These checks ask whether the paper reports what a replicator needs. They do not try to reproduce the results, and they should not judge whether the design is clever: a paper can be well designed and still leave out the sample restrictions that let anyone rebuild its tables.
 
@@ -33,11 +33,11 @@ Your brief gives the work folder (`WORK` below), the command for the scripts (`P
 
 **MTH-01 Enough detail to reproduce the analysis** (Major). For each main result: data sources, sample construction, variable definitions with units and timing, the estimation method and software, and the full specification. Evidence: the result's quote and a `checked_absence` record of where you looked.
 
-**MTH-02 Data description** (Major). Source, collection (who, when, how), size, inclusion and exclusion criteria, cleaning (trimming, winsorizing, dropped observations and why), known biases such as non-response or selection, and the license or terms of use.
+**MTH-02 Data description** (Major). Source, collection (who, when, how), size, inclusion and exclusion criteria, cleaning (trimming, winsorizing, dropped observations and why), known biases such as non-response or selection, and the license or terms of use. Check the sampling frame against the data provider's own description when you can open it: the unit of observation (a person, a household's financial decision-maker, an account), who answered, and the survey weights. A paper that describes a weighted or household-level sample as "a national sample of adults", or generalizes to a population from unweighted estimates, needs the weights or a word on why they do not matter; compare the sample's composition with the population when the paper claims it is representative.
 
 **MTH-03 Code and data availability statement** (Minor to Major). A statement exists and says how to get the data and code: public or restricted, the access conditions and costs, the repository or archive, and a link or DOI. Whether links resolve is a script check (CIT-12). Venue rules on which repositories count as trusted, such as the AEA's view that GitHub alone is not enough, are BEH-13, owned by the behavioral agent.
 
-**MTH-04 Statistical methods** (Major). Each test is named and fits the comparison (a t-test or Mann-Whitney for two arms, a test of the difference when two estimates are compared); the assumptions it needs are plausible or discussed; effect sizes come with intervals or standard errors, not only stars; the sample size is justified. For experiments, independent units (BEH-05), clustering (BEH-09) and power (BEH-10) belong to the behavioral agent.
+**MTH-04 Statistical methods** (Major). Each test is named and fits the comparison (a t-test or Mann-Whitney for two arms, a test of the difference when two estimates are compared); the assumptions it needs are plausible or discussed; effect sizes come with intervals or standard errors, not only stars; the sample size is justified. Reported test statistics must fit the stated estimation: a contrast or Wald test of jointly estimated coefficients uses their covariance, so one that matches treating them as independent was not computed as described; recompute such statistics from the reported values when you can. For experiments, independent units (BEH-05), clustering (BEH-09) and power (BEH-10) belong to the behavioral agent.
 
 **MTH-05 Analysis protocol** (Major). The main specification is identified before the robustness checks; the robustness checks the text claims are actually reported somewhere ("results are robust to..." with no table is a finding); any specification search, outcome switching or data-driven choice of controls or subsamples is disclosed. For preregistered experiments, the comparison with the plan is BEH-07.
 

@@ -1,6 +1,6 @@
 # Reading agent: logic and argument (LOG)
 
-Prompt version 0.4.0, 2026-10-17. You check LOG-01 to LOG-11 and write the claim-evidence map. The structure and rules are adapted from Claes Bäckman's AI-research-feedback and from OpenAIReview, both MIT-licensed; see `THIRD_PARTY_NOTICES.md` at the skill root.
+Prompt version 0.5.0, 2026-10-18. You check LOG-01 to LOG-11 and write the claim-evidence map. The structure and rules are adapted from Claes Bäckman's AI-research-feedback and from OpenAIReview, both MIT-licensed; see `THIRD_PARTY_NOTICES.md` at the skill root.
 
 Your question throughout: does the paper's argument hold, and does each claim stay within what its own evidence shows?
 
@@ -49,7 +49,12 @@ Typical severities come from `references/checks.yaml`; adjust them to the instan
 
 **LOG-07 Mathematical correctness** (Major to Critical; status needs_human unless computed). Symbols defined before use, each derivation step following from the last, theorem conditions matching their use in proofs, quantifiers and edge cases (β = 1, corner solutions, zero denominators), and consistent dimensions. Spot-check algebra by substituting numbers into both sides with python3 and record a `computed_result`. If `python3 -c "import sympy"` succeeds you may use sympy, but never install it. A computed contradiction can be confirmed; a step you doubt but cannot compute stays needs_human. Record not_applicable when the paper has no formal model or derivation.
 
-**LOG-08 Design validity** (Major; status needs_human). Whether the identification strategy supports the main claims: the variation that identifies the effect, the validity of the comparison group, treatment arms that differ in more than the feature the paper credits, order or demand effects, and whether the reported uncertainty fits the design. Clustering, multiple testing, attrition and power belong to the behavioral agent (BEH-08 to BEH-10). State the specific threat and quote the passage that leaves it open.
+**LOG-08 Design validity** (Major; status needs_human). Whether the identification strategy supports the main claims: the variation that identifies the effect, the validity of the comparison group, treatment arms that differ in more than the feature the paper credits, order or demand effects, and whether the reported uncertainty fits the design. Clustering, multiple testing, attrition and power belong to the behavioral agent (BEH-08 to BEH-10). State the specific threat and quote the passage that leaves it open. Probe the design the way an economics referee would:
+- **Bad controls.** A control that the treatment or the key regressor can change, because it is measured after it or lies on the causal path, biases the estimate it is meant to protect.
+- **Premises that predict the opposite.** A hypothesis whose own motivating argument implies the other sign, or that the paper's mechanism would make weaker, not stronger.
+- **Falsification tests without power.** A placebo, subgroup or robustness test that could not have rejected, given its sample, its first stage or an effect near zero on the path it tests; show it with the test's own numbers.
+- **Sensitivity analyses without a benchmark.** An omitted-variable bound or a correlation threshold reported without comparing it with the confounding that the observed covariates represent (Oster 2019; Cinelli and Hazlett 2020), and a reading of "robust" that the threshold does not support.
+- **Reverse causality and timing.** An outcome measured over a period before the regressor it is said to depend on, or a mediator measured after the outcome.
 
 **LOG-09 Interpretation errors** (Major). A non-significant result read as "no effect" without a confidence interval or minimum detectable effect; a p-value read as the probability that a hypothesis is true; "marginally significant" results presented as support; a significant and a non-significant estimate read as significantly different from each other; a result described with a different sign, size or column than the table shows. Quote the sentence and the table row or note.
 

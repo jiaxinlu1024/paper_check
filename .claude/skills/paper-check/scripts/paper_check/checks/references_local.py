@@ -211,30 +211,8 @@ def reference_ages(pm, ctx):
                f"({now - med:g} years before {now}). {last5} ({100 * last5 / len(ys):.0f}%) "
                f"{'is' if last5 == 1 else 'are'} from the last 5 years, {last10} ({100 * last10 / len(ys):.0f}%) from the "
                f"last 10, and {older30} {'is' if older30 == 1 else 'are'} more than 30 years old.")
-    f = ctx.finding(
-        "CIT-10", "Age of the reference list", "suggestion",
-        summary + " This is a summary, not a judgment: check that recent work on the topic is represented "
-        "(CIT-09 searches for missing related work).",
-        status="confirmed", confidence="high",
-        evidence=[Evidence(type="computed_result", text="reference ages",
-                           data={"formula": f"{now} - publication year", "inputs": {"years": ys},
-                                 "output": {"median_year": med, "share_last_5": round(last5 / len(ys), 3),
-                                            "share_last_10": round(last10 / len(ys), 3), "older_than_30": older30,
-                                            "mean_age": round(sum(ages) / len(ages), 1)}})],
-        trajectory=[f"Read the publication year of {len(ys)} of {len(pm.references)} references.",
-                    f"Measured ages against {now}, the paper's date or else the current year."],
-        fix=Fix(action="investigate", detail="Make sure the most recent relevant studies are cited; the CIT-09 "
-                                             "searches list candidates.",
-                resolved_when="The reference list covers the recent literature a referee would expect, or the gap is "
-                              "deliberate."),
-        script=SCRIPT, extra={"median_year": med, "paper_year": now})
-    head = next((b for b in pm.blocks if b.kind == "heading" and re.match(r"\s*(?:\d+\s+)?(?:references|bibliography|"
-                                                                          r"works cited|literature)\b", b.text, re.I)), None)
-    if head is not None:
-        add_location(f, head.anchor, head.section, head.id)
-    else:
-        add_location(f, _ref_anchor(years[0][1]))
-    yield f
+    # A summary is information, not a problem: it goes in the coverage note, where CIT-09's searches can use it.
+    ctx.note("CIT-10", summary)
 
 
 # =============================================================== FMT-08 reference list consistency

@@ -460,6 +460,26 @@ def _metadata_authors(pm) -> list:
     return uniq
 
 
+_ORG_WORDS = re.compile(r"\b(?:university|college|institute|school|department|faculty|bank|inc|ltd|llc|gmbh|corp|"
+                        r"corporation|company|foundation|center|centre|laboratory|lab|agency|ministry|office)\b", re.I)
+
+
+def mask_person(value) -> str:
+    """A personal name from a file's metadata, as initials, so the report can be forwarded without it: the
+    authors know whose name it is, and the findings file keeps the field's value for a fixing agent.
+    Institutions and other values are shown as they are."""
+    v = " ".join(str(value).split())
+    if not v or _ORG_WORDS.search(v):
+        return v
+    if "@" in v:
+        user, _, domain = v.partition("@")
+        return f"{user[:1]}…@{domain}"
+    words = re.findall(r"[^\W\d_][\w'’.-]*", v)
+    if 1 <= len(words) <= 5 and all(w[0].isupper() for w in words) and len(words) == len(v.split()):
+        return " ".join(w[0] + "." for w in words) + " (initials)"
+    return v
+
+
 def _identifying_metadata(pm) -> list:
     """Author fields, plus links, running heads and page headers that name the authors or their pages."""
     out = list(_metadata_authors(pm))
@@ -609,7 +629,7 @@ def anonymization(pm, ctx):
                                       "institutions, funders or contact details."),
                 script=SCRIPT, extra={"reasons": reasons})
         if meta:
-            listing = "; ".join(f"{k} = {v}" for k, v in meta)
+            listing = "; ".join(f"{k} = {mask_person(v) if 'link' not in k else v}" for k, v in meta)
             f = ctx.finding(
                 "FMT-02", "Author identified by the file's metadata, links or running heads", "critical",
                 f"The file identifies its authors outside the text ({listing}). Reviewers can read document "
@@ -2234,7 +2254,7 @@ def word_hygiene(pm, ctx):
         note_coverage(ctx, "FMT-14", "the author fields in the document properties are reported under FMT-02, "
                                      "because the venue reviews anonymously")
     elif meta:
-        listing = "; ".join(f"{k} = {v}" for k, v in meta)
+        listing = "; ".join(f"{k} = {mask_person(v)}" for k, v in meta)
         f = ctx.finding(
             "FMT-14", "Author recorded in the document properties", "minor",
             f"The document properties name people or institutions ({listing}). They travel with the file; under "

@@ -560,6 +560,8 @@ class Builder:
                  "needs human judgment."]
         title = ("A replication of this work was labelled failed" if sev == "major" else
                  "Replications of this work report mixed or qualified results")
+        # Whether the paper relies on the result is a reading question, so a record alone is at most Minor.
+        sev = {"major": "minor", "minor": "suggestion"}.get(sev, sev)
         self.make(card, "CIT-14", title, sev, problem, evidence=evidence, trajectory=steps, confidence="medium",
                   status="needs_human",
                   fix=Fix(action="investigate", detail="Read the replication, then mention it and its outcome where "

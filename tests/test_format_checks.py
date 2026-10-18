@@ -209,7 +209,9 @@ def test_fmt02_pdf_metadata_author():
     meta = [f for f in found if f.title == "Author identified by the file's metadata, links or running heads"]
     assert meta and meta[0].quote is None and meta[0].severity == "critical"
     problem = meta[0].problem
-    assert "document_info.author = Alex Example" in problem and "xmp.creator" in problem
+    # The name is shown as initials, so the report can be forwarded; the findings file keeps the value.
+    assert "document_info.author = A. E. (initials)" in problem and "Alex Example" not in problem
+    assert "xmp.creator" in problem and meta[0].extra["fields"]["document_info.author"] == "Alex Example"
     assert "sites.google.com/view/alexexample" in problem and "aeaweb" not in problem
     assert "running head" in problem and "LaTeX with hyperref" not in problem
 
@@ -742,12 +744,11 @@ def test_cit01_many_uncited_entries_reported_together():
     assert_well_formed(pm, found)
 
 
-def test_cit10_summary(latex_map):
+def test_cit10_summary_is_a_coverage_note_not_a_finding(latex_map):
     pm, _ = latex_map
-    found, _ = run(pm, "CIT-10")
-    assert len(found) == 1 and found[0].severity == "suggestion"
-    data = found[0].evidence[0].data
-    assert data["inputs"]["years"][0] == 1979 and data["output"]["median_year"] == 2002.5
+    found, cov = run(pm, "CIT-10")
+    assert found == [] and cov["CIT-10"].status == "run"
+    assert "from 1979 to" in cov["CIT-10"].reason and "median year 2002.5" in cov["CIT-10"].reason
 
 
 # ================================================================ BEH checks

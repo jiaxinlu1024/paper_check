@@ -38,7 +38,7 @@ Two errors matter most. Checkers wrongly accept a citation most often because it
 |---|---|---|
 | supported | none | A quoted passage that names the concept or an approved synonym, or the equation or estimate that is the concept |
 | partly supported | S3, S7, or support only through a related concept | A quoted passage, and the part of the claim it does not cover |
-| not supported: topic absent | S1 | The full-text search record: version read, pages, every term with its hit count, the closest passages, and what the work is about |
+| not supported: topic absent | S1 | The full-text search record: version read, pages, every term with its hit count, the closest passages, and what the work is about; or, from an abstract alone, the abstract's sentence showing that the work is about a different subject altogether |
 | not supported: misattributed | S4, S5 | A passage showing that the work does not originate the claim, and the likely original source if found |
 | not supported: misdescribed | S2, S6 | A passage showing what the work actually found or did |
 | contradicted | S2, when the work finds the opposite | A quoted passage stating the opposite |
@@ -49,7 +49,7 @@ Two errors matter most. Checkers wrongly accept a citation most often because it
 - **Sharing the topic is not support.** In the survey's evidence, checkers that wrongly passed a citation usually did so because the topic overlapped.
 - **A related concept is not a synonym.** A source that only fits a hyperbolic discount function partly supports a sentence about present bias.
 - **Equations count.** A source that estimates a present-bias parameter below 1 supports a sentence about present bias even if the phrase never appears.
-- **An abstract can never show a topic absent.** It can support or contradict a claim. With only the abstract, a negative verdict becomes cannot verify. Citing sentences attribute about a fifth more concepts to a paper than its abstract contains.
+- **An abstract cannot show that a detail is absent, but it can show what the work is.** Citing sentences attribute about a fifth more concepts to a paper than its abstract contains, so a concept missing from the abstract proves nothing. When the abstract shows that the work is about a different subject, population or setting altogether (S1), is a different kind of work than the sentence needs, such as a review or bibliometric study cited as original evidence (S5) or a theory paper cited for an empirical finding (S6), or states a finding at odds with the claim (S2), give that verdict from the abstract: record `version_read` as "abstract only", make the finding likely, never confirmed, quote the abstract's sentence that shows it, and say that the full text would settle it. Otherwise, with only the abstract, a negative verdict becomes cannot verify.
 - **Judge only the part of the sentence attributed to this citation.** In "X (A) and Y (B)", A answers for X only.
 - **Background citations** are supported when the work addresses the specific topic named, not a neighbouring one; **tools, datasets and methods** cited for their use are supported when the work introduces or documents them; **surveys** are supported for claims within their scope, but a survey cited as the source of an original result is S5.
 - **Record the version read.** A working paper and its published article can differ in results and numbers.

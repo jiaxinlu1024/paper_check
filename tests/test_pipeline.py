@@ -120,19 +120,20 @@ def test_report_layout_order_coverage_and_appendices(work_copy):
     data = json.loads((work_copy.parent / "paper-check-findings.json").read_text())
 
     # Severity order, then paper order; headings at the right levels.
-    assert md.index("## Critical findings (1)") < md.index("## Major findings (1)") < md.index("## Minor findings (1)")
+    assert (md.index("## What to fix first") < md.index("## Summary") < md.index("## Critical findings (1)")
+            < md.index("## Major findings (1)") < md.index("## Minor findings and suggestions (1 Minor, 0 Suggestion)"))
+    assert md.index("## Evidence") < md.index("## About this check")
     assert "### F-001 · Critical · LOG-04 · Session counts disagree" in md
     assert "Where: 2 Experimental design, paragraph 2, sentence 2 (sections/design.tex:4-5)" in md
     # A Minor finding is a row of the Minor table in the report and a full entry in the evidence file.
-    minor_table = md.split("## Minor findings (1)")[1].split("\n## ")[0]
+    minor_table = md.split("## Minor findings and suggestions (1 Minor, 0 Suggestion)")[1].split("\n## ")[0]
     assert "Abstract, sentence 2 (main.tex:12-13)" in minor_table
     assert "Where: Abstract, sentence 2 (main.tex:12-13)" in (work_copy.parent / "paper-check-evidence.md").read_text()
     ev = (work_copy.parent / "paper-check-evidence.md").read_text()
     assert 'Related, A Additional details, paragraph 1 (sections/appendix.tex:1-3): "We ran 10 survey sessions in total."' in ev
     # The refuted finding moves to its appendix in the evidence file; the suggestion is below the minimum severity.
     assert "## Appendix: refuted findings" in ev and "Section 2 randomizes the default." in ev
-    assert "## Appendix" not in md and "Proof and steps: F-001 in paper-check-evidence.md." in md
-    assert md.index("## What to fix first") < md.index("## Critical findings (1)")
+    assert "## Appendix" not in md and "Proof and steps: [F-001](paper-check-evidence.md#f-001)" in md
     assert "Wordy" not in md and "1 findings below the minimum severity" in md
     # Coverage: run by one producer and skipped by another reads "partly run".
     cov = {r["check_id"]: r for r in data["coverage"]}
@@ -310,15 +311,17 @@ def test_top_issues_follow_the_consolidators_choice_then_the_ranking(work_copy):
     main(["verify", str(work_copy)])
     main(["report", str(work_copy)])
     report = (work_copy.parent / "paper-check-report.md").read_text()
-    first = report.split("Top issues")[1].split("Coverage:")[0]
+    first = report.split("## What to fix first")[1].split("\n## ")[0]
     assert first.index("LOG-01") < first.index("LOG-03")          # ranking: confirmed before likely
     keys = {f["check_id"]: f["key"] for f in
             json.loads((work_copy.parent / "paper-check-findings.json").read_text())["findings"]}
     (work_copy / "consolidation.json").write_text(json.dumps({"groups": [], "top": [keys["LOG-03"], "LOG-09-deadbeef"]}))
     main(["report", str(work_copy)])
     report = (work_copy.parent / "paper-check-report.md").read_text()
-    chosen = report.split("Top issues")[1].split("Coverage:")[0]
-    assert "most threaten" in chosen and "LOG-03" in chosen and "LOG-01" not in chosen
+    chosen = report.split("## What to fix first")[1].split("\n## ")[0]
+    items = [line for line in chosen.splitlines() if line[:2] in ("1.", "2.")]
+    assert "most threaten" in chosen and "LOG-03" in items[0] and "top issue" in items[0]
+    assert "LOG-01" in items[1] and "top issue" not in items[1]
     assert "LOG-09-deadbeef" in report.split("## Summary")[0]       # an unknown key is a warning
 
 
@@ -348,7 +351,7 @@ def test_index_follows_sentence_order_and_places_anchor_only_findings(work_copy)
     main(["report", str(work_copy)])
     report = (work_copy.parent / "paper-check-report.md").read_text()
     index = report.split("## Index in paper order")[1].split("## Coverage")[0]
-    titles = [r.split("|")[5].strip() for r in index.splitlines() if r.startswith("| F-")]
+    titles = [r.split("|")[4].strip() for r in index.splitlines() if r.startswith("| F-")]
     order = [titles.index(t) for t in ("First sentence", "Second sentence", "Comment left in the file",
                                        "Later paragraph")]
     assert order == sorted(order), titles
@@ -399,7 +402,7 @@ def test_quick_report_is_brief_and_coverage_lists_only_what_did_not_run(tmp_path
     md = (tmp_path / "paper-check-report.md").read_text()
     finding = md.split("### F-001")[1].split("\n## ")[0]
     # The report keeps the quote, place, problem and fix; the proof and the steps are in the evidence file.
-    assert "Proof:" not in finding and "Proof and steps: F-001 in paper-check-evidence.md." in finding
+    assert "Proof:" not in finding and "Proof and steps: [F-001](paper-check-evidence.md#f-001)" in finding
     ev = (tmp_path / "paper-check-evidence.md").read_text()
     entry = ev.split("### F-001")[1].split("\n## ")[0]
     assert all(e["text"] in entry for e in evidence) and "Read the design section." in entry
@@ -463,3 +466,22 @@ def test_a_status_raised_by_merging_is_explained_in_the_trajectory(work_copy):
     lead = next(f for f in data["findings"] if f["check_id"] == "LOG-03")
     assert lead["status"] == "confirmed"
     assert any(t.startswith("Status raised from likely to confirmed: LOG-04") for t in lead["trajectory"])
+
+
+def test_finding_ids_stay_the_same_when_the_report_is_built_again(work_copy):
+    """IDs quoted from one build (in a conversation or a coauthor's notes) keep pointing at the same finding;
+    a finding added later gets the next free number instead of shifting the others."""
+    _write(work_copy, "agent_logic.json", {"producer": "agent_logic", "findings": [
+        _finding(check_id="LOG-03", title="Causal claim", severity="major"),
+        _finding(check_id="LOG-04", title="Session counts disagree", severity="minor", quote=SESSIONS)]})
+    main(["verify", str(work_copy)])
+    main(["report", str(work_copy)])
+    first = {f["title"]: f["id"] for f in json.loads((work_copy.parent / "paper-check-findings.json").read_text())["findings"]}
+    _write(work_copy, "agent_numbers.json", {"producer": "agent_numbers", "findings": [
+        _finding(check_id="NUM-01", title="Headline number", severity="critical",
+                 quote="reduces the share of employees who save nothing by 23%")]})
+    main(["verify", str(work_copy)])
+    main(["report", str(work_copy)])
+    second = {f["title"]: f["id"] for f in json.loads((work_copy.parent / "paper-check-findings.json").read_text())["findings"]}
+    assert second["Causal claim"] == first["Causal claim"] and second["Session counts disagree"] == first["Session counts disagree"]
+    assert second["Headline number"] == "F-003"

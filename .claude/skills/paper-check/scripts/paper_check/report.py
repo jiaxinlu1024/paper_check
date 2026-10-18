@@ -27,7 +27,7 @@ from typing import Optional
 from . import __version__
 from .config import OUTPUT_EVIDENCE, OUTPUT_FINDINGS, OUTPUT_REPORT
 from .model import PaperMap
-from .textutil import find_quote, normalize
+from .textutil import find_quote, normalize, split_sentences
 
 SKILL_DIR = Path(__file__).resolve().parents[2]
 SEVERITY_RANK = {"critical": 0, "major": 1, "minor": 2, "suggestion": 3}
@@ -313,6 +313,38 @@ def _top_issues(kept: list, n: int = 5) -> list:
         return len({f.check_id.split("-")[0]} | {a["check_id"].split("-")[0] for a in f.extra.get("also", [])})
     return sorted(kept, key=lambda f: (SEVERITY_RANK.get(f.severity, 9), STATUS_RANK.get(f.status, 9),
                                        -dimensions(f), CONF_RANK.get(f.confidence, 9), order[id(f)]))[:n]
+
+
+def _assign_ids(kept: list, work: Path) -> None:
+    """F-001, F-002, ... in report order the first time; later builds of the same work folder keep each
+    finding's ID (matched by its key), so IDs quoted in an earlier report or a conversation stay valid. A new
+    finding gets the next free number."""
+    path = work / "finding_ids.json"
+    try:
+        known = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+        if not path.exists() and (work.parent / OUTPUT_FINDINGS).exists():
+            # A report built before IDs were saved: take them from its findings file.
+            previous = json.loads((work.parent / OUTPUT_FINDINGS).read_text(encoding="utf-8"))
+            known = {f["key"]: f["id"] for f in previous.get("findings", []) if f.get("key") and f.get("id")}
+    except (OSError, ValueError, KeyError, TypeError):
+        known = {}
+    used = set()
+    for f in kept:
+        fid = known.get(f.extra.get("key") or "")
+        f.id = fid if fid and fid not in used else None
+        if f.id:
+            used.add(f.id)
+    n = max([int(x[2:]) for x in used if x[2:].isdigit()] + [0])
+    for f in kept:
+        if f.id is None:
+            n += 1
+            f.id = f"F-{n:03d}"
+            used.add(f.id)
+    known.update({f.extra["key"]: f.id for f in kept if f.extra.get("key")})
+    try:
+        path.write_text(json.dumps(known, indent=1), encoding="utf-8")
+    except OSError:
+        pass
 
 
 def _assign_keys(findings: list) -> None:
@@ -620,7 +652,8 @@ def _render_finding(f, loc: Locator, checklist: dict, dimensions: dict, brief: b
     dim = dimensions.get(f.dimension, f.dimension)
     also = f.extra.get("also", [])
     also_ids = list(dict.fromkeys(a["check_id"] for a in also if a.get("check_id") != f.check_id))
-    lines = [f"### {f.id} · {SEVERITY_TITLE.get(f.severity, f.severity)} · {f.check_id} · {f.title or check_title}",
+    lines = [_anchor(f.id),
+             f"### {f.id} · {SEVERITY_TITLE.get(f.severity, f.severity)} · {f.check_id} · {f.title or check_title}",
              f"Check: {f.check_id} {check_title} ({dim})" + (f", also {', '.join(also_ids)}" if also_ids else "")
              + f" · Status: {STATUS_TEXT.get(f.status, f.status)} · Confidence: {f.confidence}",
              f"Where: {loc.where(f)}", ""]
@@ -694,24 +727,48 @@ def _fix_lines(f, compact: bool = False) -> list:
     return lines
 
 
-# Minor findings of these checks, every suggestion and every Minor language finding go into one checklist of
-# small fixes in the main report: they are quick to act on and need no argument.
+# Minor findings and suggestions about wording, style and format go into one checklist of small fixes in the
+# main report: they are quick to act on and need no argument. Overclaiming (LANG-03), terminology that can be a
+# conceptual slip (COH-05) and a reviewer's or a methods suggestion stay with the substantive findings.
 SMALL_CHECKS = {"FMT-04", "FMT-06", "FMT-07", "FMT-08", "FMT-09", "FMT-10", "FMT-17", "FIG-03", "FIG-04", "FIG-05",
-                "CIT-10", "COH-05", "COH-06", "COH-07", "COH-08"}
+                "COH-06", "COH-07", "COH-08"}
 
 
 def _is_small(f, top_ids: set) -> bool:
-    if f.id in top_ids:
+    if f.id in top_ids or f.severity in ("critical", "major"):
         return False
-    if f.severity == "suggestion":
-        return True
-    return f.severity == "minor" and (f.dimension == "LANG" or f.check_id in SMALL_CHECKS)
+    return (f.dimension == "LANG" and f.check_id != "LANG-03") or f.check_id in SMALL_CHECKS
+
+
+def _lead(text: str, limit: int) -> str:
+    """Whole sentences from the start of a text, as many as fit in `limit` characters, and always the first
+    one, so a cell never stops at an abbreviation such as "U.S." or in the middle of a clause. Only a first
+    sentence longer than twice the limit is cut, at a word."""
+    text = " ".join(str(text or "").split())
+    spans = split_sentences(text)
+    if not spans:
+        return _cell(text, limit)
+    end = spans[0][1]
+    for s0, e0 in spans[1:]:
+        if e0 > limit:
+            break
+        end = e0
+    lead = text[:end].strip()
+    if len(lead) > 2 * limit:
+        lead = lead[:2 * limit].rsplit(" ", 1)[0] + " …"
+    return lead.replace("|", "\\|")
 
 
 def _first_sentence(text: str, limit: int) -> str:
-    text = " ".join(str(text or "").split())
-    m = re.match(r"(.+?[.!?])(\s|$)", text)
-    return _cell(m.group(1) if m else text, limit)
+    return _lead(text, limit)
+
+
+def _anchor(fid: str) -> str:
+    return f'<a id="{fid.lower()}"></a>'
+
+
+def _link(fid: str, file: str = "") -> str:
+    return f"[{fid}]({file}#{fid.lower()})"
 
 
 def _render_main(f, loc: Locator, checklist: dict, dimensions: dict) -> str:
@@ -721,7 +778,8 @@ def _render_main(f, loc: Locator, checklist: dict, dimensions: dict) -> str:
     check_title = info.get("title", "")
     dim = dimensions.get(f.dimension, f.dimension)
     also_ids = list(dict.fromkeys(a["check_id"] for a in f.extra.get("also", []) if a.get("check_id") != f.check_id))
-    lines = [f"### {f.id} · {SEVERITY_TITLE.get(f.severity, f.severity)} · {f.check_id} · {f.title or check_title}",
+    lines = [_anchor(f.id),
+             f"### {f.id} · {SEVERITY_TITLE.get(f.severity, f.severity)} · {f.check_id} · {f.title or check_title}",
              f"Check: {f.check_id} {check_title} ({dim})" + (f", also {', '.join(also_ids)}" if also_ids else "")
              + f" · Status: {STATUS_TEXT.get(f.status, f.status)} · Confidence: {f.confidence}",
              f"Where: {loc.where(f)}", ""]
@@ -729,7 +787,7 @@ def _render_main(f, loc: Locator, checklist: dict, dimensions: dict) -> str:
         lines += [f"> \"{normalize(f.quote)}\"", ""]
     lines += [f"Problem: {f.problem}", ""]
     lines += _fix_lines(f, compact=True)
-    lines += [f"Proof and steps: {f.id} in {OUTPUT_EVIDENCE}.", ""]
+    lines += [f"Proof and steps: {_link(f.id, OUTPUT_EVIDENCE)} in {OUTPUT_EVIDENCE}.", ""]
     return "\n".join(lines)
 
 
@@ -828,8 +886,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     below = [f for f in kept if SEVERITY_RANK.get(f.severity, 9) > min_rank]
     kept = [f for f in kept if SEVERITY_RANK.get(f.severity, 9) <= min_rank]
     kept.sort(key=lambda f: (SEVERITY_RANK.get(f.severity, 9), loc.position(f), f.check_id))
-    for i, f in enumerate(kept, 1):
-        f.id = f"F-{i:03d}"
+    _assign_ids(kept, work)
 
     counts = Counter(f.severity for f in kept)
     by_dim = Counter(f.dimension for f in kept)
@@ -841,21 +898,25 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     paper_name = pm.title or Path(pm.source.get("path", "")).name
     md = [f"# Paper check report: {paper_name}", ""]
     files = pm.source.get("files") or []
-    md.append(f"- **Paper:** {pm.source.get('path')} ({pm.source.get('format')})"
-              + (f", {len(files)} source files" if len(files) > 1 else ""))
-    md.append(f"- **Checked:** {now} with paper-check {__version__}, mode {settings.mode}, "
-              f"network {'on' if settings.network else 'off'}")
+    about = ["## About this check", ""]
+    about.append(f"- **Paper:** {pm.source.get('path')} ({pm.source.get('format')})"
+                 + (f", {len(files)} source files" if len(files) > 1 else ""))
+    about.append(f"- **Checked:** {now} with paper-check {__version__}, mode {settings.mode}, "
+                 f"network {'on' if settings.network else 'off'}")
     if venue:
         stale = " This profile is more than 180 days old; recheck the journal's guidelines." if venue.get("_stale") else ""
-        md.append(f"- **Venue profile:** {venue['name']}, rules checked {venue['checked_on']}.{stale}")
+        about.append(f"- **Venue profile:** {venue['name']}, rules checked {venue['checked_on']}.{stale}")
     else:
-        md.append("- **Venue profile:** none, so journal-specific rules were not checked.")
-    md.append(f"- **Cited-work PDFs:** {settings.sources or 'no sources folder'}")
+        about.append("- **Venue profile:** none, so journal-specific rules were not checked.")
+    about.append(f"- **Cited-work PDFs:** {settings.sources or 'no sources folder'}")
+    about.append(f"- **Producers:** {', '.join(sorted({fs.producer for fs in sets})) or 'none'}")
+    about += ["", HOW_TO_READ, ""]
+    md.append(f"Checked {now} · paper-check {__version__} · {settings.mode} mode · "
+              + (f"journal profile: {venue['name']}" if venue else "no journal profile") + ".")
+    md.append("")
     if settings.sequential:
-        md.append("- **Run:** sequential. One agent did every step in turn, so no step was checked by an "
-                  "independent second run, and the refuter pass was not independent of the reading.")
-    md.append(f"- **Producers:** {', '.join(sorted({fs.producer for fs in sets})) or 'none'}")
-    md += ["", HOW_TO_READ, ""]
+        md += ["**Run:** sequential. One agent did every step in turn, so no step was checked by an independent "
+               "second run, and the refuter pass was not independent of the reading.", ""]
     for name, err in unreadable:
         warnings.append(f"The findings file {name} could not be read, so its findings are missing: {err}")
     if not settings.network:
@@ -874,6 +935,25 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     if answer:
         md += ["## Short answer", "", answer, ""]
 
+    # ---- what to fix first: an action list, the top issues first ------------------------
+    if not top:
+        top = _top_issues(kept)
+    top_ids = {f.id for f in top}
+    first = list(top) + [f for f in kept if f.severity in ("critical", "major") and f not in top]
+    if first:
+        md += ["## What to fix first", "",
+               ("The top issues, the ones that most threaten the paper's conclusions, come first" if chosen else
+                "The top issues by severity and certainty come first") + ", then every other Critical and Major "
+               f"finding. Each links to its entry below, and its proof is in {OUTPUT_EVIDENCE}.", ""]
+        for i, f in enumerate(first, 1):
+            tag = " · top issue" if f.id in top_ids else ""
+            target = "" if f.severity in ("critical", "major") else OUTPUT_EVIDENCE
+            md.append(f"{i}. **{_link(f.id, target)}** · {SEVERITY_TITLE[f.severity]} · {f.check_id}{tag} · {loc.where(f)}. "
+                      f"{_lead(f.problem, 160)} **Fix:** {_lead(_fix_text(f.fix), 130) or 'see the entry.'}")
+        md.append("")
+    else:
+        md += ["No findings.", ""]
+
     # ---- summary --------------------------------------------------------
     md += ["## Summary", ""]
     md += _md_table(["Severity", "Findings", "Confirmed", "Likely", "Needs human judgment"],
@@ -882,20 +962,15 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
                       sum(1 for f in kept if f.severity == s and f.status == "likely"),
                       sum(1 for f in kept if f.severity == s and f.status == "needs_human")] for s in SEVERITY_RANK])
     md.append("")
+    small = [f for f in kept if _is_small(f, top_ids)]
+    rest_minor = [f for f in kept if f.severity in ("minor", "suggestion") and f not in small]
+    if small or rest_minor:
+        md += [f"Minor findings and suggestions are in two lists below: {len(rest_minor)} about substance, and "
+               f"{len(small)} small fixes of wording, style and format.", ""]
     if by_dim:
         md += _md_table(["Dimension", "Findings"],
                         [[f"{dimensions.get(d, d)} ({d})", n] for d, n in sorted(by_dim.items(), key=lambda x: (-x[1], x[0]))])
         md.append("")
-    if not top:
-        top = _top_issues(kept)
-    if top:
-        md += ["Top issues, the ones that most threaten the paper's conclusions:" if chosen else
-               "Top issues, by severity, then certainty, then how many dimensions found them:", ""]
-        md += [f"{i}. **{f.id}** ({SEVERITY_TITLE[f.severity]}, {f.check_id}): {f.title}. {f.problem}"
-               for i, f in enumerate(top, 1)]
-        md.append("")
-    else:
-        md += ["No findings.", ""]
     n_caveat = sum(1 for r in cov_rows if r["status"] == "run" and r.get("caveat"))
     md.append(f"Coverage: of {len(cov_rows)} checks, {cov_counts.get('run', 0)} ran"
               + (f" ({n_caveat} against unconfirmed journal rules)" if n_caveat else "") + ", "
@@ -903,63 +978,49 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
               f"{cov_counts.get('skipped', 0)} were skipped and {cov_counts.get('not run', 0)} were not run.")
     md.append("")
 
-    # ---- what to fix first: every Critical and Major finding on one page ------------------
-    top_ids = {f.id for f in top}
-    serious = [f for f in kept if f.severity in ("critical", "major")]
-    serious = [f for f in top if f in serious] + [f for f in serious if f not in top]
-    if serious:
-        md += ["## What to fix first", "",
-               f"Every Critical and Major finding, the top issues first. Each links to its entry below; the proof and "
-               f"the steps behind it are in {OUTPUT_EVIDENCE}.", ""]
-        md += _md_table(["", "Finding", "Where", "Problem", "Fix"],
-                        [[i, f"**{f.id}** ({SEVERITY_TITLE[f.severity]})", _cell(loc.where(f), 70),
-                          _first_sentence(f.problem, 170), _cell(_fix_text(f.fix), 130)]
-                         for i, f in enumerate(serious, 1)])
-        md.append("")
-
     # ---- findings: the main report keeps quote, place, problem and fix; the evidence file has the rest
     ev = [f"# Paper check evidence: {paper_name}", "",
           f"The proof and the steps behind every finding in {OUTPUT_REPORT}, under the same IDs, followed by the "
           "appendices: references, citation support, the claim-evidence map, recomputed numbers, refuted and dropped "
           "findings, and ingestion warnings.", ""]
-    small = [f for f in kept if _is_small(f, top_ids)]
-
     def _row(f, problem_len, fix_len):
-        return [f"{f.id} ({SEVERITY_TITLE[f.severity]}, {f.check_id})", _cell(loc.where(f), 60),
-                f'"{_cell(normalize(f.quote), 70)}"' if f.quote else "",
-                _first_sentence(f.problem, problem_len), _cell(_fix_text(f.fix), fix_len)]
+        return [f"{_link(f.id, OUTPUT_EVIDENCE)} ({SEVERITY_TITLE[f.severity]}, {f.check_id})",
+                _cell(loc.where(f), 60), f'"{_cell(normalize(f.quote), 70)}"' if f.quote else "",
+                _lead(f.problem, problem_len), _lead(_fix_text(f.fix), fix_len)]
 
-    for sev in SEVERITY_RANK:
-        group = [f for f in kept if f.severity == sev and f not in small]
-        if group and sev in ("critical", "major"):
+    for sev in ("critical", "major"):
+        group = [f for f in kept if f.severity == sev]
+        if group:
             md += [f"## {SEVERITY_TITLE[sev]} findings ({len(group)})", ""]
             md += [_render_main(f, loc, checklist, dimensions) for f in group]
-        elif group:
-            md += [f"## {SEVERITY_TITLE[sev]} findings ({len(group)})", "",
-                   f"In paper order. Each entry in {OUTPUT_EVIDENCE} has the full problem, the fix, the proof and the "
-                   "steps.", ""]
-            md += _md_table(["Finding", "Where", "Quote", "Problem", "Fix"],
-                            [_row(f, 200, 160) for f in sorted(group, key=lambda f: loc.position(f))])
-            md.append("")
+    if rest_minor:
+        n_min = sum(1 for f in rest_minor if f.severity == "minor")
+        md += [f"## Minor findings and suggestions ({n_min} Minor, {len(rest_minor) - n_min} Suggestion)", "",
+               f"In paper order. Each ID links to its full entry in {OUTPUT_EVIDENCE}: the whole problem and fix, the "
+               "proof and the steps.", ""]
+        md += _md_table(["Finding", "Where", "Quote", "Problem", "Fix"],
+                        [_row(f, 150, 110) for f in sorted(rest_minor, key=lambda f: loc.position(f))])
+        md.append("")
+    if small:
+        n_min = sum(1 for f in small if f.severity == "minor")
+        md += [f"## Small fixes ({n_min} Minor, {len(small) - n_min} Suggestion)", "",
+               f"Wording, style, captions and reference format, in paper order. Each ID links to its entry in "
+               f"{OUTPUT_EVIDENCE}.", ""]
+        md += _md_table(["Finding", "Where", "Quote", "Problem", "Fix"],
+                        [_row(f, 110, 90) for f in sorted(small, key=lambda f: loc.position(f))])
+        md.append("")
+    for sev in SEVERITY_RANK:
         everything = [f for f in kept if f.severity == sev]
         if everything:
             ev += [f"## {SEVERITY_TITLE[sev]} findings ({len(everything)})", ""]
             ev += [_render_finding(f, loc, checklist, dimensions) for f in everything]
-    if small:
-        md += [f"## Small fixes ({len(small)})", "",
-               "Minor findings about wording, style, captions, references' format and the like, and every suggestion, "
-               f"in paper order. Each has its proof in {OUTPUT_EVIDENCE}.", ""]
-        md += _md_table(["Finding", "Where", "Quote", "Problem", "Fix"],
-                        [_row(f, 140, 110) for f in sorted(small, key=lambda f: loc.position(f))])
-        md.append("")
 
     if kept:
         md += ["## Index in paper order", ""]
         index_rows = sorted(kept, key=lambda f: (loc.position(f), SEVERITY_RANK.get(f.severity, 9)))
-        md += _md_table(["Finding", "Where", "Check", "Severity", "Title"],
-                        [[f.id, _cell(loc.where(f), 80),
-                          " + ".join(dict.fromkeys([f.check_id] + [a["check_id"] for a in f.extra.get("also", [])])),
-                          SEVERITY_TITLE[f.severity], _cell(f.title, 90)] for f in index_rows])
+        md += _md_table(["Finding", "Where", "Severity", "Title"],
+                        [[f.id, _cell(loc.where(f), 55), SEVERITY_TITLE[f.severity], _cell(f.title, 80)]
+                         for f in index_rows])
         md.append("")
 
     # A check that ran against unconfirmed rules is listed with its caveat, not as run in full.
@@ -1095,6 +1156,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
            f"it, under the same IDs, and the appendices: references, citation support, the claim-evidence map, "
            f"recomputed numbers, {len(refuted)} refuted and {len(dropped)} dropped findings, and ingestion warnings. "
            f"{OUTPUT_FINDINGS} holds the same as data.", ""]
+    md += about
 
     paper_dir = work.parent
     (paper_dir / OUTPUT_REPORT).write_text("\n".join(md), encoding="utf-8")

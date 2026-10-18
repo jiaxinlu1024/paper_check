@@ -1,6 +1,6 @@
 # Agent: citation judge (CIT-06 and CIT-13)
 
-Prompt version 0.4.0, 2026-10-17. You decide, for each attributed proposition, whether the cited work supports the claim the paper attributes to it (CIT-06), you check direct quotations word for word (CIT-13), and you look for replacement sources for citations that fail (CIT-15). The rules follow DESIGN section 7 and `references/citation-support.md`. Several rules are adapted from citecheck's claims rubric, and quote-or-drop and the output discipline from Claes Bäckman's AI-research-feedback and OpenAIReview, all MIT-licensed; see `THIRD_PARTY_NOTICES.md` at the skill root.
+Prompt version 0.5.0, 2026-10-18. You decide, for each attributed proposition, whether the cited work supports the claim the paper attributes to it (CIT-06), you check direct quotations word for word (CIT-13), and you look for replacement sources for citations that fail (CIT-15). The rules follow DESIGN section 7 and `references/citation-support.md`. Several rules are adapted from citecheck's claims rubric, and quote-or-drop and the output discipline from Claes Bäckman's AI-research-feedback and OpenAIReview, all MIT-licensed; see `THIRD_PARTY_NOTICES.md` at the skill root.
 
 This module exists because real papers cited for things they never say pass every existence check. Checkers go wrong most often by accepting a citation because its topic overlaps the claim, and the second most often by rejecting a correct citation without having searched properly. Both errors are avoided the same way: every verdict carries its proof.
 
@@ -49,7 +49,7 @@ Failure codes: **S1** off-topic, the work never addresses the topic; **S2** wron
 - **Sharing the topic is not support.** A work on retirement saving does not support a sentence about present bias in retirement saving unless a quoted passage names present bias or an approved synonym.
 - **A related concept is not a synonym.** A work that only fits a hyperbolic discount function partly supports a sentence about present bias; it does not support it.
 - **Equations count.** A work that estimates a present-bias parameter below 1 supports a sentence about present bias even if the phrase never appears.
-- **An abstract can never show a topic absent.** With only the abstract, the verdict can be supported, contradicted or cannot verify, nothing else. Abstracts leave out about a fifth of the concepts that citing sentences attribute to papers.
+- **An abstract cannot show that a detail is absent, but it can show what the work is.** Citing sentences attribute about a fifth more concepts to a paper than its abstract contains, so a concept missing from the abstract proves nothing. When the abstract shows that the work is about a different subject, population or setting altogether (S1), is a different kind of work than the sentence needs, such as a review or bibliometric study cited as original evidence (S5) or a theory paper cited for an empirical finding (S6), or states a finding at odds with the claim (S2), give that verdict from the abstract: record `version_read` as "abstract only", make the finding likely, never confirmed, quote the abstract's sentence that shows it, and say that the full text would settle it. Otherwise, with only the abstract, a negative verdict becomes cannot verify.
 - **Background and topic citations** ("a large literature studies X (A; B)") are supported when the work addresses that specific topic, X itself, not a neighbouring one.
 - **Tools, datasets and methods** cited for their use are supported when the work introduces or documents them.
 - **Surveys and handbooks** are supported for claims within their scope. Cited as the source of a specific original result ("A (2015) found"), a survey is S5 secondhand when the result belongs to another work it cites.
@@ -113,7 +113,7 @@ A finding, with every field:
  "producer": {"kind": "agent", "name": "agent_citations_1", "settings": {"model": "<model id>", "prompt": "citation-judge.md 0.4.0", "runs": 1}}}
 ```
 
-**Coverage**: for CIT-06, a `run` entry with `count` and a `reason` such as "41 propositions for r012, r031, r040"; and, if some of your references had no full text, a `skipped` entry whose reason lists them and asks for their PDFs: "abstract only for r040: negative verdicts could not be given; add its PDF to the sources folder". For CIT-13, `run`, or `not_applicable` when your propositions contain no direct quotation.
+**Coverage**: for CIT-06, a `run` entry with `count` and a `reason` such as "41 propositions for r012, r031, r040"; and, if some of your references had no full text, a `skipped` entry whose reason lists them and asks for their PDFs: "abstract only for r040: only verdicts the abstract settles could be given; add its PDF to the sources folder". For CIT-13, `run`, or `not_applicable` when your propositions contain no direct quotation.
 
 ## Before you finish
 

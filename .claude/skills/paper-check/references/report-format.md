@@ -30,13 +30,16 @@ Each findings file is one FindingSet: `{"producer", "settings", "findings": [...
 
 ## Report sections
 
-1. **Header.** Paper title and file, input format, date and skill version, mode, network, venue profile and the date its rules were checked (with a warning when the profile is more than 180 days old), the sources folder, and the producers that contributed. Warnings follow: unreadable findings files, network off, ingestion problems, findings below the minimum severity.
+1. **Header.** The paper's title and one line: when it was checked, the skill version, the mode and the journal profile. A sequential run says so here. Warnings follow: unreadable findings files, network off, ingestion problems, findings below the minimum severity.
 2. **Short answer.** When the user asked a specific question, two to five sentences answering it, with the finding IDs behind each claim, written by the orchestrator to `WORK/answer.md`.
-3. **Summary.** Counts by severity, split into confirmed, likely and needs human judgment; counts by dimension; the top five issues; and one line of coverage counts.
-4. **What to fix first.** One table with every Critical and Major finding, the top issues first: where, the problem in a sentence, and the fix.
-5. **Findings.** Critical and Major findings as full entries: quote, place, problem, fix, and a pointer to the proof in the evidence file. Minor findings as one table in paper order (quote, place, the problem's first sentence, the fix), and a second table of small fixes: wording, style, captions, reference format and every suggestion. Each finding has an ID such as F-012. An **index in paper order** follows, for writers fixing the draft from top to bottom.
+3. **What to fix first.** A numbered list: the top issues first (marked), then every other Critical and Major finding. Each item links to its entry and gives the place, the problem's first sentence and the fix's first sentence, whole, never cut at an abbreviation.
+4. **Summary.** Counts by severity, split into confirmed, likely and needs human judgment; how the Minor findings and suggestions are split between the two lists below; counts by dimension; and one line of coverage counts.
+5. **Findings.** Critical and Major findings as full entries: quote, place, problem, fix, and a link to the proof in the evidence file. Minor findings and suggestions about substance as one table in paper order, and a second table of small fixes (wording, style, captions, reference format). Each table row links to its full entry in the evidence file. An **index in paper order** follows, for writers fixing the draft from top to bottom.
 6. **Coverage.** One line lists the checks that ran in full. A table gives every other check its outcome: partly run, not applicable, skipped with the reason, or not run when no producer covered it; checks left out for one shared reason, such as the mode, share a row. A skipped check was not passed. `paper-check-findings.json` has every check's outcome, with the number of findings and any note.
 7. **Evidence.** A pointer to `paper-check-evidence.md`, which holds every finding in full and these appendices: the reference table with an evidence card per reference; the citation support table, one row per citation, with a per-section summary such as "Section 2: 14 of 31 citations not supported or contradicted"; the claim-evidence map; every recomputed number; refuted findings with the refuter's counter-evidence; dropped findings with the reason; and ingestion warnings.
+8. **About this check.** The paper's path and format, the venue profile and the date its rules were checked (with a warning when the profile is more than 180 days old), the sources folder, the producers, and how to read the report.
+
+IDs stay the same when the report is built again from the same work folder: `WORK/finding_ids.json` maps each finding's key to its ID, and a new finding gets the next free number. Personal names from a file's metadata appear as initials in the report and the evidence file; the findings file keeps the value for a fixing agent.
 
 ## One finding
 
@@ -76,7 +79,7 @@ That is the entry in `paper-check-evidence.md`. In the report, a Critical or Maj
 | `id` | Assigned by the report: F-001, F-002, ... in severity and paper order |
 | `check_id`, `dimension` | The checklist ID, such as NUM-01, from `references/checks.yaml`; the dimension is its prefix |
 | `title` | A few words naming this problem |
-| `severity` | critical, major, minor or suggestion, as defined in DESIGN section 5 |
+| `severity` | critical, major, minor or suggestion, as defined in DESIGN section 5, and set by the consequence for the paper rather than the check's typical level |
 | `status` | confirmed (the evidence settles it), likely (it probably holds), needs_human (the skill could not decide), or dropped (set by `pc.py verify` when a quote fails) |
 | `confidence` | high, medium or low: evidence type, refutation and run agreement combined |
 | `locations` | Block IDs; `pc.py verify` adds the anchor (file and line, page and line, or paragraph) and the section path |
