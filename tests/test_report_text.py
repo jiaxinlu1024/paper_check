@@ -80,3 +80,73 @@ def test_merged_fixes_show_one_wording_per_passage():
     assert lines[-1] == "And 1 other wording proposed for the same passage, in paper-check-evidence.md."
     # The evidence file keeps every proposal.
     assert any("COH-04" in line for line in _fix_lines(f))
+
+
+def _word_map(abstract_parts):
+    """A small Word paper map: a structured abstract, then one numbered section."""
+    from paper_check.model import PaperMap
+    blocks = [{"id": f"b{i:04d}", "kind": "abstract", "text": t, "anchor": {"paragraph": i}}
+              for i, t in enumerate(abstract_parts, 1)]
+    n = len(blocks) + 1
+    blocks.append({"id": f"b{n:04d}", "kind": "paragraph", "text": "We ran the field experiment in 2024.",
+                   "anchor": {"paragraph": n}, "section": ["3.1 Design and sample"]})
+    return PaperMap.from_dict({"source": {"format": "docx"}, "blocks": blocks})
+
+
+def test_a_place_in_a_structured_abstract_names_its_part():
+    pm = _word_map(["Purpose – This study asks whether defaults raise saving.",
+                    "Design/methodology/approach – We randomize the default at 12 firms.",
+                    "Findings– Saving rises by four points.", "Keywords Defaults; Saving"])
+    loc = Locator(pm)
+    assert loc.short_label("b0003") == "Abstract, Findings"
+    assert loc.short_label("b0002") == "Abstract, Design/methodology/approach"
+    assert loc.short_label("b0004") == "Abstract, Keywords"
+    # A Word paragraph count is not shown in the short form, and a short section title keeps its number.
+    assert loc.short_label("b0005") == "3.1 Design and sample, paragraph 1"
+    plain = Locator(_word_map(["We study defaults.", "We find that saving rises."]))
+    assert plain.short_label("b0002") == "Abstract, paragraph 2"
+
+
+def test_cells_show_the_sentence_after_a_setup_and_say_when_steps_follow():
+    assert _lead("Partly supported (S7). The source supports only the first clause.", 60) == \
+        "Partly supported (S7). The source supports only the first clause."
+    assert _lead("The abstract says saving rises for everyone. Table 3 shows it rises only for new hires. "
+                 "Later text.", 60) == ("The abstract says saving rises for everyone. Table 3 shows it rises only "
+                                        "for new hires.")
+    fx = Fix(action="investigate", detail="Stack the data by firm. (1) Re-estimate with firm fixed effects. "
+                                          "(2) Cluster by firm. Equation (3) stays.")
+    assert _fix_short(fx, 300) == "Stack the data by firm. Steps (1) to (2) are in the entry."
+
+
+def test_a_long_first_sentence_stops_before_its_example_with_a_note():
+    text = ("In Word, right-click the figure, choose View Alt Text and add a short description, for example: "
+            "'Bar chart. " + "Bars show the saving rate in each arm and the gap between them; " * 12 + "'")
+    assert _lead(text, 100) == ("In Word, right-click the figure, choose View Alt Text and add a short description "
+                                "(the entry gives an example).")
+
+
+def test_internal_labels_read_as_places_and_plain_words():
+    from paper_check.report import _display
+    pm = _word_map(["We study defaults.", "We find that saving rises."])
+    loc = Locator(pm)
+    text = ("Delete the sentence (b0003). Partly supported (S7): the source covers one clause. "
+            "[UNVERIFIED] It is usually cited as Madrian and Shea (2001). Unknown id b9999 stays.")
+    assert _display(text, loc) == ("Delete the sentence (3.1 Design and sample, paragraph 1). Partly supported: "
+                                   "the source covers one clause. *Not verified:* It is usually cited as Madrian "
+                                   "and Shea (2001). Unknown id b9999 stays.")
+
+
+def test_two_findings_that_reword_the_same_words_name_each_other():
+    from paper_check.report import _mark_same_words
+    words = "the default raises saving for every employee in the sample"
+    a = Finding(check_id="LOG-02", title="a", severity="major", problem="p", id="F-001",
+                fix=Fix(action="replace", original=words, replacement="x"))
+    b = Finding(check_id="COH-02", title="b", severity="minor", problem="p", id="F-002",
+                fix=Fix(action="replace", original=words + ".", replacement="y"))
+    c = Finding(check_id="NUM-01", title="c", severity="minor", problem="p", id="F-003",
+                fix=Fix(action="replace", original="a different sentence about attrition rates", replacement="z"))
+    _mark_same_words([a, b, c])
+    assert a.extra["same_words"] == [["F-002", "minor"]] and b.extra["same_words"] == [["F-001", "major"]]
+    assert "same_words" not in c.extra
+    assert _fix_lines(a, compact=True)[-1].startswith("Same words as [F-002](paper-check-evidence.md#f-002)")
+    assert _fix_lines(a)[-1].startswith("Same words as [F-002](#f-002)")

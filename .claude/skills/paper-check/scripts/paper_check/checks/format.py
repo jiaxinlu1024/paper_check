@@ -666,7 +666,8 @@ def anonymization(pm, ctx):
             evidence=[Evidence(type="script_output", text=listing, data={"script": SCRIPT})],
             trajectory=base + [f"Found: {listing}."],
             fix=Fix(action="investigate",
-                    detail="Check the target journal's review type (run with --venue). For double-anonymous review, move "
+                    detail="Check whether the target journal uses double-anonymous review; naming the journal when the "
+                           "check runs does this for you. For double-anonymous review, move "
                            "names, affiliations, acknowledgments and grant numbers to a separate title page and clear "
                            "the file's author metadata.",
                     resolved_when="Either the journal is not double-anonymous, or the manuscript and its metadata "

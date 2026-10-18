@@ -78,13 +78,13 @@ That is the entry in `paper-check-evidence.md`. In the report, a Critical or Maj
 |---|---|
 | `id` | Assigned by the report: F-001, F-002, ... in severity and paper order |
 | `check_id`, `dimension` | The checklist ID, such as NUM-01, from `references/checks.yaml`; the dimension is its prefix |
-| `title` | A few words saying what is wrong, not only the topic: "Effect size differs between abstract and table", not "Effect size". Page one shows most Major findings by title alone |
+| `title` | A few words saying what is wrong, not only the topic: "Effect size differs between abstract and table", not "Effect size". When the fault is a missed or contradicting source, name it: "Lindqvist and Moreau (2021) already test this question". Page one shows most Major findings by title alone |
 | `severity` | critical, major, minor or suggestion, as defined in DESIGN section 5, and set by the consequence for the paper rather than the check's typical level |
 | `status` | confirmed (the evidence settles it), likely (it probably holds), needs_human (the skill could not decide), or dropped (set by `pc.py verify` when a quote fails) |
 | `confidence` | high, medium or low: evidence type, refutation and run agreement combined |
 | `locations` | Block IDs; `pc.py verify` adds the anchor (file and line, page and line, or paragraph) and the section path |
 | `quote`, `related_quotes` | Verbatim text from the paper, checked by script |
-| `problem` | One or two sentences |
+| `problem` | One or two sentences, starting with what is wrong rather than with what the paper says: the tables show the first sentence. Name places by section and paragraph, not by block ID |
 | `evidence` | Typed items: `quote` and `source_quote` (verbatim, checked by script); `computed_result` (formula, inputs, output, tolerance); `checked_absence` (scope searched, terms with hit counts, version read); `lookup_record` (database, query, record, URL); `script_output`; `image` (page, crop path, description); `note` |
 | `trajectory` | The steps taken, in order |
 | `fix` | `action` (replace, insert, delete or investigate), the exact `original` and `replacement` for a replace, `detail`, and `resolved_when`. Put the first step in the first sentence of `detail`: page one and the tables show that sentence alone |

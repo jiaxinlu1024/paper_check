@@ -37,14 +37,24 @@ FRONT_KINDS = {"title": "Title", "author": "Author line", "abstract": "Abstract"
                "jel": "JEL codes", "acknowledgment": "Acknowledgments", "front_matter": "Front matter"}
 
 HOW_TO_READ = (
-    "How to read this report. Findings are grouped by severity and, within each group, follow the order of "
-    "the paper. Every quote was checked against the paper text by a script; findings whose quotes could not "
-    "be found were dropped and are listed at the end. *Confirmed* means the evidence settles the point, "
-    "*likely* means it probably holds but deserves a second look, and *needs human judgment* means the skill "
-    "could not decide. The index lists every finding in paper order, for fixing the draft from top to bottom. "
-    "The coverage table lists every check, including the ones that were skipped: a skipped check was not "
-    "passed, it was not run."
+    "How to read this report. Page one lists the top issues, each with its fix, and the other Major findings. "
+    "Critical and Major findings follow in full; Minor findings and suggestions are in two tables in paper "
+    "order, one about substance and one of small fixes. Every quote was checked against the paper text by a "
+    "script; findings whose quotes could not be found were dropped and are listed in the evidence file. "
+    "*Confirmed* means the evidence settles the point, *likely* means it probably holds but deserves a second "
+    "look, and *needs human judgment* means the skill could not decide. *Not verified* marks a statement about "
+    "another work that this run did not check. The index lists every finding in paper order, for fixing the "
+    "draft from top to bottom. The coverage table lists every check that did not run in full, with the reason: "
+    "a skipped check was not passed, it was not run."
 )
+
+# The parts of a structured abstract ("Purpose –", "Findings –"), so a place in it says which part.
+_ABSTRACT_PART = re.compile(r"^\s*([A-Z][A-Za-z/ ]{2,45}?)\s*(?:[–—:]|\s-\s)")
+_ABSTRACT_WORDS = {"purpose", "aim", "aims", "objective", "objectives", "background", "context", "motivation",
+                   "design", "methodology", "approach", "methods", "method", "data", "findings", "results",
+                   "conclusion", "conclusions", "originality", "value", "practical", "social", "research",
+                   "limitations", "implications", "contribution", "contributions", "policy", "and"}
+_ABSTRACT_LEAD = re.compile(r"^\s*(Keywords?|JEL(?: classification| codes)?|Paper type)\b", re.I)
 
 
 def _load_checklist() -> tuple[dict, dict]:
@@ -99,6 +109,18 @@ class Locator:
             if b.kind in ("paragraph", "list_item"):
                 counts[(tuple(b.section), b.kind)] += 1
                 self.para_no[b.id] = counts[(tuple(b.section), b.kind)]
+        self.abstract_part: dict = {}
+        abstract = [b for b in pm.blocks if b.kind == "abstract"]
+        if len(abstract) > 1:
+            for i, b in enumerate(abstract, 1):
+                m, lead = _ABSTRACT_PART.match(b.text or ""), _ABSTRACT_LEAD.match(b.text or "")
+                words = set(re.split(r"[/ ]+", m.group(1).strip().lower())) if m else set()
+                if m and words <= _ABSTRACT_WORDS:
+                    self.abstract_part[b.id] = m.group(1).strip()
+                elif lead:
+                    self.abstract_part[b.id] = lead.group(1)
+                else:
+                    self.abstract_part[b.id] = f"paragraph {i}"
         self.caption_of: dict = {}
         for t in pm.tables:
             if t.caption_block:
@@ -175,6 +197,7 @@ class Locator:
         parts = []
         if block.kind in FRONT_KINDS:
             parts.append(FRONT_KINDS[block.kind])
+            parts.append(self.abstract_part.get(block.id, ""))
         else:
             sec = list(section or block.section)
             if sec:
@@ -219,6 +242,7 @@ class Locator:
         parts = []
         if block.kind in FRONT_KINDS:
             parts.append(FRONT_KINDS[block.kind])
+            parts.append(self.abstract_part.get(block.id, ""))
         else:
             sec = list(section or block.section)
             if sec:
@@ -803,10 +827,33 @@ def _render_finding(f, loc: Locator, checklist: dict, dimensions: dict, brief: b
     return "\n".join(lines)
 
 
+_BLOCK_ID = re.compile(r"\b(b\d{4,5})\b")
+_SCALE_CODE = re.compile(r"\b((?:partly |not )?supported|contradicted|unclear)\s*\(S[1-9]\)", re.I)
+
+
+def _display(text: str, loc) -> str:
+    places: dict = {}
+
+    def place(m):
+        bid = m.group(1)
+        if bid not in places:
+            places[bid] = loc.short_label(bid) if loc.pm.block(bid) is not None else bid
+        return places[bid]
+    text = _BLOCK_ID.sub(place, text)
+    text = _SCALE_CODE.sub(r"\1", text)
+    text = re.sub(r"\[UNVERIFIED\]\s+(?=[A-Z(\"“'‘])", "*Not verified:* ", text)
+    return text.replace("[UNVERIFIED]", "(not verified)")
+
+
+def _plain_words(text) -> str:
+    return re.sub(r"[^\w ]", "", normalize(str(text or "")).lower()).strip()
+
+
 def _fix_lines(f, compact: bool = False) -> list:
     """The suggested fix, the test for when it is resolved, and the fixes of findings merged into it:
     one entry can need a fix for each fault. The compact form, for the main report, leaves the test to the
-    evidence file and shows at most two merged fixes that have a short form, whole; it counts the others."""
+    evidence file and shows each merged fix that has a short form, one wording per passage; it counts the
+    others, which the evidence file has."""
     lines = []
     if f.fix:
         fx = f.fix
@@ -825,25 +872,36 @@ def _fix_lines(f, compact: bool = False) -> list:
         if extra and extra != main_fix and extra not in shown:
             shown.add(extra)
             extras.append(a)
+    same = f.extra.get("same_words") or []
+    if same:
+        links = ", ".join(_link(i, "" if (not compact or sev in ("critical", "major")) else OUTPUT_EVIDENCE)
+                          for i, sev in same)
+        note = (f"Same words as {links}: {'that fix rewords' if len(same) == 1 else 'their fixes reword'} a "
+                "passage this one changes too; make one change that serves both.")
+    else:
+        note = None
     if not compact:
         lines += [f"Also fix ({a.get('check_id')}): {a.get('fix')}" for a in extras]
-        return lines
+        return lines + ([note] if note else [])
     # Two producers can propose different new wording for the same words; the page shows one rewording per
     # passage, and the evidence file has the alternatives.
     def _words(fx) -> str:
         orig = (fx.get("original") if isinstance(fx, dict) else getattr(fx, "original", None)) or ""
         return re.sub(r"[^\w ]", "", normalize(orig).lower()).strip()
 
-    reworded = [w for w in [_words(f.fix)] if w]
+    # The main fix's own text can reword other passages too ("In the abstract, replace ...").
+    detail_words = _plain_words(f.fix.detail if f.fix else "")
+    reworded = [w for w in [_words(f.fix), detail_words if len(detail_words) >= 40 else ""] if w]
     brief, alternatives = [], 0
     for a in extras:
         words = _words(a.get("fix_parts") or {})
-        if words and any(words in w or w in words for w in reworded):
+        if words and any(words == w or (min(len(words), len(w)) >= 12 and (words in w or w in words))
+                         for w in reworded):
             alternatives += 1
             continue
-        short = (_fix_short(a["fix_parts"], 300, OUTPUT_EVIDENCE) if a.get("fix_parts")
-                 else (_lead(a.get("fix"), 0) if len(_lead(a.get("fix"), 0)) <= 300 else None))
-        if short and len(brief) < 2:
+        short = (_fix_short(a["fix_parts"], 450, OUTPUT_EVIDENCE) if a.get("fix_parts")
+                 else (_lead(a.get("fix"), 0) if len(_lead(a.get("fix"), 0)) <= 450 else None))
+        if short:
             brief.append(f"Also fix ({a.get('check_id')}): {short}")
             if words:
                 reworded.append(words)
@@ -854,7 +912,28 @@ def _fix_lines(f, compact: bool = False) -> list:
          f"{'passage' if alternatives == 1 else 'passages'}"] if alternatives else [])
     if more:
         lines.append(f"And {' and '.join(more)}, in {OUTPUT_EVIDENCE}.")
-    return lines
+    return lines + ([note] if note else [])
+
+
+def _mark_same_words(kept: list) -> None:
+    """Two findings whose fixes reword the same words would leave the author two versions of one passage:
+    each entry names the other."""
+    claims = []
+    for f in kept:
+        f.extra.pop("same_words", None)
+    for f in kept:
+        texts = {t for t in [_plain_words(getattr(f.fix, "original", None) if f.fix else "")]
+                 + [_plain_words((a.get("fix_parts") or {}).get("original")) for a in f.extra.get("also", [])]
+                 if len(t) >= 20}
+        for w in texts:
+            for g, v in claims:
+                if g is f or not (w in v or v in w):
+                    continue
+                for x, y in ((f, g), (g, f)):
+                    marks = x.extra.setdefault("same_words", [])
+                    if all(m[0] != y.id for m in marks):
+                        marks.append([y.id, y.severity])
+        claims += [(f, w) for w in texts]
 
 
 # Minor findings and suggestions about wording, style, format and anonymization go into one checklist of small
@@ -896,24 +975,73 @@ def _sentence_ends(text: str) -> list:
     return out
 
 
+# A first sentence that only sets the scene, a bare verdict or what the paper says, keeps the next sentence
+# with it in a table cell: that is where the fault is.
+_VERDICT_ONLY = re.compile(r"^(?:\[UNVERIFIED\]\s*)?(?:partly supported|not supported|supported|contradicted|"
+                           r"unclear|cannot verify)\b[^.]{0,40}\.$", re.I)
+_SETUP = re.compile(r"^(?:\[UNVERIFIED\]\s*)?(?:(?:the|this|its)\s+)?(?:paper|abstract|introduction|conclusions?|"
+                    r"discussion|section\s+\S+|table\s+\S+|figure\s+\S+|text|sentence|manuscript|draft|authors?|"
+                    r"[^.]{0,80}\(\d{4}[^)]*\))\s+(?:\w+\s+){0,2}?(?:says|say|states|claims|writes|reports|argues|"
+                    r"justifies|defines?|rules out|presents|calls|describes|attributes|cites|lists|gives|uses)\b", re.I)
+_STEP = re.compile(r"(?:^|\s)\((\d{1,2})\)\s+(?=[A-Za-z])")
+_NOT_STEP = re.compile(r"(?:equation|eq\.|model|column|table|specification|panel)\s*$", re.I)
+
+
+def _is_setup(sentence: str) -> bool:
+    s = sentence.strip()
+    return bool(_VERDICT_ONLY.match(s) or _SETUP.match(s))
+
+
+def _steps_note(rest: str) -> str:
+    """A note that numbered steps follow in the entry, when a cell shows only the start of a list."""
+    steps = sorted({int(m.group(1)) for m in _STEP.finditer(rest) if not _NOT_STEP.search(rest[:m.start()])})
+    if not steps:
+        return ""
+    if len(steps) == 1:
+        return f" Step ({steps[0]}) is in the entry."
+    return f" Steps ({steps[0]}) to ({steps[-1]}) are in the entry."
+
+
+def _overflow(text: str, cap: int) -> str:
+    """A first sentence too long for a cell: the part before a quoted example, or the text up to a clause
+    break, with a note that the entry has the rest. Never a bare cut."""
+    m = re.search(r"(?:^|[\s(\[])[\"“‘']", text)
+    if m and 40 <= m.start() <= cap:
+        head = text[:m.start()]
+        example = re.search(r"(?:for example|for instance|e\.g\.|such as)[\s,;:]*$", head, re.I)
+        head = re.sub(r"[\s,;:]*(?:for example|for instance|e\.g\.|such as)?[\s,;:]*$", "", head, flags=re.I)
+        return head + (" (the entry gives an example)." if example else " (the entry has the full text).")
+    cut = max(text.rfind("; ", 0, cap), text.rfind(": ", 0, cap))
+    if cut < cap * 0.4:
+        cut = text.rfind(", ", 0, cap)
+    if cut < cap * 0.4:
+        cut = text.rfind(" ", 0, cap)
+    return text[:cut].rstrip(",;: ") + " (continued in the entry)."
+
+
 def _lead(text: str, limit: int) -> str:
     """Whole sentences from the start of a text, as many as fit in `limit` characters, and always the first
-    one, so a cell never stops at an abbreviation such as "U.S." or in the middle of a clause. Only a first
-    sentence longer than twice the limit is cut, at a word."""
+    one (two when the first only sets the scene), so a cell never stops at an abbreviation such as "U.S.",
+    inside a quotation or in the middle of a clause. A first sentence too long for any cell ends at a clause
+    break or before its quoted example, with a note that the entry has the rest."""
     text = " ".join(str(text or "").split())
     ends = _sentence_ends(text)
     if not ends:
         return _cell(text, limit)
-    end = ends[0]
-    for e0 in ends[1:]:
+    end, k = ends[0], 1
+    if len(ends) > 1 and _is_setup(text[:end]):
+        end, k = ends[1], 2
+    for e0 in ends[k:]:
         if e0 > limit:
             break
         end = e0
     lead = text[:end].strip()
     cap = max(2 * limit, 600)
     if len(lead) > cap:
-        lead = lead[:cap].rsplit(" ", 1)[0] + " …"
-    return lead.replace("|", "\\|")
+        lead = _overflow(lead, cap)
+    else:
+        lead += _steps_note(text[end:])
+    return _PIPE.sub(r"\\|", lead)
 
 
 def _fix_short(fx, room: int, where: str = "the entry") -> Optional[str]:
@@ -945,7 +1073,9 @@ def _fix_short(fx, room: int, where: str = "the entry") -> Optional[str]:
     if not ends:
         return None
     first = text[:ends[0]].strip()
-    return _PIPE.sub(r"\\|", first) if len(first) <= room else None
+    if len(first) > room:
+        return None
+    return _PIPE.sub(r"\\|", first + _steps_note(text[ends[0]:]))
 
 
 def _first_sentence(text: str, limit: int) -> str:
@@ -1090,6 +1220,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     kept = [f for f in kept if SEVERITY_RANK.get(f.severity, 9) <= min_rank]
     kept.sort(key=lambda f: (SEVERITY_RANK.get(f.severity, 9), loc.position(f), f.check_id))
     _assign_ids(kept, work)
+    _mark_same_words(kept)
 
     counts = Counter(f.severity for f in kept)
     by_dim = Counter(f.dimension for f in kept)
@@ -1160,12 +1291,12 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
                  "The top issues by severity and certainty come first") + ", each with its fix"
         intro += (", then the other " + ("Critical and Major" if any(f.severity == "critical" for f in others)
                                          else "Major") + " findings") if others else ""
-        intro += (". Each links to its entry, which has the quote, the problem and the whole fix; the proof is in "
+        intro += (". Each links to its entry, with the quote, the problem and the fix; the proof is in "
                   f"{OUTPUT_EVIDENCE}.")
         md += ["## What to fix first", "", intro, ""]
         for i, f in enumerate(lead, 1):
             target = "" if f.severity in ("critical", "major") else OUTPUT_EVIDENCE
-            fix = _fix_short(f.fix, 320) or _lead(f.fix.detail if f.fix else "", 0) or "see the entry."
+            fix = _fix_short(f.fix, 600) or _lead(f.fix.detail if f.fix else "", 0) or "see the entry."
             md.append(f"{i}. **{_link(f.id, target)} {f.title}** · {SEVERITY_TITLE[f.severity]} · "
                       f"{loc.short_where(f)}. **Fix:** {fix}")
         if others:
@@ -1255,10 +1386,17 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     # A check that ran against unconfirmed rules is listed with its caveat, not as run in full.
     full = [r for r in cov_rows if r["status"] == "run" and not r.get("caveat")]
     rest = [r for r in cov_rows if r["status"] != "run" or r.get("caveat")]
+    # A check that does not apply to this paper leaves no gap, so the page names it in one line; the table is
+    # for what was skipped, run in part or run against unconfirmed rules.
+    na = [r for r in rest if r["status"] == "not applicable"]
+    gaps = [r for r in rest if r["status"] != "not applicable"]
     md += ["## Coverage", "",
-           f"{len(full)} of {len(cov_rows)} checks ran in full ({OUTPUT_EVIDENCE} lists them). The table lists the "
-           f"other {len(cov_rows) - len(full)} and why. Skipped checks were not passed: they were not run. "
-           f"{OUTPUT_FINDINGS} has every check's outcome.", ""]
+           f"{len(full)} of {len(cov_rows)} checks ran in full ({OUTPUT_EVIDENCE} lists them)."
+           + (f" {len(na)} did not apply to this paper: {', '.join(r['check_id'] for r in na)}; the evidence file "
+              "says why." if na else "")
+           + (f" The table lists the other {len(gaps)} and why. Skipped checks were not passed: they were not run."
+              if gaps else "")
+           + f" {OUTPUT_FINDINGS} has every check's outcome.", ""]
     ev_cov = ["## Coverage, in full", "",
               f"{len(full)} of {len(cov_rows)} checks ran in full: {', '.join(r['check_id'] for r in full) or 'none'}.",
               ""]
@@ -1276,8 +1414,10 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
             else:
                 rows += [[m["check_id"], m["title"], status, detail] for m in members]
                 briefs += [m["brief"] for m in members]
-        md += _md_table(["Check", "Title", "Outcome", "Detail"], [r[:3] + [b] for r, b in zip(rows, briefs)])
-        md.append("")
+        shown = [r[:3] + [b] for r, b in zip(rows, briefs) if r[2] != "not applicable"]
+        if shown:
+            md += _md_table(["Check", "Title", "Outcome", "Detail"], shown)
+            md.append("")
         ev_cov += ["Every check that did not run in full, with the producers' whole notes:", ""]
         ev_cov += _md_table(["Check", "Title", "Outcome", "Detail"], rows)
         ev_cov.append("")
@@ -1399,6 +1539,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     report_text, evidence_text = "\n".join(md), "\n".join(ev)
     for name, masked in _metadata_names(pm).items():
         report_text, evidence_text = report_text.replace(name, masked), evidence_text.replace(name, masked)
+    report_text, evidence_text = _display(report_text, loc), _display(evidence_text, loc)
     (paper_dir / OUTPUT_REPORT).write_text(report_text, encoding="utf-8")
     (paper_dir / OUTPUT_EVIDENCE).write_text(evidence_text, encoding="utf-8")
     out_findings = []
