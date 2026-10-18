@@ -25,7 +25,7 @@ from typing import Optional
 from . import __version__
 from .config import OUTPUT_FINDINGS, OUTPUT_REPORT
 from .model import PaperMap
-from .textutil import normalize
+from .textutil import find_quote, normalize
 
 SKILL_DIR = Path(__file__).resolve().parents[2]
 SEVERITY_RANK = {"critical": 0, "major": 1, "minor": 2, "suggestion": 3}
@@ -171,10 +171,41 @@ class Locator:
         return "; ".join(labels) or "whole paper"
 
     def first_order(self, f) -> int:
+        return self.position(f)[0]
+
+    def position(self, f) -> tuple:
+        """Where a finding first appears: (block order, offset of its quote in the block). A location with
+        only an anchor, such as a PDF annotation's page and line, sorts after the block it follows."""
         for loc in f.locations:
             if loc.block in self.order:
-                return self.order[loc.block]
-        return 10**9
+                block = self.pm.block(loc.block)
+                span = find_quote(f.quote, block.text) if f.quote and block is not None else None
+                return (self.order[loc.block], span[0] if span else 0)
+        for loc in f.locations:
+            near = self._block_near(loc.anchor)
+            if near is not None:
+                return (self.order[near.id], 10**6)
+        return (10**9, 0)
+
+    def _block_near(self, anchor):
+        """The last block that starts at or before an anchor without a block (same page and line,
+        Word paragraph, or LaTeX file and line)."""
+        if anchor is None:
+            return None
+        if anchor.page is not None:
+            key = (lambda a: (a.page, a.page_line or 0)) if anchor.page_line is not None else (lambda a: (a.page, 0))
+            target = (anchor.page, anchor.page_line or 0)
+            pool = [b for b in self.pm.blocks if b.anchor.page is not None]
+        elif anchor.paragraph is not None:
+            key, target = (lambda a: (a.paragraph,)), (anchor.paragraph,)
+            pool = [b for b in self.pm.blocks if b.anchor.paragraph is not None]
+        elif anchor.file and anchor.line is not None:
+            key, target = (lambda a: (a.line,)), (anchor.line,)
+            pool = [b for b in self.pm.blocks if b.anchor.file == anchor.file and b.anchor.line is not None]
+        else:
+            return None
+        before = [b for b in pool if key(b.anchor) <= target]
+        return max(before, key=lambda b: (key(b.anchor), self.order[b.id])) if before else (pool[0] if pool else None)
 
 
 # Checks that often report the same underlying problem from different angles. Findings
@@ -671,7 +702,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     min_rank = SEVERITY_RANK.get(settings.min_severity, 3)
     below = [f for f in kept if SEVERITY_RANK.get(f.severity, 9) > min_rank]
     kept = [f for f in kept if SEVERITY_RANK.get(f.severity, 9) <= min_rank]
-    kept.sort(key=lambda f: (SEVERITY_RANK.get(f.severity, 9), loc.first_order(f), f.check_id))
+    kept.sort(key=lambda f: (SEVERITY_RANK.get(f.severity, 9), loc.position(f), f.check_id))
     for i, f in enumerate(kept, 1):
         f.id = f"F-{i:03d}"
 
@@ -745,7 +776,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
 
     if kept:
         md += ["## Index in paper order", ""]
-        index_rows = sorted(kept, key=lambda f: (loc.first_order(f), SEVERITY_RANK.get(f.severity, 9)))
+        index_rows = sorted(kept, key=lambda f: (loc.position(f), SEVERITY_RANK.get(f.severity, 9)))
         md += _md_table(["Finding", "Where", "Check", "Severity", "Problem"],
                         [[f.id, loc.where(f),
                           " + ".join(dict.fromkeys([f.check_id] + [a["check_id"] for a in f.extra.get("also", [])])),

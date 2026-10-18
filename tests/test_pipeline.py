@@ -303,3 +303,35 @@ def test_top_issues_follow_the_consolidators_choice_then_the_ranking(work_copy):
     chosen = report.split("Top issues")[1].split("Coverage:")[0]
     assert "most threaten" in chosen and "LOG-03" in chosen and "LOG-01" not in chosen
     assert "LOG-09-deadbeef" in report.split("## Summary")[0]       # an unknown key is a warning
+
+
+def test_index_follows_sentence_order_and_places_anchor_only_findings(work_copy):
+    """Within one paragraph the index follows the quotes' order, not severity; a finding with only an
+    anchor (a file comment, an annotation) sits after the block it follows, not at the end."""
+    from paper_check.model import PaperMap
+    pm = PaperMap.load(work_copy / "paper_map.json")
+    paras = [b for b in pm.blocks if b.kind == "paragraph"]
+    block = next(b for b in paras if len(b.sentences) >= 2 and b.anchor.file and b.anchor.line)
+    later = next(b for b in paras[paras.index(block) + 1:] if b.anchor.file == block.anchor.file)
+    first = block.text[block.sentences[0].start:block.sentences[0].end].strip()
+    second = block.text[block.sentences[1].start:block.sentences[1].end].strip()
+    _write(work_copy, "agent_logic.json", {"producer": "agent_logic", "findings": [
+        _finding(check_id="LOG-03", title="Second sentence", severity="major", quote=second,
+                 locations=[{"block": block.id}], problem="About the second sentence."),
+        _finding(check_id="LOG-01", title="First sentence", severity="minor", quote=first,
+                 locations=[{"block": block.id}], problem="About the first sentence."),
+        _finding(check_id="LOG-05", title="Later paragraph", severity="minor", quote=later.text[:60].strip(),
+                 locations=[{"block": later.id}], problem="About a later paragraph."),
+    ]})
+    _write(work_copy, "agent_format.json", {"producer": "agent_format", "findings": [
+        {"check_id": "FMT-11", "title": "Comment left in the file", "severity": "minor", "status": "confirmed",
+         "problem": "A comment is left in the source.", "quote": "",
+         "locations": [{"anchor": {"file": block.anchor.file, "line": block.anchor.line}}]},
+    ]})
+    main(["report", str(work_copy)])
+    report = (work_copy.parent / "paper-check-report.md").read_text()
+    index = report.split("## Index in paper order")[1].split("## Coverage")[0]
+    problems = [r.split("|")[5].strip() for r in index.splitlines() if r.startswith("| F-")]
+    order = [problems.index(p) for p in ("About the first sentence.", "About the second sentence.",
+                                         "A comment is left in the source.", "About a later paragraph.")]
+    assert order == sorted(order), problems
