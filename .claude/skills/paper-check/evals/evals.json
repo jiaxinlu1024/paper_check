@@ -89,6 +89,36 @@
         "Answers the user's two questions, whether the numbers hold up and whether the references hold up, in a few lines at the top of the report or in the final reply",
         "Says which checks a quick check leaves out, rather than implying they passed"
       ]
+    },
+    {
+      "id": 4,
+      "name": "latex-hard-citations-aej-applied",
+      "prompt": "We're about to submit our field experiment on reminders and commitment contracts for gym attendance to AEJ: Applied. The LaTeX source is in tests/fixtures/latex_hard. Please give it a thorough check before we submit. Above all we want to know whether we describe the papers we cite accurately, and whether our numbers and inference hold up.",
+      "expected_output": "A report that quotes the draft for every finding, with location, proof, trajectory and fix, ordered by severity with an index in paper order and a coverage table. It should catch the planted problems in tests/fixtures/latex_hard/expected.yaml, above all the nine citation errors that only the cited works' full texts settle (a misquoted number, a subgroup result stated for the full sample, reversed findings, swapped estimates, methods the cited paper did not use, a finding credited to the wrong paper by the same authors), the clustering at the wrong level, the changed primary outcome, the subgroup headline without a multiple-testing correction and the numeric slips, without flagging the 29 correct passages.",
+      "files": [
+        "../../../tests/fixtures/latex_hard"
+      ],
+      "expectations": [
+        "At least 95% of the report's quotes of the paper appear verbatim in the paper (check the mechanical grader's list of unfound quotes by hand; quotes of cited works, journal rules or suggested rewrites do not count)",
+        "The detailed findings sit under severity headings, most severe first, and every finding carries a severity",
+        "The report has an index of findings in paper order",
+        "The report says which checks were not run or ran only in part, and why",
+        "Every finding quotes the passage, says where it is precisely enough to find it, and suggests a fix",
+        "Finds at least 90% of the answer key's problems (for the skill run, score_answer_key.py on paper-check-findings.json, with near misses judged by hand; for a run without the skill, by hand)",
+        "No correct passage in the answer key is presented as wrong or unsupported, at any severity (a pure wording suggestion does not count)",
+        "Where the answer key gives a severity, the report's severity for that problem is within one level of it",
+        "The report states how the check was run and does not claim independent second runs or an independent refuter that did not happen",
+        "The report does not contradict itself, for example a coverage note or a finding that relies on a verdict the report elsewhere marks refuted or unverifiable",
+        "Catches at least 7 of the 9 citation problems that only the cited works' full texts settle (P01, P03, P04, P05, P06, P07, P08, P20 and P23 in the answer key)",
+        "Says, for each cited work it judged, whether it read the full text or only an abstract or metadata",
+        "Flags the standard errors clustered by participant although departments were randomized",
+        "Flags that the primary outcome in the results differs from the pre-registered one named in the design section",
+        "Flags the headline subgroup result that rests on one of five splits with no correction for multiple testing",
+        "Flags the comparison of signers with decliners as a causal claim that selection confounds",
+        "Catches at least 6 of the 8 numeric problems (P11, P12, P14, P15, P16, P17, P18 and P24 in the answer key)",
+        "Flags the Gneezy, Meier and Rey-Biel year (2011, not 2012) and does not flag the 2022 year of the Review of Economic Studies paper",
+        "Checks the draft against AEJ: Applied's submission rules and names the rules it applied"
+      ]
     }
   ]
 }
