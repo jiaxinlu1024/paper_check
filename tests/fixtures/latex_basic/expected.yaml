@@ -8,7 +8,7 @@ planted:
     quote: "reduces the share of employees who save nothing by 23%"
     truth: "Table 1 and the results text give 9.9% and 8.1%, a relative reduction of 18.2%, not 23%."
   - id: P02
-    checks: [COH-02, NUM-05]
+    checks: [COH-02, NUM-05, NUM-01, NUM-10]
     quote: "field experiment with 1,200 employees"
     truth: "The design section and the table report 1,150 employees."
   - id: P03
@@ -94,6 +94,7 @@ planted:
   - id: P22
     checks: [NUM-03, BEH-09]
     table: tab:main
+    cell: "0.120***"
     truth: "Column (2) treatment: 0.120 with SE 0.080 is marked ***, but t = 1.5."
   - id: P23
     checks: [LOG-03, LOG-02]
@@ -103,6 +104,27 @@ planted:
     checks: [FMT-08]
     key: smithson2019
     truth: "Title acronym OECD is not brace-protected; BibTeX styles may lowercase it."
+  - id: P25
+    origin: round-1
+    checks: [NUM-03, NUM-07]
+    table: tab:main
+    cell: "(0.008)"
+    about: ["too small", "implausib", "plausib", "0.017", "small for", "small given"]
+    about_required: true
+    severity: major
+    truth: "Not planted; both arms found it in round 1. Column (1)'s standard error is too small: with 1,150 employees and zero-contribution shares of 9.9% and 8.1%, the standard error of the difference is about 0.017, not 0.008, so t is about 1.1, not 2.25."
+  - id: P26
+    origin: round-1
+    checks: [FMT-13, FIG-01]
+    mentions: ["dist.pdf"]
+    severity: major
+    truth: "Not planted; both arms found it in round 1. sections/results.tex includes figures/dist.pdf, which is not in the source, so the paper does not compile as sent."
+  - id: P27
+    origin: round-1
+    checks: [FMT-13]
+    mentions: ["tablenotes", "threeparttable"]
+    severity: major
+    truth: "Not planted; found in round 1. Table 1 uses the tablenotes environment, but the threeparttable package is not loaded, so LaTeX stops with an undefined environment."
 negatives:
   - quote: "automatic enrollment sharply raised 401(k) participation in the firm studied by"
     truth: "Supported by Madrian and Shea (2001)."
@@ -112,7 +134,7 @@ negatives:
     wrong_if: [CIT-06, CIT-02, BEH-15]
   - table: tab:main
     cell: "-0.018**"
-    truth: "t = 2.25, p about 0.024: two stars are correct."
+    truth: "t = 2.25, p about 0.024: two stars match the printed standard error (which is itself too small, P25)."
   - table: tab:main
     cell: "0.250***"
     truth: "t = 5: three stars are correct."

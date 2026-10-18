@@ -25,7 +25,7 @@ planted:
     anchor_twocol: {page: 1, page_line: 6}
     truth: "Table 1 and the results text give 9.9% and 8.1%, a relative reduction of 18.2%, not 23%."
   - id: P02
-    checks: [COH-02, NUM-05]
+    checks: [COH-02, NUM-05, NUM-01, NUM-10]
     quote: "field experiment with 1,200 employees"
     anchor: {page: 1, page_line: 6}
     anchor_twocol: {page: 1, page_line: 5}
@@ -157,6 +157,7 @@ planted:
   - id: P22
     checks: [NUM-03, BEH-09]
     table: "table:1"
+    cell: "0.120***"
     anchor: {page: 3, page_line: 2}
     anchor_twocol: {page: 2, page_line: 3}
     truth: "Column (2) treatment: 0.120 with SE 0.080 is marked ***, but t = 1.5."
@@ -170,7 +171,7 @@ planted:
     checks: [FMT-02]
     metadata:
       document_info.author: "Alex Example"
-    truth: "The PDF's document information names the first author, a problem under anonymized review. The comment of P11 also carries his name."
+    truth: "The PDF's document information names the first author, a problem under anonymized review. The comment of P11 also carries the author's name."
   - id: D02
     checks: [FMT-08]
     key: smithson2019
@@ -178,6 +179,22 @@ planted:
     anchor: {page: 4, page_line: 15}
     anchor_twocol: {page: 3, page_line: 22}
     truth: "The reference prints the acronym OECD as \"oecd\": a sentence-case bibliography style lowercased an unbraced acronym (P24 of latex_basic)."
+  - id: P25
+    origin: round-1
+    checks: [NUM-03, NUM-07]
+    table: "table:1"
+    cell: "(0.008)"
+    about: ["too small", "implausib", "plausib", "0.017", "small for", "small given"]
+    about_required: true
+    severity: major
+    truth: "Not planted; both arms found it in round 1. Column (1)'s standard error is too small: with 1,150 employees and zero-contribution shares of 9.9% and 8.1%, the standard error of the difference is about 0.017, not 0.008, so t is about 1.1, not 2.25."
+  - id: F01
+    origin: round-1
+    checks: [FIG-01]
+    mentions: ["figure 1"]
+    about: ["axis", "axes", "legend", "tick"]
+    about_required: true
+    truth: "Not planted; found in round 1. Figure 1 has axis lines but no axis labels, tick values or legend, so the reader cannot tell which bars are which arm or what is measured."
 negatives:
   - quote: "automatic enrollment sharply raised 401(k) participation in the firm studied by"
     truth: "Supported by Madrian and Shea (2001)."
@@ -185,7 +202,7 @@ negatives:
     truth: "Supported by DellaVigna and Malmendier (2006)."
   - table: "table:1"
     cell: "-0.018**"
-    truth: "t = 2.25, p about 0.024: two stars are correct."
+    truth: "Stars match the printed standard error (itself too small, P25). t = 2.25, p about 0.024: two stars are correct."
   - table: "table:1"
     cell: "0.250***"
     truth: "t = 5: three stars are correct."

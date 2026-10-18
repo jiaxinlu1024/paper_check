@@ -512,3 +512,21 @@ def test_footnote_marker_styles():
     assert PdfReader._marker_of(wrapped, expected=4) is None  # footnote text that wraps onto a number
     symbol = line(Tok("†Example", 72, 120, 100, 110, 10.0))
     assert PdfReader._marker_of(symbol) == "†"
+
+
+def test_report_gives_the_quotes_own_page_and_line(pdf_map):
+    """A paragraph can start lines or a page before the quoted sentence; the report's location is
+    the line where the quote starts."""
+    from paper_check.model import Finding, Location
+    from paper_check.report import Locator
+
+    pm, _ = pdf_map
+    block = _block_with(pm, "TODO: add the heterogeneity analysis")
+    loc = Locator(pm)
+    f = Finding(check_id="FMT-11", title="Draft leftover", severity="minor", problem="A TODO is printed.",
+                quote="TODO: add the heterogeneity analysis", locations=[Location(block=block.id)])
+    assert "(p. 2, line 1)" in loc.where(f)
+    f2 = Finding(check_id="COH-07", title="x", severity="minor", problem="x",
+                 quote="Loss aversion, with a coefficient of about 2.25",
+                 locations=[Location(block=_block_with(pm, "Loss aversion, with a coefficient").id)])
+    assert "(p. 1, line 19)" in loc.where(f2)

@@ -15,6 +15,7 @@ Outputs, beside the work folder:
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import hashlib
 import json
@@ -136,9 +137,25 @@ class Locator:
                 return i
         return None
 
+    @staticmethod
+    def _quote_anchor(block, anchor, start: Optional[int]):
+        """A PDF block's line map says on which page and line a quote starts, which can be lines or a page
+        after the paragraph's first line."""
+        lines = (block.attrs or {}).get("lines") if block is not None else None
+        if start is None or not lines or anchor is None or anchor.page is None or anchor != block.anchor:
+            return anchor
+        page, line = anchor.page, anchor.page_line
+        for offset, pg, no in lines:
+            if offset <= start:
+                page, line = pg, no
+        if (page, line) == (anchor.page, anchor.page_line):
+            return anchor
+        return dataclasses.replace(anchor, page=page, page_line=line, bbox=None)
+
     def label(self, block_id: Optional[str], anchor=None, section=None, start: Optional[int] = None) -> str:
         block = self.pm.block(block_id) if block_id else None
         anchor = anchor or (block.anchor if block else None)
+        anchor = self._quote_anchor(block, anchor, start)
         anchor_label = anchor.label() if anchor else ""
         if block is None:
             return anchor_label or block_id or "whole paper"
@@ -162,8 +179,12 @@ class Locator:
     def where(self, f) -> str:
         span = (f.verification or {}).get("quotes", {}).get("quote_span") or {}
         labels = []
-        for loc in f.locations:
+        for i, loc in enumerate(f.locations):
             start = span.get("start") if span.get("block") == loc.block else None
+            if start is None and i == 0 and f.quote and loc.block:
+                block = self.pm.block(loc.block)
+                hit = find_quote(f.quote, block.text) if block is not None else None
+                start = hit[0] if hit else None
             labels.append(self.label(loc.block, loc.anchor, loc.section, start))
         labels = list(dict.fromkeys(labels))
         if len(labels) > 3:

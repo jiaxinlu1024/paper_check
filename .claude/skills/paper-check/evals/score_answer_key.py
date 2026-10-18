@@ -3,21 +3,32 @@
 Usage:
     python score_answer_key.py FINDINGS_JSON EXPECTED_YAML [--json]
 
-FINDINGS_JSON is the paper-check-findings.json a run wrote. A planted item counts
-as found when a kept finding's quote, a related quote or an evidence quote overlaps
-the item's quote (case and whitespace insensitive), or, for items keyed to a
-reference, when a finding quotes that reference's entry or names its key. The
-check IDs are reported but not required to match, because one problem can be
-caught under a neighbouring check.
+FINDINGS_JSON is the paper-check-findings.json a run wrote. A planted item counts as
+found when one kept finding is both at the item's place and about the item's problem.
 
-A negative is a correct passage. It counts as flagged when a finding's quote
-contains it, lies inside it, or shares at least 25 characters with it; a shared
-short phrase from another place, such as a caption with the same words, does
-not count. When the negative lists `wrong_if` checks, only findings under those
-checks are false positives, and other findings that quote the passage are
-listed as "also quoted" (they raise different problems). Each flag shows its
-severity and status: a Critical or Major finding that is confirmed or likely is
-a hard false positive, anything else a soft one.
+Place: the finding's quote, a related quote or an evidence quote overlaps the item's
+quote or related quote (case and whitespace insensitive; a fragment of the item's quote
+must be at least 15 characters long); or the finding quotes or names the item's
+reference entry (`key`); or it contains the item's note text (`note_contains`), table
+cell (`cell`), one of its `mentions` (such as a file name), or a metadata value.
+
+Problem: one of the finding's checks, its own or one merged into it, is among the item's
+`checks`; or its title, problem or fix uses one of the item's `about` words. When the
+item sets `about_required`, only the `about` words count, because a finding under the
+same check at the same place can be about something else.
+
+A finding at the place but about another problem is listed as "near": a reader can judge
+it, and it does not count. Where the key gives a severity, the severities of the
+matching findings are reported next to it, and where it gives a PDF anchor (page and line),
+whether the report's location is on that page within one line.
+
+A negative is a correct passage. It counts as flagged when a finding's quote contains
+it, lies inside it, or shares at least 25 characters with it; a shared short phrase from
+another place, such as a caption with the same words, does not count. When the negative
+lists `wrong_if` checks, only findings under those checks (their own or merged ones) are
+false positives, and other findings that quote the passage are listed as "also quoted"
+(they raise different problems). A Critical or Major finding that is confirmed or likely
+is a hard false positive, anything else a soft one.
 """
 
 from __future__ import annotations
@@ -30,23 +41,31 @@ from pathlib import Path
 
 import yaml
 
+SEVERITIES = ["suggestion", "minor", "major", "critical"]
+MIN_FRAGMENT = 15
+
 
 def _squeeze(text: str) -> str:
     text = (text or "").lower().replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"')
+    text = text.replace("−", "-").replace("–", "-")
     text = re.sub(r"(?<=[a-z])-\s*(?=[a-z])", "", text)
-    return re.sub(r"[\s ]+", "", text)
+    return re.sub(r"[\s ]+", "", text)
 
 
-def _overlaps(a: str, b: str) -> bool:
-    a, b = _squeeze(a), _squeeze(b)
+def _overlaps(item_text: str, found: str) -> bool:
+    """The finding's text covers the item's text, or a long piece of it."""
+    a, b = _squeeze(item_text), _squeeze(found)
     if not a or not b:
         return False
-    if a in b or b in a:
+    if a in b:
         return True
-    # A long shared piece counts: at least 25 characters or most of the shorter text.
+    if b in a:
+        return len(b) >= min(MIN_FRAGMENT, len(a))
     short, long_ = (a, b) if len(a) <= len(b) else (b, a)
-    need = min(25, max(8, int(len(short) * 0.6)))
-    return any(short[i:i + need] in long_ for i in range(0, max(1, len(short) - need + 1), 3))
+    need = min(25, max(MIN_FRAGMENT, int(len(short) * 0.6)))
+    if len(short) < need:
+        return False
+    return any(short[i:i + need] in long_ for i in range(0, len(short) - need + 1, 3))
 
 
 def _contains_or_long(a: str, b: str) -> bool:
@@ -68,11 +87,69 @@ def _label(f: dict) -> str:
     return f"{f.get('id')} {f.get('check_id')} {f.get('severity')} {f.get('status')}"
 
 
+def _also(f: dict) -> list:
+    return [a for a in (f.get("extra") or {}).get("also", []) if isinstance(a, dict)]
+
+
+def _checks(f: dict) -> set:
+    """The finding's own check and the checks of findings merged into it."""
+    return {c for c in [f.get("check_id")] + [a.get("check_id") for a in _also(f)] if c}
+
+
 def _texts(f: dict) -> list:
     out = [f.get("quote") or ""]
     out += [(q.get("quote") if isinstance(q, dict) else str(q)) or "" for q in f.get("related_quotes", [])]
     out += [e.get("text") or "" for e in f.get("evidence", []) if e.get("type") == "quote"]
     return [t for t in out if t]
+
+
+def _words(f: dict) -> str:
+    """What the finding says: title, problem and fix, with those of findings merged into it."""
+    fix = f.get("fix")
+    parts = [f.get("title"), f.get("problem"), fix.get("detail") if isinstance(fix, dict) else fix]
+    for a in _also(f):
+        parts += [a.get("title"), a.get("problem")]
+    return " ".join(p for p in parts if isinstance(p, str)).lower()
+
+
+def _at_place(item: dict, f: dict, refs: dict) -> bool:
+    texts = _texts(f)
+    blob = json.dumps(f, ensure_ascii=False).lower()
+    if item.get("quote") and any(_overlaps(item["quote"], t) for t in texts):
+        return True
+    if item.get("related") and any(_overlaps(item["related"], t) for t in texts):
+        return True
+    if item.get("key"):
+        key = item["key"].lower()
+        raw = (refs.get(item["key"]) or {}).get("raw") or ""
+        if re.search(r"(?<![a-z0-9])" + re.escape(key) + r"(?![a-z0-9])", blob):
+            return True
+        if raw and any(_overlaps(raw, t) for t in texts):
+            return True
+    if item.get("note_contains"):
+        note = item["note_contains"]
+        if any(_overlaps(note, t) for t in texts) or note.lower() in blob:
+            return True
+    if item.get("cell"):
+        cell = _squeeze(item["cell"])
+        if _squeeze((f.get("extra") or {}).get("cell") or "") == cell or cell in _squeeze(blob):
+            return True
+    if any(m.lower() in blob for m in item.get("mentions") or []):
+        return True
+    for mkey, mval in (item.get("metadata") or {}).items():
+        # A flag such as `true` would match any finding; such items name their place with `mentions`.
+        if not isinstance(mval, bool) and len(str(mval)) >= 4 and str(mval).lower() in blob:
+            return True
+    return False
+
+
+def _about(item: dict, f: dict) -> bool:
+    words = _words(f)
+    if any(w.lower() in words for w in item.get("about") or []):
+        return True
+    if item.get("about_required"):
+        return False
+    return bool(_checks(f) & set(item.get("checks") or []))
 
 
 def score(findings_path: Path, expected_path: Path) -> dict:
@@ -82,33 +159,32 @@ def score(findings_path: Path, expected_path: Path) -> dict:
     refs = {c.get("key"): c for c in data.get("appendices", {}).get("references", []) if isinstance(c, dict)}
     rows = []
     for item in key.get("planted", []):
-        hits = []
+        hits, near = [], []
         for f in findings:
-            texts = _texts(f)
-            blob = json.dumps(f, ensure_ascii=False).lower()
-            ok = False
-            if item.get("quote"):
-                ok = any(_overlaps(item["quote"], t) for t in texts)
-            if not ok and item.get("related"):
-                ok = any(_overlaps(item["related"], t) for t in texts)
-            if not ok and item.get("key"):
-                raw = (refs.get(item["key"]) or {}).get("raw") or ""
-                ok = item["key"].lower() in blob or (raw and any(_overlaps(raw, t) for t in texts))
-            if not ok and item.get("note_contains"):
-                ok = any(_overlaps(item["note_contains"], t) for t in texts) or item["note_contains"].lower() in blob
-            if not ok and item.get("table") and item.get("checks"):
-                ok = f.get("check_id") in item["checks"] and ("table" in blob)
-            if not ok and item.get("metadata") and f.get("check_id") in (item.get("checks") or []):
-                # Metadata problems have no quote: match the metadata key or its value.
-                for mkey, mval in item["metadata"].items():
-                    leaf = mkey.split(".")[-1] if not mkey.split(".")[-1].isdigit() else mkey.split(".")[0]
-                    if str(mval).lower() in blob or leaf.lower() in blob:
-                        ok = True
-                        break
-            if ok:
-                hits.append(f"{f.get('id')} {f.get('check_id')} {f.get('severity')}")
-        rows.append({"id": item["id"], "checks": item.get("checks"), "found": bool(hits), "by": hits,
-                     "truth": item.get("truth")})
+            if not _at_place(item, f, refs):
+                continue
+            (hits if _about(item, f) else near).append(f)
+        row = {"id": item["id"], "checks": item.get("checks"), "found": bool(hits),
+               "by": [f"{f.get('id')} {f.get('check_id')} {f.get('severity')}" for f in hits],
+               "near": [f"{f.get('id')} {f.get('check_id')} {f.get('severity')}" for f in near],
+               "truth": item.get("truth"), "origin": item.get("origin", "planted")}
+        if item.get("anchor") and hits:
+            # The report's location for the item, against the page and line where its quote starts.
+            want = (item["anchor"]["page"], item["anchor"]["page_line"])
+            given = []
+            for f in hits:
+                m = re.search(r"p\. (\d+), line (\d+)", f.get("where") or "")
+                if m:
+                    given.append((int(m.group(1)), int(m.group(2))))
+            best = min(given, key=lambda g: (g[0] != want[0], abs(g[1] - want[1]))) if given else None
+            row["anchor"] = {"expected": list(want), "given": list(best) if best else None,
+                             "within_one": bool(best) and best[0] == want[0] and abs(best[1] - want[1]) <= 1}
+        if item.get("severity") and hits:
+            want = SEVERITIES.index(item["severity"])
+            best = min(hits, key=lambda f: abs(SEVERITIES.index(f.get("severity", "minor")) - want))
+            row["severity"] = {"expected": item["severity"], "given": best.get("severity"),
+                               "within_one": abs(SEVERITIES.index(best.get("severity", "minor")) - want) <= 1}
+        rows.append(row)
     negatives = []
     for neg in key.get("negatives", []):
         flagged, also, hard = [], [], 0
@@ -117,7 +193,7 @@ def score(findings_path: Path, expected_path: Path) -> dict:
             for f in findings:
                 if not _contains_or_long(neg["quote"], f.get("quote") or ""):
                     continue
-                if wrong_if and f.get("check_id") not in wrong_if:
+                if wrong_if and not (_checks(f) & wrong_if):
                     also.append(_label(f))
                     continue
                 flagged.append(_label(f))
@@ -130,13 +206,18 @@ def score(findings_path: Path, expected_path: Path) -> dict:
                     return _squeeze(cell) == _squeeze(neg["cell"])
                 return _squeeze(f.get("quote") or "").endswith(_squeeze(neg["cell"]))
             cell_findings = [f for f in findings
-                             if f.get("check_id", "").startswith(("NUM", "FIG")) and _flags_cell(f)]
+                             if any(c.startswith(("NUM", "FIG")) for c in _checks(f)) and _flags_cell(f)]
             flagged = [_label(f) for f in cell_findings]
             hard = sum(_hard(f) for f in cell_findings)
         negatives.append({"negative": neg.get("quote") or neg.get("cell"), "flagged_by": flagged,
                           "hard": hard, "also_quoted_by": also})
     found = sum(r["found"] for r in rows)
+    graded = [r["severity"] for r in rows if r.get("severity")]
+    anchored = [r["anchor"] for r in rows if r.get("anchor")]
     return {"planted_found": found, "planted_total": len(rows),
+            "planted_near_only": sum(1 for r in rows if not r["found"] and r["near"]),
+            "severity_within_one": sum(g["within_one"] for g in graded), "severity_graded": len(graded),
+            "anchors_within_one": sum(a["within_one"] for a in anchored), "anchors_graded": len(anchored),
             "negatives_flagged": sum(bool(n["flagged_by"]) for n in negatives), "negatives_total": len(negatives),
             "negatives_hard": sum(bool(n["hard"]) for n in negatives),
             "items": rows, "negatives": negatives, "findings_total": len(findings)}
@@ -152,13 +233,23 @@ def main() -> int:
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=1))
         return 0
-    print(f"Planted problems found: {result['planted_found']} of {result['planted_total']}; "
+    print(f"Planted problems found: {result['planted_found']} of {result['planted_total']} "
+          f"({result['planted_near_only']} more only near); "
+          f"severity within one level: {result['severity_within_one']} of {result['severity_graded']}; "
+          + (f"locations within one line: {result['anchors_within_one']} of {result['anchors_graded']}; "
+             if result["anchors_graded"] else "") +
           f"negatives flagged: {result['negatives_flagged']} of {result['negatives_total']} "
           f"({result['negatives_hard']} by a Critical or Major finding); "
           f"findings in the report: {result['findings_total']}")
     for r in result["items"]:
-        mark = "found " if r["found"] else "MISSED"
-        print(f"  {mark} {r['id']:4s} {','.join(r['checks'] or []):18s} {'; '.join(r['by'][:3])}")
+        mark = "found " if r["found"] else ("near  " if r["near"] else "MISSED")
+        sev = r.get("severity")
+        sev_note = f" [key {sev['expected']}, given {sev['given']}]" if sev else ""
+        anc = r.get("anchor")
+        if anc and not anc["within_one"]:
+            sev_note += f" [line: key {anc['expected']}, given {anc['given']}]"
+        shown = r["by"][:3] if r["found"] else r["near"][:3]
+        print(f"  {mark} {r['id']:4s} {','.join(r['checks'] or []):18s} {'; '.join(shown)}{sev_note}")
     for n in result["negatives"]:
         if n["flagged_by"]:
             kind = "FALSE POSITIVE" if n["hard"] else "soft flag"
