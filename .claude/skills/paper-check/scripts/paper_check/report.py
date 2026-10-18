@@ -228,6 +228,58 @@ def _key(f) -> str:
     return f"{f.check_id}-{hashlib.sha1(base.encode('utf-8')).hexdigest()[:8]}"
 
 
+def _chosen_top(kept: list, work: Path, warnings: list, n: int = 5) -> tuple:
+    """The top issues the consolidation agent chose (consolidation.json "top": keys in order of
+    importance), as ([findings], True); ([], False) when it chose none."""
+    path = work / "consolidation.json"
+    data = _load_json(path) if path.exists() else None
+    keys = data.get("top") if isinstance(data, dict) else None
+    if not isinstance(keys, list) or not keys:
+        return [], False
+    index: dict = {}
+    for f in kept:
+        for k in [f.extra.get("key")] + list(f.extra.get("absorbed_keys") or []):
+            if k:
+                index.setdefault(k, f)
+    out = []
+    for k in keys:
+        f = index.get(k) if isinstance(k, str) else None
+        if f is None:
+            warnings.append(f"consolidation.json names a top issue that this report does not have: {k}")
+        elif f not in out:
+            out.append(f)
+    return out[:n], bool(out)
+
+
+def _top_issues(kept: list, n: int = 5) -> list:
+    """The findings to name first: the most severe, then confirmed before likely before needs human
+    judgment, then those reported from the most dimensions, then the most confident, then paper order."""
+    order = {id(f): i for i, f in enumerate(kept)}
+
+    def dimensions(f) -> int:
+        return len({f.check_id.split("-")[0]} | {a["check_id"].split("-")[0] for a in f.extra.get("also", [])})
+    return sorted(kept, key=lambda f: (SEVERITY_RANK.get(f.severity, 9), STATUS_RANK.get(f.status, 9),
+                                       -dimensions(f), CONF_RANK.get(f.confidence, 9), order[id(f)]))[:n]
+
+
+def _assign_keys(findings: list) -> None:
+    """Give every finding a key no other finding in the report shares. Two findings with one producer,
+    check, block and quote (a reference's wrong year and its missing DOI) are told apart by their title
+    and problem; the shared plain key is then given to neither, so a consolidation that named it is
+    reported instead of applied to the wrong finding."""
+    base = [_key(f) for f in findings]
+    counts = Counter(base)
+    used: Counter = Counter()
+    for f, k in zip(findings, base):
+        if counts[k] > 1:
+            tail = normalize(f"{f.title}|{f.problem or ''}").lower()[:400]
+            k = f"{k}{hashlib.sha1(tail.encode('utf-8')).hexdigest()[:4]}"
+            used[k] += 1
+            if used[k] > 1:
+                k = f"{k}-{used[k]}"
+        f.extra["key"] = k
+
+
 def _take_keys(keep, other) -> None:
     keys = keep.extra.setdefault("absorbed_keys", [])
     for k in [other.extra.get("key")] + list(other.extra.get("absorbed_keys") or []):
@@ -610,8 +662,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
         for c in fs.coverage:
             c.producer = c.producer or fs.producer
             coverage[c.check_id].append(c)
-    for f in findings:
-        f.extra["key"] = _key(f)
+    _assign_keys(findings)
     dropped = [f for f in findings if f.status == "dropped" and not _refuted(f)]
     refuted = [f for f in findings if _refuted(f)]
     kept = _dedupe([f for f in findings if f.status != "dropped" and not _refuted(f)], pm)
@@ -654,6 +705,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
         warnings.append(f"Reading the paper produced {len(pm.warnings)} warnings; see the appendix on ingestion.")
     if below:
         warnings.append(f"{len(below)} findings below the minimum severity ({settings.min_severity}) are left out.")
+    top, chosen = _chosen_top(kept, work, warnings)
     if warnings:
         md += ["**Warnings**", ""] + [f"- {w}" for w in warnings] + [""]
 
@@ -669,9 +721,11 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
         md += _md_table(["Dimension", "Findings"],
                         [[f"{dimensions.get(d, d)} ({d})", n] for d, n in sorted(by_dim.items(), key=lambda x: (-x[1], x[0]))])
         md.append("")
-    top = kept[:5]
+    if not top:
+        top = _top_issues(kept)
     if top:
-        md += ["Top issues:", ""]
+        md += ["Top issues, the ones that most threaten the paper's conclusions:" if chosen else
+               "Top issues, by severity, then certainty, then how many dimensions found them:", ""]
         md += [f"{i}. **{f.id}** ({SEVERITY_TITLE[f.severity]}, {f.check_id}): {f.title}. {f.problem}"
                for i, f in enumerate(top, 1)]
         md.append("")

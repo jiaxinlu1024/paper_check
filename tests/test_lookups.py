@@ -932,3 +932,28 @@ def test_a_working_paper_series_name_is_not_compared_with_the_institution():
     checks = {c["field"]: c for c in policy.field_checks(cited, evs)}
     assert checks["container"]["status"] == "unknown" and checks["container"]["found"]
     assert not [c for c in checks.values() if c["status"] == "differs"]
+
+
+def test_a_wrong_year_and_a_missing_doi_in_one_entry_are_one_finding():
+    from paper_check.checks import Context
+    from paper_check.lookups.findings import Builder
+    raw = "Doe, J. (2010). Ferry Fares and Island Tourism. Journal of Examples, 3, 1-20."
+    record = {"source": "crossref", "doi": "10.5555/ferry.1", "title": "Ferry Fares and Island Tourism",
+              "authors": ["Doe, Jane"], "year": 2011, "container": "Journal of Examples"}
+    card = {"ref": "r001", "key": "doe2010", "raw": raw, "verdict": "metadata_drift", "severity": "minor",
+            "matched": record, "matched_in": ["Crossref", "OpenAlex"], "queries": [], "anchor": {},
+            "field_checks": [
+                {"field": "year", "cited": "2010", "found": 2011, "status": "differs",
+                 "sources": {"crossref": [2011], "openalex": [2011]}, "contradicting": ["crossref", "openalex"],
+                 "agreeing": []},
+                {"field": "doi", "cited": None, "found": "10.5555/ferry.1", "status": "missing",
+                 "sources": {"crossref": "10.5555/ferry.1"}}]}
+    block = Block(id="b0001", kind="reference", text=raw, anchor=Anchor(file="x.bib", line=1))
+    b = Builder(Context(work=Path("."), producer="refs"), {"r001": block})
+    b.metadata(card)
+    b.missing_parts(card)
+    cit03 = [f for f in b.findings if f.check_id == "CIT-03"]
+    assert len(cit03) == 1
+    f = cit03[0]
+    assert "year" in f.title and "DOI missing" in f.title and "10.5555/ferry.1" in f.problem
+    assert "10.5555/ferry.1" in f.fix.detail and f.fix.replacement == "2011"

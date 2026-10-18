@@ -941,3 +941,9 @@ def test_numbers_the_sentence_places_outside_the_table_or_in_its_note(run):
     ], [(rows, note, "1")])
     findings, _ = run(pm)
     assert {f.extra["value"] for f in by_check(findings, "NUM-06")} == {"0.066"}
+
+
+def test_a_table_named_by_a_cross_reference_field_is_masked_but_still_read_as_not_shown():
+    assert num._NOT_IN_TABLE.search("two estimates, not reported in " + num.MASK * 7 + ", are 0.1 and 0.2")
+    assert num._NOT_IN_TABLE.search("values omitted from Table 3 are small")
+    assert not num._NOT_IN_TABLE.search("the estimates reported in Table 3 are 0.1 and 0.2")

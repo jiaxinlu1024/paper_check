@@ -3083,9 +3083,9 @@ def _flow_findings(paper: _Paper, ctx):
 # ================================================================ NUM-06: text against tables
 _SUPERLATIVE = re.compile(r"\b(?:largest|highest|biggest|strongest|greatest|smallest|lowest|weakest|best|worst|maximum|minimum)\b", re.I)
 # "two further estimates, not reported in Table 2, are ...": the sentence itself says the numbers are elsewhere.
-_NOT_IN_TABLE = re.compile(r"\b(?:not|never)\s+(?:shown|reported|included|presented|listed|displayed|tabulated)\s+"
-                           r"(?:in|on)\s+(?:the\s+)?Tables?\b|\b(?:omitted|excluded|absent)\s+from\s+(?:the\s+)?Tables?\b",
-                           re.I)
+# A table named by a cross-reference field is masked in the sentence text, so the pattern takes either form.
+_NOT_IN_TABLE = re.compile(r"\b(?:(?:not|never)\s+(?:shown|reported|included|presented|listed|displayed|tabulated)\s+"
+                           r"(?:in|on)|(?:omitted|excluded|absent)\s+from)\s+(?:the\s+)?(?:Tables?\b|" + MASK + ")", re.I)
 _NOTE_NUMBER = re.compile(r"(?<![\w.])[-\u2212\u2013]?\d+\.\d+(?![\w.]*\d)")
 
 

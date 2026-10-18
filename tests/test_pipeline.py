@@ -263,3 +263,43 @@ def test_consolidation_groups_one_root_cause_from_several_dimensions(work_copy):
     assert any("NUM-01-00000000" in w for w in data["warnings"])
     # the keys stay stable across builds
     assert merged["key"] == keys["LOG-03"]
+
+
+def test_findings_that_share_a_quote_get_distinct_keys(work_copy):
+    """Two findings of one producer and check on one quote (a reference's wrong year and its missing
+    DOI) must not share a key, or a consolidation group meant for one lands on the other."""
+    _write(work_copy, "agent_logic.json", {"producer": "agent_logic", "findings": [
+        _finding(check_id="LOG-03", title="Causal claim", problem="Causal wording from a correlation."),
+        _finding(check_id="LOG-03", title="Causal claim in the conclusion", problem="Repeated in the conclusion."),
+        _finding(check_id="LOG-01", title="Other", quote=SESSIONS, problem="A different passage."),
+    ]})
+    main(["verify", str(work_copy)])
+    main(["report", str(work_copy)])
+    first = json.loads((work_copy.parent / "paper-check-findings.json").read_text())["findings"]
+    keys = [f["key"] for f in first]
+    assert len(keys) == len(set(keys)) == 3
+    main(["report", str(work_copy)])
+    again = json.loads((work_copy.parent / "paper-check-findings.json").read_text())["findings"]
+    assert sorted(f["key"] for f in again) == sorted(keys)     # stable across builds
+
+
+def test_top_issues_follow_the_consolidators_choice_then_the_ranking(work_copy):
+    _write(work_copy, "agent_logic.json", {"producer": "agent_logic", "findings": [
+        _finding(check_id="LOG-03", title="Causal claim", severity="major", status="likely",
+                 problem="Causal wording from a correlation."),
+        _finding(check_id="LOG-01", title="Confirmed but minor point", severity="major", status="confirmed",
+                 quote=SESSIONS, problem="A smaller problem."),
+    ]})
+    main(["verify", str(work_copy)])
+    main(["report", str(work_copy)])
+    report = (work_copy.parent / "paper-check-report.md").read_text()
+    first = report.split("Top issues")[1].split("Coverage:")[0]
+    assert first.index("LOG-01") < first.index("LOG-03")          # ranking: confirmed before likely
+    keys = {f["check_id"]: f["key"] for f in
+            json.loads((work_copy.parent / "paper-check-findings.json").read_text())["findings"]}
+    (work_copy / "consolidation.json").write_text(json.dumps({"groups": [], "top": [keys["LOG-03"], "LOG-09-deadbeef"]}))
+    main(["report", str(work_copy)])
+    report = (work_copy.parent / "paper-check-report.md").read_text()
+    chosen = report.split("Top issues")[1].split("Coverage:")[0]
+    assert "most threaten" in chosen and "LOG-03" in chosen and "LOG-01" not in chosen
+    assert "LOG-09-deadbeef" in report.split("## Summary")[0]       # an unknown key is a warning

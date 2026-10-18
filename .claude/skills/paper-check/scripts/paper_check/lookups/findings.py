@@ -120,6 +120,9 @@ def _identifier_steps(card: dict) -> list:
     return ["No DOI, arXiv, NBER, SSRN, IZA or CEPR identifier in the entry."]
 
 
+SEVERITY_ORDER = ["critical", "major", "minor", "suggestion"]
+
+
 class Builder:
     def __init__(self, ctx, blocks: dict):
         self.ctx = ctx
@@ -350,6 +353,22 @@ class Builder:
                                 "journal, volume, issue, pages, and the DOI where the style uses DOIs.")
         steps = [f"Matched in {_join(card.get('matched_in') or [])}.",
                  f"Compared the entry's parts with the record: {_join(names)} absent from the entry."]
+        drift = next((f for f in self.findings if f.check_id == "CIT-03" and f.extra.get("ref") == card["ref"]
+                      and "field_checks" in f.extra), None)
+        if drift is not None:
+            # One entry, one finding: correcting the entry from the record also adds the missing parts.
+            drift.title += f"; {_join(names)} missing"
+            drift.problem += f" The entry also leaves out its {_join(names)}: the record gives {values}."
+            if drift.fix is not None:
+                drift.fix.detail = (drift.fix.detail or "").rstrip() + f" Also add: {values}."
+                drift.fix.resolved_when = ((drift.fix.resolved_when or "").rstrip(". ")
+                                           + f", and the entry gives its {_join(names)}.")
+            drift.trajectory.extend(steps)
+            if SEVERITY_ORDER.index(sev) < SEVERITY_ORDER.index(drift.severity):
+                drift.severity = sev
+            drift.extra.update({"missing": [c["field"] for c in missing],
+                                "values": {c["field"]: c["found"] for c in missing}})
+            return
         self.make(card, "CIT-03", f"Reference entry is missing its {_join(names)}", sev, problem,
                   evidence=evidence, trajectory=steps, fix=fix,
                   confidence="high" if card.get("verdict") == "verified" else "medium",
