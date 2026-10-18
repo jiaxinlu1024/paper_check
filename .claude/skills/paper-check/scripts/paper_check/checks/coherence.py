@@ -37,12 +37,18 @@ _OPEN_FORMS = ["data set", "work force", "policy maker", "policy makers", "decis
 _WORD = re.compile(r"[A-Za-z]+(?:-[A-Za-z]+)*")
 
 
+_CAMEL = re.compile(r"[A-Z][a-z]+(?:[A-Z][a-z0-9]*)+")
+
+
 def _forms(pm):
     counts, first, occurrences = Counter(), {}, defaultdict(list)
     for b in prose(pm, PROSE_KINDS):
         skip = span_list(b) + math_spans(b.text)
         for m in _WORD.finditer(b.text):
             if inside(m.start(), skip):
+                continue
+            # A variable name is not a spelling of a term: "PostRetirement_{it}", "IncomeQuartile".
+            if b.text[m.end():m.end() + 1] in ("_", "^", "{") or _CAMEL.fullmatch(m.group(0)):
                 continue
             w = m.group(0).lower()
             counts[w] += 1
@@ -351,7 +357,9 @@ _SKIP_SECTION = re.compile(r"\binstructions?\b|\bquestionnaires?\b|\bsurvey (?:i
 def repeated_passages(pm, ctx):
     blocks = [b for b in prose(pm, ("paragraph", "list_item", "footnote"))
               if not any(_SKIP_SECTION.search(s) for s in b.section or [])]
-    toks = [[(m.group(0).lower(), m.start(), m.end()) for m in _TOKEN.finditer(b.text)] for b in blocks]
+    # Citations do not count: two passages that share only a list of citations are not repeated text.
+    toks = [[(m.group(0).lower(), m.start(), m.end()) for m in _TOKEN.finditer(b.text)
+             if not any(c.start <= m.start() < c.end for c in b.citations)] for b in blocks]
     index = defaultdict(list)
     found = []
     for j, tj in enumerate(toks):

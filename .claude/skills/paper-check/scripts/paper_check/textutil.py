@@ -84,7 +84,8 @@ _ABBREVIATIONS = {
     "u.k", "e.u", "st", "vol", "pp", "p", "ch", "ed", "eds", "resp", "viz", "ca", "jan", "feb", "mar",
     "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec", "tab", "app", "est", "std", "dept",
 }
-_BOUNDARY = re.compile(r"([.!?])(['\")\]]*)(\s+)(?=[\"'(\[]?[A-Z0-9])")
+# Closing marks after the stop include curly quotes: 'the "trust gap."' ends a sentence, as does 'gap.'.
+_BOUNDARY = re.compile(r"([.!?])(['\")\]\u2019\u201d\u00bb]*)(\s+)(?=[\"'(\[\u2018\u201c\u00ab]?[A-Z0-9])")
 
 
 _LABEL_WORDS = {"appendix", "table", "figure", "section", "panel", "column", "model", "treatment", "group",

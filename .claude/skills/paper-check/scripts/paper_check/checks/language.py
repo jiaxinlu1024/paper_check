@@ -249,6 +249,18 @@ MIN_WEAK = 3
 _SIGNPOST = {"interestingly", "basically", "actually", "really", "totally"}
 _VERY_ADJ = re.compile(r"\b(?:the|this|that|its|their|his|her|our)\s+$", re.I)  # "the very first": not an intensifier
 _SIGNIF = re.compile(r"\b(?:significantly|significant|insignificant(?:ly)?)\b", re.I)
+# Wording that only has the statistical sense: "highly significant", "not significant", "positive and significant",
+# "significant at", "no significant effect".
+_SIGNIF_STAT = re.compile(r"\b(?:highly|marginally|statistically|weakly|strongly|jointly|individually|not|no|non-?)\s*-?"
+                          r"significant|\b(?:positive|negative)(?:ly)?\s+and\s+(?:statistically\s+)?significant|"
+                          r"\bsignificant(?:ly)?\s+(?:at|in\s+(?:all|every|each))\b|\binsignificant", re.I)
+# "Clearly" and "obviously" assert only when they introduce a claim or a demonstration, not when they
+# describe ("a clearly financial channel", "less obviously innocuous").
+_ASSERT_AFTER = re.compile(r"^\s*(?:,|shows?|showed|demonstrates?|demonstrated|indicates?|establishes?|proves?|"
+                           r"reveals?|confirms?|supports?|outperforms?|dominates?|implies|is|are|was|were|has|have|"
+                           r"holds?|exceeds?|explains?|drives?|matters?|true|false|the\b)", re.I)
+_MAGNITUDE = re.compile(r"\d+(?:\.\d+)?\s*(?:%|percent|per cent|percentage points?|pp\b)|\b\d+(?:\.\d+)?\s*(?:times|fold)\b",
+                        re.I)
 _STAT_CONTEXT = re.compile(
     r"\bp\s*[<=>≤≥]\s*0?\.\d|\bp-?values?\b|\bt\s*[=(]|\bz\s*=|\bF\s*\(|χ|chi-?squared?|\bstatistical(?:ly)?\b|"
     r"\bat (?:the )?\d+(?:\.\d+)?\s*(?:%|percent|per cent) (?:level|significance)|\b\d+(?:\.\d+)?\s*(?:%|percent) level|"
@@ -282,6 +294,18 @@ def vague_words(pm, ctx):
                     continue
                 if word == "very" and _VERY_ADJ.search(b.text[max(0, m.start() - 12):m.start()]):
                     continue
+                if word.lower() in ("clearly", "obviously"):
+                    before = b.text[max(0, m.start() - 30):m.start()]
+                    asserts = (_ASSERT_AFTER.match(b.text[m.end():m.end() + 30])
+                               or re.search(r"\b(?:is|are|was|were|be|been|being|seems?|seemed|appears?|appeared|"
+                                            r"remains?|remained)\s+(?:not\s+|very\s+|so\s+|also\s+)?$", before, re.I)
+                               or re.search(r"(?:^|[.;:!?]\s*|^\s*)$", before))
+                    if not asserts:
+                        continue  # describes ("a clearly financial channel", "less obviously innocuous")
+                if word.lower() in [h.lower() for h in _HYPE]:
+                    s0, e0 = sentence_bounds(b, m.start())
+                    if _MAGNITUDE.search(b.text[s0:e0]):
+                        continue  # "a dramatic contraction: originations fell by 72 percent" gives its size
                 groups[word.lower()].append((b, m.start(), m.end()))
     for word, hits in groups.items():
         loaded = word in _LOADED
@@ -308,12 +332,18 @@ def vague_words(pm, ctx):
     for b, skip in texts:
         if b.kind == "abstract":
             continue  # abstracts summarize results tested in the body
+        cites_table = bool(re.search(r"\b(?:Table|Figure|Panel)\s+[A-Z]?\d", b.text)) or any(
+            r.resolved for r in b.crossrefs)
         for m in _SIGNIF.finditer(b.text):
             if inside(m.start(), skip):
                 continue
             s0, e0 = sentence_bounds(b, m.start())
-            if _stat_nearby(b, s0, e0):
+            if _stat_nearby(b, s0, e0) or cites_table:
+                continue  # a paragraph that discusses a table reports its tests there
+            if _SIGNIF_STAT.search(b.text[max(s0, m.start() - 40):min(e0, m.end() + 25)]):
                 continue
+            if any(c.start < e0 and c.end > s0 for c in b.citations):
+                continue  # reports a cited study's result
             quote = sentence_quote(b, m.start(), 35)
             yield ctx.finding(
                 "LANG-04", f"\"{m.group(0)}\" without a statistical test", "minor",

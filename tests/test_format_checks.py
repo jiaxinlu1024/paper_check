@@ -867,3 +867,26 @@ def test_answer_key(fixture_maps, paper, venue):
         sev = {f.title: f.severity for f in findings if f.check_id == "FMT-02"}
         assert sev["Self-revealing citation"] == "critical" and sev["Author names in an anonymized manuscript"] == "critical"
     assert {c for c in MINE if c not in coverage} == set()
+
+
+def test_lang04_descriptive_and_statistical_uses_are_not_flagged(tmp_path):
+    body = ("\\section{Results}\nA clearly financial channel draws more trust than a general one, and the linear "
+            "model is less obviously innocuous here. The contraction was dramatic: originations fell by 72 percent. "
+            "The indirect effect is positive and significant in every subgroup.\n\n"
+            "Table 4 collects the subgroup estimates. All five indirect effects are significant.\n\n"
+            "This is clearly important.")
+    pm, _ = ingest_tex(tmp_path, body)
+    found, _ = run(pm, "LANG-04")
+    words = {f.extra["word"].lower(): f.extra["count"] for f in found}
+    assert words.get("clearly") == 1 and "obviously" not in words and "dramatic" not in words
+    assert not [w for w in words if w.startswith("signific")]
+
+
+def test_coh05_ignores_variable_names_and_coh09_ignores_shared_citations(tmp_path):
+    from paper_check.checks import Context, run_checks
+    body = ("\\section{Model}\nWe study post-retirement income. The indicator PostRetirement_{it} marks the years "
+            "after retirement, and post-retirement volatility is measured over three waves.\n\n"
+            "\\section{Results}\nPost-retirement volatility is higher for the poor.")
+    pm, _ = ingest_tex(tmp_path, body)
+    found, _ = run(pm, "COH-05")
+    assert found == []
