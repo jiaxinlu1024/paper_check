@@ -47,6 +47,7 @@ class Context:
     coverage: dict = field(default_factory=dict)
     notes: dict = field(default_factory=dict)
     current: Optional[str] = None  # name of the check function running now
+    partial: set = field(default_factory=set)  # checks that ran on part of what they cover
 
     def finding(self, check_id: str, title: str, severity: str, problem: str, *,
                 block=None, quote: Optional[str] = None, related=None, evidence=None,
@@ -73,6 +74,12 @@ class Context:
     def not_applicable(self, check_id: str, reason: str) -> None:
         self.coverage[check_id] = Coverage(check_id, "not_applicable", reason, self.current or self.producer)
 
+    def partly(self, check_id: str, reason: str) -> None:
+        """The check ran, but not on everything it covers; the reason says what it left out. The
+        coverage table shows it as partly run."""
+        self.skip(check_id, reason)
+        self.partial.add(check_id)
+
 
 def load_modules(names: Iterable[str] = MODULES) -> list:
     loaded, errors = [], []
@@ -92,6 +99,7 @@ def load_modules(names: Iterable[str] = MODULES) -> list:
 def run_checks(pm: PaperMap, ctx: Context, only: Optional[set] = None) -> FindingSet:
     errors = load_modules()
     out = FindingSet(producer="scripts", settings={"version": __version__})
+    ran_in_part = []
     for check_ids, func, name in _REGISTRY:
         if only and not (set(check_ids) & only):
             continue
@@ -106,12 +114,15 @@ def run_checks(pm: PaperMap, ctx: Context, only: Optional[set] = None) -> Findin
             f.producer.setdefault("check", name)
         out.findings.extend(found)
         for cid in check_ids:
+            n = sum(1 for f in found if f.check_id == cid)
             if cid not in ctx.coverage:
-                n = sum(1 for f in found if f.check_id == cid)
                 ctx.coverage[cid] = Coverage(cid, "run", ctx.notes.get(cid), name, n)
+            elif cid in ctx.partial:
+                ran_in_part.append(Coverage(cid, "run", ctx.notes.get(cid), name, n))
     for name, tb in errors:
         out.settings.setdefault("module_errors", {})[name] = tb
-    out.coverage = sorted(ctx.coverage.values(), key=lambda c: c.check_id)
+    # The part that ran comes first, so a lookup by check id keeps the entry that says what was left out.
+    out.coverage = sorted(ran_in_part + list(ctx.coverage.values()), key=lambda c: c.check_id)
     return out
 
 

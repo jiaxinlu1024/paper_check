@@ -27,7 +27,7 @@ MINE = {
     "FMT-12", "FMT-13", "FMT-14", "FMT-15", "FMT-16", "FMT-18", "COH-05", "COH-06", "COH-07", "COH-09", "LANG-01",
     "LANG-02", "LANG-04", "LANG-07", "LANG-08", "CIT-01", "CIT-10", "BEH-06", "BEH-11", "BEH-12", "BEH-16",
 }
-IN_SCOPE = {"P05", "P06", "P07", "P11", "P12", "P13", "P14", "P15", "P16", "P24"}
+IN_SCOPE = {"P05", "P06", "P07", "P11", "P12", "P13", "P14", "P15", "P16", "P24", "P26", "P27"}
 
 
 class Settings:
@@ -449,10 +449,29 @@ def test_fmt13_reads_the_log(tmp_path):
     assert_well_formed(pm, found)
 
 
-def test_fmt13_skipped_without_log(latex_map):
+def test_fmt13_reads_the_source_without_a_log(latex_map):
+    """Without a .log, the source still shows a missing figure file and an environment whose package is
+    not loaded; the log part is recorded as not run."""
     pm, _ = latex_map
     found, cov = run(pm, "FMT-13")
-    assert not found and cov["FMT-13"].status == "skipped" and ".log" in cov["FMT-13"].reason
+    by_title = {f.title: f for f in found}
+    missing = by_title["Figure file missing from the source"]
+    assert missing.extra["file"] == "figures/dist.pdf" and missing.locations[0].anchor.file == "sections/results.tex"
+    env = by_title["The tablenotes environment needs a package that is not loaded"]
+    assert env.locations[0].anchor.label() == "tables/main_results.tex:18" and "threeparttable" in env.problem
+    assert cov["FMT-13"].status == "skipped" and ".log" in cov["FMT-13"].reason
+    assert_well_formed(pm, found)
+
+
+def test_fmt13_source_checks_accept_a_complete_source(tmp_path):
+    body = ("\\section{Intro}\nText.\n\\begin{table}\\begin{threeparttable}\\begin{tabular}{l}a\\\\\\end{tabular}"
+            "\\begin{tablenotes}\\item Note.\\end{tablenotes}\\end{threeparttable}\\end{table}\n"
+            "\\begin{figure}\\includegraphics{plot}\\caption{A plot.}\\end{figure}\n"
+            "% \\begin{landscape} only in a comment\n")
+    pm, _ = ingest_tex(tmp_path, body, preamble="\\usepackage{graphicx}\n\\usepackage{threeparttable}",
+                       extra_files={"plot.png": "not really a png"})
+    found, _ = run(pm, "FMT-13")
+    assert not found, [f.title for f in found]
 
 
 # ================================================================ FMT-14 Word hygiene
@@ -792,7 +811,7 @@ def test_beh16_keywords_and_jel(tmp_path):
 
 # ================================================================ integration: the fixtures' answer keys
 FIXTURES = ROOT / "tests" / "fixtures"
-WORD_ONLY = {"W01", "W02", "W03", "W04", "W05", "W06", "W07", "W08"}
+WORD_ONLY = {"W01", "W02", "W03", "W04", "W05", "W06", "W07", "W08", "W09"}
 
 
 @pytest.fixture(scope="module")
@@ -832,6 +851,8 @@ def _found(item, findings):
         if "key" in item and (f.extra.get("key") == item["key"] or item["key"] in (f.extra.get("keys") or [])):
             return True
         if "note_contains" in item and item["note_contains"].lower() in _text_of(f).lower():
+            return True
+        if any(m.lower() in _text_of(f).lower() for m in item.get("mentions") or []):
             return True
         if "metadata" in item:
             # a planted value must appear in the finding; a flag (true/false) must be named as the metadata it read

@@ -1,6 +1,6 @@
 # Reading agent: figures and tables (FIG)
 
-Prompt version 0.4.0, 2026-10-17. You check FIG-01 to FIG-06 and FMT-17 (accessibility). The structure and rules are adapted from Claes Bäckman's AI-research-feedback and from OpenAIReview, both MIT-licensed; see `THIRD_PARTY_NOTICES.md` at the skill root.
+Prompt version 0.5.0, 2026-10-18. You check FIG-01 to FIG-06 and FMT-17 (accessibility). The structure and rules are adapted from Claes Bäckman's AI-research-feedback and from OpenAIReview, both MIT-licensed; see `THIRD_PARTY_NOTICES.md` at the skill root.
 
 Most of these checks need you to look at the figures, so first make sure you can see them. A check you could not run because no image was available is recorded as skipped, never as passed.
 
@@ -48,7 +48,7 @@ If no image can be viewed, record FIG-01, FIG-02, FIG-03, FIG-05 and FMT-17 as s
 
 **FIG-05 Consistent styling** (Suggestion). The same color and marker for the same treatment in every figure, comparable axis ranges for the same outcome, and consistent labels and fonts.
 
-**FIG-06 Caption, figure and text agree** (Minor to Major). The caption describes what is plotted, including every panel; legend labels match the names the text uses for the arms ("Opt-out" in the legend, "Default" in the text); and the text's reading of the figure ("rises steadily", "peaks at 40 percent") matches what the image shows. Major when the text's reading of a main result is wrong.
+**FIG-06 Caption, figure and text agree** (Minor to Major). The caption describes what is plotted, including every panel; legend labels match the names the text uses for the arms ("Opt-out" in the legend, "Default" in the text); and the text's reading of the figure ("rises steadily", "peaks at 40 percent") matches what the image shows. Major when the text's reading of a main result is wrong. Check the plotted magnitudes against what the caption says is plotted: the bars of a distribution or of shares by category should total 100% within each group, and counts for groups of equal size should total about the same. Estimate bar heights from the image (in pixels against the axis when there are no tick labels) and show the sums in a `computed_result`.
 
 **FMT-17 Accessibility** (Minor). Alt text where it can be checked (Word `descr` attributes; LaTeX `alt=` options), color-only distinctions, and the smallest font inside figures. Without a venue rule on accessibility, report color under FIG-03 and font size under FIG-01, and use FMT-17 for missing alt text.
 

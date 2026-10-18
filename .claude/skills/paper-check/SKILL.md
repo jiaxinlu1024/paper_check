@@ -190,6 +190,8 @@ Don't paste the whole report into the chat.
 | Second runs | no | no | yes |
 | Refuter | yes | yes | yes |
 
+A mode sets how deep the check goes; the user's request sets what it must answer. If the user asks about something the mode leaves out, also run the steps that answer it, and say so in the summary. For "do the references hold up?" in a quick check, run citation support as in standard mode (judges on every citation, without digests), because whether a cited work says what the sentence claims is the larger part of that question.
+
 In quick and standard modes, record what the mode leaves out with `PC skip WORK --checks <ids or dimensions> --reason "not run in <mode> mode"`.
 
 ## 9. When you cannot launch subagents

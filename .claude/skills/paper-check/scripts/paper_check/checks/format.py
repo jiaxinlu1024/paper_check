@@ -788,6 +788,33 @@ def heading_hierarchy(pm, ctx):
                                       "semicolon, and is not typed in capitals."),
                 script=SCRIPT)
 
+    # Word: a heading typed as bold body text is missing from the navigation pane, a table of contents,
+    # PDF bookmarks and what screen readers announce as headings.
+    if fmt == "docx":
+        typed = [b for _, b in heads if b.attrs.get("detected") in ("bold numbered", "bold name")
+                 and not b.attrs.get("abstract_label")]
+        styled = [b for _, b in heads if str(b.attrs.get("detected") or "").startswith("style")]
+        if typed:
+            first = typed[0]
+            names = ", ".join(f'"{b.text}"' for b in typed[:6]) + (" ..." if len(typed) > 6 else "")
+            yield ctx.finding(
+                "FMT-04", "Heading typed as bold body text", "minor",
+                f"{len(typed)} heading(s) are bold body text rather than a heading style: {names}"
+                + (f", while {len(styled)} other heading(s) use heading styles" if styled else "")
+                + ". Word leaves them out of the navigation pane, a table of contents and PDF bookmarks, and screen "
+                  "readers do not announce them as headings.",
+                block=first, quote=first.text, status="confirmed",
+                related=[related(b, b.text) for b in typed[1:6]],
+                evidence=[Evidence(type="script_output",
+                                   text="; ".join(f"{b.text}: {b.attrs.get('detected')}" for b in typed[:10]),
+                                   data={"script": SCRIPT, "styled_headings": len(styled)})],
+                trajectory=steps + ["Listed how each heading was recognized: by its Word style, or only by bold "
+                                    "text and a number or a known section name."],
+                fix=Fix(action="investigate", detail="Apply the heading style of the right level (Heading 1 for a "
+                                                     "section) to each of these paragraphs.",
+                        resolved_when="Every heading uses a Word heading style."),
+                script=SCRIPT, extra={"headings": [b.text for b in typed]})
+
     # expected sections: a concluding section in a full-length paper
     main_top = [b for _, b in heads if b.level == top and not in_appendix(pm, b)
                 and not re.match(r"\s*(?:abstract|keywords?|jel|acknowledge?ments?|highlights)\b", _heading_title(b), re.I)]
@@ -1876,6 +1903,111 @@ def _unwrap_log(text: str) -> str:
     return "\n".join(out)
 
 
+# Environments and the packages that define them. A source that uses one without loading any of them
+# stops with "Environment ... undefined" under a standard document class.
+_ENV_PACKAGES = {
+    "tablenotes": {"threeparttable", "threeparttablex"},
+    "threeparttable": {"threeparttable", "threeparttablex"},
+    "longtable": {"longtable", "ltablex", "ltxtable"},
+    "tabularx": {"tabularx", "ltablex"},
+    "landscape": {"lscape", "pdflscape"},
+    "sidewaystable": {"rotating"},
+    "sidewaysfigure": {"rotating"},
+    "subfigure": {"subcaption"},
+    "subtable": {"subcaption"},
+    "tikzpicture": {"tikz", "pgfplots"},
+    "spacing": {"setspace"},
+    "singlespace": {"setspace"},
+    "onehalfspace": {"setspace"},
+    "doublespace": {"setspace"},
+    "appendices": {"appendix"},
+    "adjustbox": {"adjustbox"},
+    "algorithm": {"algorithm", "algorithm2e"},
+}
+_STANDARD_CLASSES = {"article", "report", "book", "amsart", "amsbook", "scrartcl", "scrreprt", "scrbook"}
+_GRAPHIC_EXTS = ("", ".pdf", ".png", ".jpg", ".jpeg", ".eps", ".ps", ".tif", ".tiff")
+
+
+def _source_files(pm, folder: Path, main: Path) -> list:
+    """The paper's .tex files: the main file and every file a block, table or figure came from."""
+    names = {str(main.relative_to(folder))} if main is not None else set()
+    for obj in list(pm.blocks) + list(pm.tables) + list(pm.figures):
+        if obj.anchor is not None and obj.anchor.file and obj.anchor.file.endswith(".tex"):
+            names.add(obj.anchor.file)
+    return [folder / n for n in sorted(names) if (folder / n).is_file()]
+
+
+def _uncommented(text: str) -> str:
+    """The text with comments blanked out, keeping line numbers and offsets."""
+    return re.sub(r"(?<!\\)%[^\n]*", lambda m: " " * len(m.group(0)), text)
+
+
+def _source_build_problems(pm, ctx, folder: Path, main: Path, steps: list):
+    """What a compile would trip on, read from the source: figure files that are not there, and
+    environments used without the package that defines them."""
+    files = _source_files(pm, folder, main)
+    texts = {f: _uncommented(f.read_text(encoding="utf-8", errors="replace")) for f in files}
+    all_text = "\n".join(texts.values())
+    steps = steps + [f"Read {len(files)} source file(s): {', '.join(str(f.relative_to(folder)) for f in files)}."]
+    base = main.parent if main is not None else folder
+    paths = [base] + [base / d for m in re.finditer(r"\\graphicspath\s*\{((?:\{[^}]*\})+)\}", all_text)
+                      for d in re.findall(r"\{([^}]*)\}", m.group(1))]
+    for fig in pm.figures:
+        for name in fig.files or []:
+            name = name.strip()
+            if not name or "\\" in name or "#" in name:
+                continue
+            if any((d / (name + ext)).is_file() for d in paths for ext in _GRAPHIC_EXTS):
+                continue
+            f = ctx.finding(
+                "FMT-13", "Figure file missing from the source", "major",
+                f"\\includegraphics asks for {name}, which is not in the paper's folder"
+                + (f" or the \\graphicspath folders" if len(paths) > 1 else "")
+                + ", so the paper does not compile as sent, and a journal or arXiv upload of this source fails.",
+                status="confirmed",
+                evidence=[Evidence(type="checked_absence", text=f"looked for {name} with the extensions "
+                                   f"{', '.join(e or '(none)' for e in _GRAPHIC_EXTS)}",
+                                   data={"terms": {name: 0}, "scope": "the paper's folder"})],
+                trajectory=steps + [f"Figure {fig.number or ''} includes {name}; no such file next to the main file."],
+                fix=Fix(action="investigate", detail=f"Add {name} to the source folder, or correct the path in "
+                                                     "\\includegraphics.",
+                        resolved_when=f"{name} is in the source folder and the paper compiles."),
+                script=SCRIPT, extra={"file": name})
+            yield add_location(f, fig.anchor)
+    if (pm.metadata or {}).get("documentclass") not in _STANDARD_CLASSES or list(folder.glob("*.cls")) \
+            or list(folder.glob("*.sty")):
+        return
+    loaded = set((pm.metadata or {}).get("packages") or [])
+    for env, packages in _ENV_PACKAGES.items():
+        if loaded & packages:
+            continue
+        if re.search(r"\\(?:re)?newenvironment\s*\{\s*" + env + r"\s*\}|\\(?:New|Renew)DocumentEnvironment\s*\{\s*"
+                     + env + r"\s*\}|\\newtheorem\s*\{\s*" + env + r"\s*\}", all_text):
+            continue
+        uses = [(f, m.start()) for f, t in texts.items() for m in re.finditer(r"\\begin\s*\{" + env + r"\}", t)]
+        if not uses:
+            continue
+        first, pos = uses[0]
+        line = texts[first].count("\n", 0, pos) + 1
+        anchor = Anchor(file=str(first.relative_to(folder)), line=line)
+        need = " or ".join(sorted(packages))
+        f = ctx.finding(
+            "FMT-13", f"The {env} environment needs a package that is not loaded", "major",
+            f"The source uses \\begin{{{env}}} ({len(uses)} time(s), first at {anchor.label()}), but no "
+            f"\\usepackage loads {need}, so LaTeX stops with \"Environment {env} undefined\".",
+            status="confirmed",
+            evidence=[Evidence(type="script_output", text=f"packages loaded: {', '.join(sorted(loaded)) or 'none'}",
+                               data={"script": SCRIPT, "environment": env, "uses": len(uses)})],
+            trajectory=steps + [f"Found \\begin{{{env}}} at {anchor.label()}.",
+                                f"No \\usepackage loads {need}, and the source does not define {env}."],
+            fix=Fix(action="investigate", detail=f"Add \\usepackage{{{sorted(packages)[0]}}} to the preamble"
+                                                 + (" and wrap the table in a threeparttable environment"
+                                                    if env == "tablenotes" else "") + ".",
+                    resolved_when=f"The preamble loads {need} and the paper compiles."),
+            script=SCRIPT, extra={"environment": env})
+        yield add_location(f, anchor)
+
+
 @register("FMT-13")
 def build_log(pm, ctx):
     fmt = input_format(pm)
@@ -1884,14 +2016,21 @@ def build_log(pm, ctx):
         return
     folder, main = paper_paths(pm)
     md = pm.metadata or {}
+    if folder is not None:
+        yield from _source_build_problems(pm, ctx, folder, main, [])
     log = None
     if main is not None:
         name = md.get("log_file")
         cand = (main.parent / name) if name else main.with_suffix(".log")
         log = cand if cand.exists() else None
     if log is None:
-        ctx.skip("FMT-13", "no .log file next to the main .tex file; compile the paper and run the checks again to "
-                           "check undefined references, overfull boxes, missing figures and font substitutions")
+        reason = ("no .log file next to the main .tex file; compile the paper and run the checks again to check "
+                  "undefined references, overfull boxes and font substitutions")
+        if folder is not None:
+            ctx.note("FMT-13", "read the source for missing figure files and environments without their package")
+            ctx.partly("FMT-13", reason)
+        else:
+            ctx.skip("FMT-13", reason)
         return
     text = _unwrap_log(log.read_text(encoding="utf-8", errors="replace"))
     anchor = Anchor(file=str(log.relative_to(folder)) if folder and str(log).startswith(str(folder)) else log.name)
