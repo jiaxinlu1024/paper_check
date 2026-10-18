@@ -142,7 +142,7 @@ Two guardrails catch false positives, which are what make reviewers stop trustin
    - the refuter of `refs.json` reads every `web_checks_*.json` and refutes the database findings for references the web check found;
    - each refuter also examines script findings that reading agents disputed under `settings.disputed_script_findings`.
 
-   A refuter can overturn a finding only by quoting counter-evidence from the paper or the source, and `PC verify` sets a refutation aside if that quote cannot be found. The outcome goes in `verification.refuter` ("not refuted", "refuted" or "downgraded") with `verification.refuter_note`. Refuted findings move to an appendix, so nothing disappears silently.
+   A refuter can overturn a finding only by quoting counter-evidence from the paper or the source, and `PC verify` sets a refutation aside if that quote cannot be found. The outcome goes in `verification.refuter` ("not refuted", "refuted" or "downgraded") with `verification.refuter_note`. Refuted findings move to an appendix of the evidence file, so nothing disappears silently.
 
 ### Launching in waves
 
@@ -161,13 +161,13 @@ If a launch is refused because the limit is reached, don't retry at once: launch
 PC validate WORK          # every findings file is well formed; fix what it reports
 PC verify WORK            # every quote is checked; failed findings are dropped
 PC skip WORK --uncovered --reason "<why these checks did not run>"   # only if some checks have no outcome
-PC report WORK            # writes paper-check-report.md and paper-check-findings.json beside WORK
+PC report WORK            # writes paper-check-report.md, paper-check-evidence.md and paper-check-findings.json beside WORK
 PC status WORK            # confirms coverage
 ```
 
 `PC status` lists checks that have no outcome. Each one either gets run, or gets skipped with an honest reason, such as "not run in quick mode" or "the subagent failed". Use `--uncovered` only after you have tried to run them.
 
-**Consolidate.** Different dimensions often report one problem from different angles: the abstract's overclaim under coherence, logic and numbers, or a missing dataset citation under citations and ethics. The script merges findings that quote the same sentence; for the rest, after the first `PC report`, launch one agent with `references/agents/consolidator.md`. It reads the draft `paper-check-findings.json` and writes `WORK/consolidation.json`: groups of findings that one fix resolves, and the top issues, the findings that most threaten the paper's conclusions, which the summary lists first. Then run `PC report WORK` again: each group appears once, under its most severe finding, with the others listed in it.
+**Consolidate.** Different dimensions often report one problem from different angles: the abstract's overclaim under coherence, logic and numbers, or a missing dataset citation under citations and ethics. The script merges findings that quote the same sentence; for the rest, after the first `PC report`, launch one agent with `references/agents/consolidator.md`. It reads the draft `paper-check-findings.json` and writes `WORK/consolidation.json`: groups of findings that one fix resolves, and the top issues, the findings that most threaten the paper's conclusions, which page one lists first, each with its fix. Then run `PC report WORK` again: each group appears once, under its most severe finding, with the others listed in it.
 
 Then read the report yourself before handing it over. Look for findings that contradict each other, duplicates the merge missed, and anything that reads as generic advice rather than a specific problem with a quote. Fix the findings files and rerun `PC verify` and `PC report` if needed.
 
