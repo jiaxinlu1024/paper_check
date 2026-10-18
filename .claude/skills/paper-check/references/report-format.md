@@ -94,4 +94,4 @@ Minor findings and suggestions put the trajectory on one line: "Trajectory: (1) 
 
 ## Coverage entries
 
-Each producer records, for every check it owns, `{"check_id", "status", "reason", "count"}` with status run, not_applicable or skipped. A check that could not run, or ran on only part of the paper, is skipped with the reason. A note on what a run covered may go in `reason`; the coverage table shows it. `pc.py skip` records checks left out on purpose, such as those a mode does not run.
+Each producer records, for every check it owns, `{"check_id", "status", "reason", "count"}` with status run, not_applicable or skipped. A check that could not run, or ran on only part of the paper, is skipped with the reason. A note on what a run covered may go in `reason`; the findings file keeps it. The note says what this check read or compared, not what another check concluded: producers write their coverage before the refuters run, so "already a CIT-06 verdict" can be wrong by the time the report is built. `pc.py skip` records checks left out on purpose, such as those a mode does not run.
