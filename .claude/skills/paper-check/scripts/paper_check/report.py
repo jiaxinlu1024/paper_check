@@ -223,7 +223,7 @@ def _strength(f) -> tuple:
 def _key(f) -> str:
     """A key that names a finding across report builds: its producer, check, block and quote."""
     base = "|".join([str(f.producer.get("name") or ""), str(f.producer.get("check") or ""), f.check_id,
-                     f.locations[0].block if f.locations else "", normalize(f.quote or "").lower()[:300],
+                     str((f.locations[0].block if f.locations else "") or ""), normalize(f.quote or "").lower()[:300],
                      "" if f.quote else normalize(f.problem or "").lower()[:200]])
     return f"{f.check_id}-{hashlib.sha1(base.encode('utf-8')).hexdigest()[:8]}"
 
