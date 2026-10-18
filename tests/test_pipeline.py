@@ -134,7 +134,7 @@ def test_report_layout_order_coverage_and_appendices(work_copy):
     # The refuted finding moves to its appendix in the evidence file; the suggestion is below the minimum severity.
     assert "## Appendix: refuted findings" in ev and "Section 2 randomizes the default." in ev
     assert "## Appendix" not in md and "Proof and steps: [F-001](paper-check-evidence.md#f-001)" in md
-    assert "Wordy" not in md and "1 findings below the minimum severity" in md
+    assert "Wordy" not in md and "1 finding below the minimum severity (minor) is left out" in md
     # Coverage: run by one producer and skipped by another reads "partly run".
     cov = {r["check_id"]: r for r in data["coverage"]}
     assert cov["LOG-02"]["status"] == "partly run" and "agent ran out of time" in cov["LOG-02"]["detail"]
@@ -207,7 +207,7 @@ def test_related_findings_on_one_passage_are_merged(work_copy):
     assert "Also fix (COH-02): Report the 23% in the results, or drop it." in md
     assert "Also fix (COH-02): Report the 23% in the results, or drop it." in ev
     cov = {r["check_id"]: r for r in data["coverage"]}
-    assert cov["COH-02"]["detail"].startswith("1 findings")
+    assert cov["COH-02"]["detail"].startswith("1 finding;")
 
 
 def test_merge_runs_pairs_single_findings_of_one_check(work_copy):
@@ -312,7 +312,7 @@ def test_top_issues_follow_the_consolidators_choice_then_the_ranking(work_copy):
     main(["report", str(work_copy)])
     report = (work_copy.parent / "paper-check-report.md").read_text()
     first = report.split("## What to fix first")[1].split("\n## ")[0]
-    assert first.index("LOG-01") < first.index("LOG-03")          # ranking: confirmed before likely
+    assert first.index("Confirmed but minor point") < first.index("Causal claim")   # confirmed before likely
     keys = {f["check_id"]: f["key"] for f in
             json.loads((work_copy.parent / "paper-check-findings.json").read_text())["findings"]}
     (work_copy / "consolidation.json").write_text(json.dumps({"groups": [], "top": [keys["LOG-03"], "LOG-09-deadbeef"]}))
@@ -320,9 +320,13 @@ def test_top_issues_follow_the_consolidators_choice_then_the_ranking(work_copy):
     report = (work_copy.parent / "paper-check-report.md").read_text()
     chosen = report.split("## What to fix first")[1].split("\n## ")[0]
     items = [line for line in chosen.splitlines() if line[:2] in ("1.", "2.")]
-    assert "most threaten" in chosen and "LOG-03" in items[0] and "top issue" in items[0]
-    assert "LOG-01" in items[1] and "top issue" not in items[1]
-    assert "LOG-09-deadbeef" in report.split("## Summary")[0]       # an unknown key is a warning
+    # The chosen top issue comes first, with its fix; the other Major finding follows by title.
+    assert "most threaten" in chosen and "Causal claim" in items[0] and "**Fix:**" in items[0]
+    assert "Confirmed but minor point" in items[1] and "Fix:" not in items[1]
+    assert chosen.index("Other Major findings") < chosen.index("Confirmed but minor point")
+    about = report.split("## About this check")[1]
+    assert "LOG-09-deadbeef" in about                                # an unknown key is a note for the runner,
+    assert "LOG-09-deadbeef" not in report.split("## Summary")[0]   # not a warning on the author's first page
 
 
 def test_index_follows_sentence_order_and_places_anchor_only_findings(work_copy):
@@ -351,7 +355,7 @@ def test_index_follows_sentence_order_and_places_anchor_only_findings(work_copy)
     main(["report", str(work_copy)])
     report = (work_copy.parent / "paper-check-report.md").read_text()
     index = report.split("## Index in paper order")[1].split("## Coverage")[0]
-    titles = [r.split("|")[4].strip() for r in index.splitlines() if r.startswith("| F-")]
+    titles = [r.split("|")[4].strip() for r in index.splitlines() if r.startswith("| [F-")]
     order = [titles.index(t) for t in ("First sentence", "Second sentence", "Comment left in the file",
                                        "Later paragraph")]
     assert order == sorted(order), titles
@@ -408,7 +412,9 @@ def test_quick_report_is_brief_and_coverage_lists_only_what_did_not_run(tmp_path
     assert all(e["text"] in entry for e in evidence) and "Read the design section." in entry
     coverage = md.split("## Coverage")[1].split("\n## ")[0]
     assert "| LOG-01, LOG-05, LOG-06, LOG-07 | 4 checks | skipped |" in coverage
-    assert "checks ran in full:" in coverage
+    # The page gives the count; the evidence file names the checks that ran in full.
+    assert "checks ran in full (paper-check-evidence.md lists them)" in coverage
+    assert "checks ran in full:" in ev.split("## Coverage, in full")[1]
     data = json.loads((tmp_path / "paper-check-findings.json").read_text())
     assert len(data["coverage"]) == 125 and len(data["findings"][0]["evidence"]) == 5
 
@@ -441,7 +447,8 @@ def test_checks_against_unconfirmed_journal_rules_carry_a_caveat(tmp_path):
     assert caveated and all("unconfirmed JEBO rule" in cov[c]["caveat"] for c in caveated)
     md = (tmp_path / "paper-check-report.md").read_text()
     coverage = md.split("## Coverage")[1].split("\n## ")[0]
-    ran_in_full = coverage.split("checks ran in full:")[1].split(".")[0]
+    evidence = (tmp_path / "paper-check-evidence.md").read_text()
+    ran_in_full = evidence.split("## Coverage, in full")[1].split("checks ran in full:")[1].split(".")[0]
     assert not any(c in ran_in_full for c in caveated + ["FMT-01"]) and "run, with a caveat" in coverage
     assert "against unconfirmed journal rules" in md.split("## Summary")[1].split("\n## ")[0]
 

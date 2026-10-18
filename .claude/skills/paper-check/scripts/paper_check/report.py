@@ -61,11 +61,23 @@ def _load_json(path: Path):
         return None
 
 
+_PIPE = re.compile(r"(?<!\\)\|")
+
+
 def _cell(value, limit: Optional[int] = None) -> str:
     text = normalize(str(value if value is not None else ""))
     if limit and len(text) > limit:
         text = text[:limit - 1].rstrip() + "…"
-    return text.replace("|", "\\|")
+    return _PIPE.sub(r"\\|", text)
+
+
+def _clip(value, limit: int) -> str:
+    """A quote or a label shortened at a word, for a table cell; the rest is in the entry."""
+    text = normalize(str(value if value is not None else ""))
+    if len(text) > limit:
+        cut = text[:limit].rsplit(" ", 1)[0].rstrip(",;:")
+        text = (cut if len(cut) >= limit // 2 else text[:limit]) + "…"
+    return _PIPE.sub(r"\\|", text)
 
 
 def _md_table(header: list, rows: list) -> list:
@@ -177,20 +189,80 @@ class Locator:
         text = ", ".join(p for p in parts if p)
         return f"{text} ({anchor_label})" if anchor_label and text else (text or anchor_label)
 
-    def where(self, f) -> str:
+    _SECTION_NUMBER = re.compile(r"^((?:\d+|[A-Z])(?:\.\d+)+|\d+)\.?\s+(\S.*)$")
+    _APPENDIX = re.compile(r"^Appendix\s+([A-Z0-9]+(?:\.\d+)*)\b", re.I)
+
+    def section_short(self, title: str) -> str:
+        """A section's name in a few words: "1 Introduction" stays, "5.2 Heterogeneous effects by age, income
+        and tenure" becomes "Section 5.2", an unnumbered long title keeps the part before its colon."""
+        title = " ".join(str(title or "").split())
+        m = self._SECTION_NUMBER.match(title)
+        if m:
+            num, rest = m.group(1), m.group(2)
+            return f"{num} {rest}" if len(rest) <= 24 else f"Section {num}"
+        m = self._APPENDIX.match(title)
+        if m and len(title) > 24:
+            return f"Appendix {m.group(1)}"
+        if len(title) > 40 and ":" in title[:40]:
+            return title.split(":", 1)[0]
+        return _clip(title, 40) if len(title) > 40 else title
+
+    def short_label(self, block_id: Optional[str], anchor=None, section=None, start: Optional[int] = None) -> str:
+        """A place for a list or a table: the section, the paragraph or table and the sentence, plus a PDF's
+        page and line or a LaTeX file and line. A Word paragraph count, which Word does not show, is left out."""
+        block = self.pm.block(block_id) if block_id else None
+        anchor = anchor or (block.anchor if block else None)
+        anchor = self._quote_anchor(block, anchor, start)
+        precise = anchor.label() if anchor is not None and (anchor.file or anchor.page) else ""
+        if block is None:
+            return precise or (anchor.label() if anchor is not None else "") or block_id or "whole paper"
+        parts = []
+        if block.kind in FRONT_KINDS:
+            parts.append(FRONT_KINDS[block.kind])
+        else:
+            sec = list(section or block.section)
+            if sec:
+                parts.append(self.section_short(sec[-1]))
+            if block.kind != "heading":
+                parts.append(self.element(block))
+            elif not sec:
+                parts.append("heading")
+        n = self.sentence_no(block, start)
+        if n:
+            parts.append(f"sentence {n}")
+        text = ", ".join(p for p in parts if p)
+        return f"{text} ({precise})" if precise and text else (text or precise)
+
+    def _starts(self, f):
+        """Each location with the offset of the finding's quote in its block, when known."""
         span = (f.verification or {}).get("quotes", {}).get("quote_span") or {}
-        labels = []
         for i, loc in enumerate(f.locations):
             start = span.get("start") if span.get("block") == loc.block else None
             if start is None and i == 0 and f.quote and loc.block:
                 block = self.pm.block(loc.block)
                 hit = find_quote(f.quote, block.text) if block is not None else None
                 start = hit[0] if hit else None
-            labels.append(self.label(loc.block, loc.anchor, loc.section, start))
-        labels = list(dict.fromkeys(labels))
+            yield loc, start
+
+    def where(self, f) -> str:
+        labels = list(dict.fromkeys(self.label(loc.block, loc.anchor, loc.section, start)
+                                    for loc, start in self._starts(f)))
         if len(labels) > 3:
-            return "; ".join(labels[:3]) + f"; and {len(labels) - 3} more places"
+            more = len(labels) - 3
+            return "; ".join(labels[:3]) + f"; and {more} more {'place' if more == 1 else 'places'}"
         return "; ".join(labels) or "whole paper"
+
+    def short_where(self, f, more: bool = True) -> str:
+        """The first place in short form, and how many other places the entry lists."""
+        places = list(self._starts(f))
+        if not places:
+            return "whole paper"
+        loc, start = places[0]
+        first = self.short_label(loc.block, loc.anchor, loc.section, start)
+        n = len(dict.fromkeys(self.label(l.block, l.anchor, l.section, s) for l, s in places))
+        if more and n > 1:
+            return f"{first}, and {n - 1} more place{'s' if n > 2 else ''}"
+        return first
 
     def first_order(self, f) -> int:
         return self.position(f)[0]
@@ -315,6 +387,24 @@ def _top_issues(kept: list, n: int = 5) -> list:
                                        -dimensions(f), CONF_RANK.get(f.confidence, 9), order[id(f)]))[:n]
 
 
+def _metadata_names(pm) -> dict:
+    """Personal names recorded in the file's metadata, with the initials the report prints instead, whichever
+    finding quotes them."""
+    from .checks.format import _metadata_authors, mask_person
+    out = {}
+    try:
+        pairs = list(_metadata_authors(pm))
+    except Exception:  # noqa: BLE001 - a reader's odd metadata must not stop the report
+        pairs = []
+    for _key, value in pairs:
+        for v in (value if isinstance(value, (list, tuple)) else [value]):
+            v = " ".join(str(v).split())
+            masked = mask_person(v)
+            if v and masked != v and len(v) > 3:
+                out[v] = masked
+    return out
+
+
 def _assign_ids(kept: list, work: Path) -> None:
     """F-001, F-002, ... in report order the first time; later builds of the same work folder keep each
     finding's ID (matched by its key), so IDs quoted in an earlier report or a conversation stay valid. A new
@@ -372,12 +462,21 @@ def _take_keys(keep, other) -> None:
             keys.append(k)
 
 
+def _period(quoted: str) -> str:
+    """The period after a quotation, left out when the quotation ends a sentence itself."""
+    return "" if re.search(r"[.!?]['\"’”)]*$", quoted.strip()) else "."
+
+
+def _replace_text(original: str, replacement: str) -> str:
+    return f'replace "{original}" with "{replacement}"{_period(replacement)}'
+
+
 def _fix_text(fx) -> str:
     """A fix in one line, as the report prints it."""
     if fx is None:
         return ""
     if fx.action == "replace" and fx.original and fx.replacement is not None:
-        return f'replace "{fx.original}" with "{fx.replacement}".' + (f" {fx.detail}" if fx.detail else "")
+        return _replace_text(fx.original, fx.replacement) + (f" {fx.detail}" if fx.detail else "")
     return fx.detail or ""
 
 
@@ -386,10 +485,15 @@ def _absorb(keep, other, note: str) -> None:
     keep.evidence.extend(e for e in other.evidence if e not in keep.evidence)
     keep.related_quotes.extend(q for q in other.related_quotes if q not in keep.related_quotes)
     keep.trajectory.extend(t for t in other.trajectory if t not in keep.trajectory)
-    keep.extra.setdefault("also", []).append({
+    also = keep.extra.setdefault("also", [])
+    also.append({
         "check_id": other.check_id, "title": other.title, "severity": other.severity, "status": other.status,
         "producer": other.producer.get("name"), "source": list(_source(other)), "problem": other.problem,
-        "fix": _fix_text(other.fix) or None, "note": note})
+        "fix": _fix_text(other.fix) or None, "fix_parts": other.fix.to_dict() if other.fix else None, "note": note})
+    # What the absorbed finding had itself absorbed comes along, so a chain of merges loses no fix.
+    for a in other.extra.get("also") or []:
+        if a not in also:
+            also.append(a)
     # A less severe finding cannot confirm a more severe claim: a confirmed Major "the DOI belongs to
     # another paper" does not confirm a likely Critical "the work does not exist".
     if SEVERITY_RANK.get(other.severity, 9) <= SEVERITY_RANK.get(keep.severity, 9):
@@ -490,7 +594,8 @@ def _group_patterns(findings: list) -> list:
             continue
         keep, rest = fs[0], fs[1:]
         keep.extra["instances"] = len(fs)
-        keep.problem = f"{len(fs)} instances of this problem; the first is quoted, the others are listed below. {keep.problem}"
+        keep.problem = (f"{keep.problem.rstrip()} This occurs {len(fs)} times: the first is quoted, and the entry's proof "
+                        "lists the others.")
         for o in rest:
             if o.quote:
                 keep.related_quotes.append({"quote": o.quote, "block": o.locations[0].block if o.locations else None})
@@ -701,12 +806,12 @@ def _render_finding(f, loc: Locator, checklist: dict, dimensions: dict, brief: b
 def _fix_lines(f, compact: bool = False) -> list:
     """The suggested fix, the test for when it is resolved, and the fixes of findings merged into it:
     one entry can need a fix for each fault. The compact form, for the main report, leaves the test to the
-    evidence file and shows at most two merged fixes, shortened."""
+    evidence file and shows at most two merged fixes that have a short form, whole; it counts the others."""
     lines = []
     if f.fix:
         fx = f.fix
         if fx.action == "replace" and fx.original and fx.replacement is not None:
-            lines.append(f'Suggested fix: replace "{fx.original}" with "{fx.replacement}".' + (f" {fx.detail}" if fx.detail else ""))
+            lines.append("Suggested fix: " + _replace_text(fx.original, fx.replacement) + (f" {fx.detail}" if fx.detail else ""))
         elif fx.action == "investigate":
             lines.append(f"Suggested fix (investigate): {fx.detail or 'check this passage against the evidence.'}")
         else:
@@ -719,19 +824,45 @@ def _fix_lines(f, compact: bool = False) -> list:
         extra = normalize(a.get("fix") or "")
         if extra and extra != main_fix and extra not in shown:
             shown.add(extra)
-            extras.append((a.get("check_id"), a.get("fix")))
-    for cid, fx_text in (extras[:2] if compact else extras):
-        lines.append(f"Also fix ({cid}): {_cell(fx_text, 160) if compact else fx_text}")
-    if compact and len(extras) > 2:
-        lines.append(f"And {len(extras) - 2} more fixes for findings merged into this one, in {OUTPUT_EVIDENCE}.")
+            extras.append(a)
+    if not compact:
+        lines += [f"Also fix ({a.get('check_id')}): {a.get('fix')}" for a in extras]
+        return lines
+    # Two producers can propose different new wording for the same words; the page shows one rewording per
+    # passage, and the evidence file has the alternatives.
+    def _words(fx) -> str:
+        orig = (fx.get("original") if isinstance(fx, dict) else getattr(fx, "original", None)) or ""
+        return re.sub(r"[^\w ]", "", normalize(orig).lower()).strip()
+
+    reworded = [w for w in [_words(f.fix)] if w]
+    brief, alternatives = [], 0
+    for a in extras:
+        words = _words(a.get("fix_parts") or {})
+        if words and any(words in w or w in words for w in reworded):
+            alternatives += 1
+            continue
+        short = (_fix_short(a["fix_parts"], 300, OUTPUT_EVIDENCE) if a.get("fix_parts")
+                 else (_lead(a.get("fix"), 0) if len(_lead(a.get("fix"), 0)) <= 300 else None))
+        if short and len(brief) < 2:
+            brief.append(f"Also fix ({a.get('check_id')}): {short}")
+            if words:
+                reworded.append(words)
+    lines += brief
+    rest = len(extras) - len(brief) - alternatives
+    more = ([f"{rest} more {'fix' if rest == 1 else 'fixes'} for findings merged into this one"] if rest else []) + (
+        [f"{alternatives} other {'wording' if alternatives == 1 else 'wordings'} proposed for the same "
+         f"{'passage' if alternatives == 1 else 'passages'}"] if alternatives else [])
+    if more:
+        lines.append(f"And {' and '.join(more)}, in {OUTPUT_EVIDENCE}.")
     return lines
 
 
-# Minor findings and suggestions about wording, style and format go into one checklist of small fixes in the
-# main report: they are quick to act on and need no argument. Overclaiming (LANG-03), terminology that can be a
+# Minor findings and suggestions about wording, style, format and anonymization go into one checklist of small
+# fixes in the main report: they are quick to act on and need no argument. Overclaiming (LANG-03), terminology that can be a
 # conceptual slip (COH-05) and a reviewer's or a methods suggestion stay with the substantive findings.
-SMALL_CHECKS = {"FMT-04", "FMT-06", "FMT-07", "FMT-08", "FMT-09", "FMT-10", "FMT-17", "FIG-03", "FIG-04", "FIG-05",
-                "COH-06", "COH-07", "COH-08"}
+SMALL_CHECKS = {"FMT-02", "FMT-04", "FMT-05", "FMT-06", "FMT-07", "FMT-08", "FMT-09", "FMT-10", "FMT-11", "FMT-14", "FMT-16",
+                "FMT-17", "FIG-01", "FIG-03", "FIG-04", "FIG-05", "CIT-03", "CIT-12", "COH-06", "COH-07", "COH-08",
+                "COH-09"}
 
 
 def _is_small(f, top_ids: set) -> bool:
@@ -740,23 +871,81 @@ def _is_small(f, top_ids: set) -> bool:
     return (f.dimension == "LANG" and f.check_id != "LANG-03") or f.check_id in SMALL_CHECKS
 
 
+_OPEN_SINGLE = re.compile(r"(?:^|(?<=[\s(\[]))['‘](?=\w)")
+_CLOSE_SINGLE = re.compile(r"(?<=[\w.,;:!?)\]])['’](?=[\s.,;:!?)\]]|$)")
+
+
+def _open_quote(text: str) -> bool:
+    """Whether a text stops inside a quotation, such as an example sentence a fix proposes."""
+    if text.count('"') % 2 or text.count("“") > text.count("”"):
+        return True
+    return len(_OPEN_SINGLE.findall(text)) > len(_CLOSE_SINGLE.findall(text))
+
+
+def _sentence_ends(text: str) -> list:
+    """Where the sentences of a text end, not inside a quotation: a sentence that stops inside one runs on
+    to the end of the quotation, over at most three more sentences, so a stray apostrophe does no harm."""
+    ends = [e for _s, e in split_sentences(text)]
+    out, run_on = [], 0
+    for i, e in enumerate(ends):
+        if i < len(ends) - 1 and run_on < 3 and _open_quote(text[(out[-1] if out else 0):e]):
+            run_on += 1
+            continue
+        out.append(e)
+        run_on = 0
+    return out
+
+
 def _lead(text: str, limit: int) -> str:
     """Whole sentences from the start of a text, as many as fit in `limit` characters, and always the first
     one, so a cell never stops at an abbreviation such as "U.S." or in the middle of a clause. Only a first
     sentence longer than twice the limit is cut, at a word."""
     text = " ".join(str(text or "").split())
-    spans = split_sentences(text)
-    if not spans:
+    ends = _sentence_ends(text)
+    if not ends:
         return _cell(text, limit)
-    end = spans[0][1]
-    for s0, e0 in spans[1:]:
+    end = ends[0]
+    for e0 in ends[1:]:
         if e0 > limit:
             break
         end = e0
     lead = text[:end].strip()
-    if len(lead) > 2 * limit:
-        lead = lead[:2 * limit].rsplit(" ", 1)[0] + " …"
+    cap = max(2 * limit, 600)
+    if len(lead) > cap:
+        lead = lead[:cap].rsplit(" ", 1)[0] + " …"
     return lead.replace("|", "\\|")
+
+
+def _fix_short(fx, room: int, where: str = "the entry") -> Optional[str]:
+    """A fix short enough for a list item or a table cell, never cut inside a sentence: a replacement whole
+    when it fits, else the words to reword and where the new wording is; any other fix's first sentence when
+    it fits. None when the fix has no such short form."""
+    if isinstance(fx, dict):
+        from .model import Fix
+        fx = Fix.from_dict(fx)
+    if fx is None:
+        return None
+    orig = normalize(fx.original or "")
+    if fx.action in ("replace", "delete") and orig:
+        whole = (_replace_text(orig, normalize(fx.replacement)) if fx.action == "replace"
+                 and fx.replacement is not None else f'delete "{orig}"{_period(orig)}')
+        if len(whole) <= room:
+            return _PIPE.sub(r"\\|", whole)
+        verb = "reword" if fx.action == "replace" else "delete"
+        if fx.action == "replace" and fx.replacement is None:
+            return None
+        if len(orig) <= 160:
+            target = f'"{orig}"'
+        else:
+            target = f'the passage beginning "{orig[:70].rsplit(" ", 1)[0]}"'
+        tail = f"; the new wording is in {where}." if verb == "reword" else "."
+        return _PIPE.sub(r"\\|", f"{verb} {target}{tail}")
+    text = " ".join(str(fx.detail or "").split())
+    ends = _sentence_ends(text)
+    if not ends:
+        return None
+    first = text[:ends[0]].strip()
+    return _PIPE.sub(r"\\|", first) if len(first) <= room else None
 
 
 def _first_sentence(text: str, limit: int) -> str:
@@ -791,6 +980,10 @@ def _render_main(f, loc: Locator, checklist: dict, dimensions: dict) -> str:
     return "\n".join(lines)
 
 
+def _findings(n: int) -> str:
+    return f"{n} finding" if n == 1 else f"{n} findings"
+
+
 def _coverage(checklist: dict, coverage: dict, kept: list, refuted: tuple = ()) -> list:
     rows = []
     found = Counter(f.check_id for f in kept)
@@ -810,15 +1003,15 @@ def _coverage(checklist: dict, coverage: dict, kept: list, refuted: tuple = ()) 
         reasons = sorted({f"{c.producer + ': ' if c.producer else ''}{c.reason}" for c in entries
                           if c.reason and c.status != "run"})
         if not entries and found.get(cid):
-            status, detail = "run", f"{found[cid]} findings; the producer recorded no coverage entry"
+            status, detail = "run", f"{_findings(found[cid])}; the producer recorded no coverage entry"
         elif not entries:
             status, detail = "not run", "No producer covered this check in this run."
         elif statuses == {"run"} or statuses == {"run", "not_applicable"}:
             notes = sorted({c.reason for c in entries if c.status == "run" and c.reason})
-            status, detail = "run", f"{found.get(cid, 0)} findings" + ("; " + "; ".join(notes) if notes else "")
+            status, detail = "run", _findings(found.get(cid, 0)) + ("; " + "; ".join(notes) if notes else "")
         elif "run" in statuses:
             status = "partly run"
-            detail = f"{found.get(cid, 0)} findings; not run in part: " + "; ".join(reasons)
+            detail = f"{_findings(found.get(cid, 0))}; not run in part: " + "; ".join(reasons)
         elif statuses == {"not_applicable"}:
             status, detail = "not applicable", "; ".join(reasons)
         else:
@@ -828,8 +1021,18 @@ def _coverage(checklist: dict, coverage: dict, kept: list, refuted: tuple = ()) 
         caveats = sorted({c.caveat for c in entries if getattr(c, "caveat", None)})
         if caveats and status in ("run", "partly run"):
             detail += "; " + "; ".join(caveats)
+        # The report's coverage table shows the first note whole and counts the rest; the evidence file
+        # has every producer's note.
+        notes = list(caveats) if status == "run" else list(reasons)
+        brief = detail
+        if len(notes) > 1 or (notes and len(notes[0]) > 300):
+            head = (f"{_findings(found.get(cid, 0))}; " if status in ("run", "partly run") else "") + (
+                "not run in part: " if status == "partly run" else "")
+            brief = head + _lead(notes[0], 200)
+            if len(notes) > 1:
+                brief += f" And {len(notes) - 1} more {'note' if len(notes) == 2 else 'notes'} in {OUTPUT_EVIDENCE}."
         rows.append({"check_id": cid, "title": info["title"], "dimension": info.get("dimension"),
-                     "status": status, "detail": detail, "caveat": "; ".join(caveats) or None,
+                     "status": status, "detail": detail, "brief": brief, "caveat": "; ".join(caveats) or None,
                      "producers": sorted({c.producer for c in entries if c.producer})})
     return rows
 
@@ -911,6 +1114,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     about.append(f"- **Cited-work PDFs:** {settings.sources or 'no sources folder'}")
     about.append(f"- **Producers:** {', '.join(sorted({fs.producer for fs in sets})) or 'none'}")
     about += ["", HOW_TO_READ, ""]
+    about_notes = []
     md.append(f"Checked {now} · paper-check {__version__} · {settings.mode} mode · "
               + (f"journal profile: {venue['name']}" if venue else "no journal profile") + ".")
     md.append("")
@@ -924,8 +1128,13 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     if pm.warnings:
         warnings.append(f"Reading the paper produced {len(pm.warnings)} warnings; see the appendix on ingestion.")
     if below:
-        warnings.append(f"{len(below)} findings below the minimum severity ({settings.min_severity}) are left out.")
+        warnings.append(f"{_findings(len(below))} below the minimum severity ({settings.min_severity}) "
+                        f"{'is' if len(below) == 1 else 'are'} left out.")
     top, chosen = _chosen_top(kept, work, warnings)
+    # Notes about the run's own files, such as a consolidation entry that names a finding this build does not
+    # have, are for whoever runs the check; they go to the end, not to the author's first page.
+    internal = [w for w in warnings if "consolidation.json" in w]
+    warnings = [w for w in warnings if w not in internal]
     if warnings:
         md += ["**Warnings**", ""] + [f"- {w}" for w in warnings] + [""]
 
@@ -941,15 +1150,27 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     top_ids = {f.id for f in top}
     first = list(top) + [f for f in kept if f.severity in ("critical", "major") and f not in top]
     if first:
-        md += ["## What to fix first", "",
-               ("The top issues, the ones that most threaten the paper's conclusions, come first" if chosen else
-                "The top issues by severity and certainty come first") + ", then every other Critical and Major "
-               f"finding. Each links to its entry below, and its proof is in {OUTPUT_EVIDENCE}.", ""]
-        for i, f in enumerate(first, 1):
-            tag = " · top issue" if f.id in top_ids else ""
+        # One page: the top issues (and any Critical finding) with the first step of the fix, then the other
+        # Major findings by title. Each entry, right below, has the quote, the problem and the whole fix.
+        lead = [f for f in first if f.id in top_ids or f.severity == "critical"]
+        others = [f for f in first if f not in lead]
+        intro = ("The top issues, the ones that most threaten the paper's conclusions, come first" if chosen else
+                 "The top issues by severity and certainty come first") + ", each with its fix"
+        intro += (", then the other " + ("Critical and Major" if any(f.severity == "critical" for f in others)
+                                         else "Major") + " findings") if others else ""
+        intro += (". Each links to its entry, which has the quote, the problem and the whole fix; the proof is in "
+                  f"{OUTPUT_EVIDENCE}.")
+        md += ["## What to fix first", "", intro, ""]
+        for i, f in enumerate(lead, 1):
             target = "" if f.severity in ("critical", "major") else OUTPUT_EVIDENCE
-            md.append(f"{i}. **{_link(f.id, target)}** · {SEVERITY_TITLE[f.severity]} · {f.check_id}{tag} · {loc.where(f)}. "
-                      f"{_lead(f.problem, 160)} **Fix:** {_lead(_fix_text(f.fix), 130) or 'see the entry.'}")
+            fix = _fix_short(f.fix, 320) or _lead(f.fix.detail if f.fix else "", 0) or "see the entry."
+            md.append(f"{i}. **{_link(f.id, target)} {f.title}** · {SEVERITY_TITLE[f.severity]} · "
+                      f"{loc.short_where(f)}. **Fix:** {fix}")
+        if others:
+            md += ["", "Other " + ("Critical and Major" if any(f.severity == "critical" for f in others) else "Major")
+                   + " findings, in paper order:", ""]
+            md += [f"{i}. {_link(f.id)} {f.title} · {SEVERITY_TITLE[f.severity]} · {loc.short_where(f)}"
+                   for i, f in enumerate(others, len(lead) + 1)]
         md.append("")
     else:
         md += ["No findings.", ""]
@@ -984,9 +1205,10 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
           "appendices: references, citation support, the claim-evidence map, recomputed numbers, refuted and dropped "
           "findings, and ingestion warnings.", ""]
     def _row(f, problem_len, fix_len):
+        fix = _fix_short(f.fix, 260) or _lead(f.fix.detail if f.fix else "", fix_len)
         return [f"{_link(f.id, OUTPUT_EVIDENCE)} ({SEVERITY_TITLE[f.severity]}, {f.check_id})",
-                _cell(loc.where(f), 60), f'"{_cell(normalize(f.quote), 70)}"' if f.quote else "",
-                _lead(f.problem, problem_len), _lead(_fix_text(f.fix), fix_len)]
+                loc.short_where(f), f'"{_clip(f.quote, 70)}"' if f.quote else "",
+                _lead(f.problem, problem_len), fix]
 
     for sev in ("critical", "major"):
         group = [f for f in kept if f.severity == sev]
@@ -1019,7 +1241,8 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
         md += ["## Index in paper order", ""]
         index_rows = sorted(kept, key=lambda f: (loc.position(f), SEVERITY_RANK.get(f.severity, 9)))
         md += _md_table(["Finding", "Where", "Severity", "Title"],
-                        [[f.id, _cell(loc.where(f), 55), SEVERITY_TITLE[f.severity], _cell(f.title, 80)]
+                        [[_link(f.id, "" if f.severity in ("critical", "major") else OUTPUT_EVIDENCE),
+                          loc.short_where(f, more=False), SEVERITY_TITLE[f.severity], _cell(f.title)]
                          for f in index_rows])
         md.append("")
 
@@ -1027,26 +1250,32 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
     full = [r for r in cov_rows if r["status"] == "run" and not r.get("caveat")]
     rest = [r for r in cov_rows if r["status"] != "run" or r.get("caveat")]
     md += ["## Coverage", "",
-           f"{len(full)} of {len(cov_rows)} checks ran in full: {', '.join(r['check_id'] for r in full) or 'none'}. "
-           "The table lists the others and why. Skipped checks were not passed: they were not run. "
-           "paper-check-findings.json has every check's outcome.", ""]
+           f"{len(full)} of {len(cov_rows)} checks ran in full ({OUTPUT_EVIDENCE} lists them). The table lists the "
+           f"other {len(cov_rows) - len(full)} and why. Skipped checks were not passed: they were not run. "
+           f"{OUTPUT_FINDINGS} has every check's outcome.", ""]
+    ev_cov = ["## Coverage, in full", "",
+              f"{len(full)} of {len(cov_rows)} checks ran in full: {', '.join(r['check_id'] for r in full) or 'none'}.",
+              ""]
     if rest:
         # Checks left out for one shared reason, such as the mode, share a row.
         groups: dict = defaultdict(list)
         for r in rest:
             outcome = "run, with a caveat" if r["status"] == "run" else r["status"]
             groups[(outcome, r["detail"])].append(r)
-        rows = []
+        rows, briefs = [], []
         for (status, detail), members in groups.items():
             if len(members) >= 3:
                 rows.append([", ".join(m["check_id"] for m in members), f"{len(members)} checks", status, detail])
+                briefs.append(members[0]["brief"])
             else:
                 rows += [[m["check_id"], m["title"], status, detail] for m in members]
-        md += _md_table(["Check", "Title", "Outcome", "Detail"], [r[:3] + [_cell(r[3], 180)] for r in rows])
+                briefs += [m["brief"] for m in members]
+        md += _md_table(["Check", "Title", "Outcome", "Detail"], [r[:3] + [b] for r, b in zip(rows, briefs)])
         md.append("")
-        ev += ["## Coverage, in full", "", "Every check that did not run in full, with the producers' whole notes.", ""]
-        ev += _md_table(["Check", "Title", "Outcome", "Detail"], rows)
-        ev.append("")
+        ev_cov += ["Every check that did not run in full, with the producers' whole notes:", ""]
+        ev_cov += _md_table(["Check", "Title", "Outcome", "Detail"], rows)
+        ev_cov.append("")
+    ev += ev_cov
 
     # ---- appendices: written into the evidence file ---------------------
     split = len(md)
@@ -1156,11 +1385,16 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
            f"it, under the same IDs, and the appendices: references, citation support, the claim-evidence map, "
            f"recomputed numbers, {len(refuted)} refuted and {len(dropped)} dropped findings, and ingestion warnings. "
            f"{OUTPUT_FINDINGS} holds the same as data.", ""]
+    if internal:
+        about += ["Notes on this run's files:", ""] + [f"- {w}" for w in internal] + [""]
     md += about
 
     paper_dir = work.parent
-    (paper_dir / OUTPUT_REPORT).write_text("\n".join(md), encoding="utf-8")
-    (paper_dir / OUTPUT_EVIDENCE).write_text("\n".join(ev), encoding="utf-8")
+    report_text, evidence_text = "\n".join(md), "\n".join(ev)
+    for name, masked in _metadata_names(pm).items():
+        report_text, evidence_text = report_text.replace(name, masked), evidence_text.replace(name, masked)
+    (paper_dir / OUTPUT_REPORT).write_text(report_text, encoding="utf-8")
+    (paper_dir / OUTPUT_EVIDENCE).write_text(evidence_text, encoding="utf-8")
     out_findings = []
     for f in kept:
         d = f.to_dict()
@@ -1183,7 +1417,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
         "evidence_file": OUTPUT_EVIDENCE,
         "coverage": cov_rows,
         "appendices": appendices,
-        "warnings": warnings,
+        "warnings": warnings + internal,
     }
     (paper_dir / OUTPUT_FINDINGS).write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"Wrote {paper_dir / OUTPUT_REPORT}, {paper_dir / OUTPUT_EVIDENCE} and {paper_dir / OUTPUT_FINDINGS}: "
