@@ -174,7 +174,7 @@ Then read the report yourself before handing it over. Look for findings that con
 
 Finally, tell the user, briefly:
 
-- where the report is (`paper-check-report.md` beside the paper) and the findings file for agents (`paper-check-findings.json`);
+- where the report is (`paper-check-report.md` beside the paper), the evidence file with every finding's proof (`paper-check-evidence.md`) and the findings file for agents (`paper-check-findings.json`);
 - counts by severity and the top three to five issues, in one line each;
 - what was not checked and why, and what would improve coverage: missing PDFs of cited works, a venue, the LaTeX source or the `.log` file, API keys.
 

@@ -19,12 +19,13 @@ import dataclasses
 import datetime as dt
 import hashlib
 import json
+import re
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Optional
 
 from . import __version__
-from .config import OUTPUT_FINDINGS, OUTPUT_REPORT
+from .config import OUTPUT_EVIDENCE, OUTPUT_FINDINGS, OUTPUT_REPORT
 from .model import PaperMap
 from .textutil import find_quote, normalize
 
@@ -612,7 +613,7 @@ BRIEF_PROOF = 3   # proof lines per finding in a quick check's report; the findi
 
 
 def _render_finding(f, loc: Locator, checklist: dict, dimensions: dict, brief: bool = False) -> str:
-    """One finding. A brief rendering, for quick checks, keeps the first proof lines and puts the
+    """One finding in full, for the evidence file. A brief rendering keeps the first proof lines and puts the
     trajectory on one line."""
     info = checklist.get(f.check_id, {})
     check_title = info.get("title", "")
@@ -659,26 +660,76 @@ def _render_finding(f, loc: Locator, checklist: dict, dimensions: dict, brief: b
         lines.append("Verifier settings: " + ", ".join(f"{k} {v}" for k, v in settings.items()))
     if trajectory or settings:
         lines.append("")
+    fix = _fix_lines(f)
+    lines += fix + ([""] if fix else [])
+    return "\n".join(lines)
+
+
+def _fix_lines(f, compact: bool = False) -> list:
+    """The suggested fix, the test for when it is resolved, and the fixes of findings merged into it:
+    one entry can need a fix for each fault. The compact form, for the main report, leaves the test to the
+    evidence file and shows at most two merged fixes, shortened."""
+    lines = []
     if f.fix:
         fx = f.fix
         if fx.action == "replace" and fx.original and fx.replacement is not None:
             lines.append(f'Suggested fix: replace "{fx.original}" with "{fx.replacement}".' + (f" {fx.detail}" if fx.detail else ""))
         elif fx.action == "investigate":
-            lines.append(f"Suggested fix (investigate): {fx.detail or 'check this passage against the evidence above.'}")
+            lines.append(f"Suggested fix (investigate): {fx.detail or 'check this passage against the evidence.'}")
         else:
             lines.append(f"Suggested fix ({fx.action}): {fx.detail or ''}".rstrip())
-        if fx.resolved_when:
+        if fx.resolved_when and not compact:
             lines.append(f"Resolved when: {fx.resolved_when}")
-    # A merged finding keeps the other problems' own fixes: one entry can need a fix for each fault.
     main_fix = normalize(_fix_text(f.fix))
-    shown = set()
-    for a in also:
+    shown, extras = set(), []
+    for a in f.extra.get("also", []):
         extra = normalize(a.get("fix") or "")
         if extra and extra != main_fix and extra not in shown:
             shown.add(extra)
-            lines.append(f"Also fix ({a.get('check_id')}): {a.get('fix')}")
-    if f.fix or shown:
-        lines.append("")
+            extras.append((a.get("check_id"), a.get("fix")))
+    for cid, fx_text in (extras[:2] if compact else extras):
+        lines.append(f"Also fix ({cid}): {_cell(fx_text, 160) if compact else fx_text}")
+    if compact and len(extras) > 2:
+        lines.append(f"And {len(extras) - 2} more fixes for findings merged into this one, in {OUTPUT_EVIDENCE}.")
+    return lines
+
+
+# Minor findings of these checks, every suggestion and every Minor language finding go into one checklist of
+# small fixes in the main report: they are quick to act on and need no argument.
+SMALL_CHECKS = {"FMT-04", "FMT-06", "FMT-07", "FMT-08", "FMT-09", "FMT-10", "FMT-17", "FIG-03", "FIG-04", "FIG-05",
+                "CIT-10", "COH-05", "COH-06", "COH-07", "COH-08"}
+
+
+def _is_small(f, top_ids: set) -> bool:
+    if f.id in top_ids:
+        return False
+    if f.severity == "suggestion":
+        return True
+    return f.severity == "minor" and (f.dimension == "LANG" or f.check_id in SMALL_CHECKS)
+
+
+def _first_sentence(text: str, limit: int) -> str:
+    text = " ".join(str(text or "").split())
+    m = re.match(r"(.+?[.!?])(\s|$)", text)
+    return _cell(m.group(1) if m else text, limit)
+
+
+def _render_main(f, loc: Locator, checklist: dict, dimensions: dict) -> str:
+    """One finding in the main report: the quote, where it is, the problem and the fix. Its proof and the
+    steps that led to it are in the evidence file, under the same ID."""
+    info = checklist.get(f.check_id, {})
+    check_title = info.get("title", "")
+    dim = dimensions.get(f.dimension, f.dimension)
+    also_ids = list(dict.fromkeys(a["check_id"] for a in f.extra.get("also", []) if a.get("check_id") != f.check_id))
+    lines = [f"### {f.id} · {SEVERITY_TITLE.get(f.severity, f.severity)} · {f.check_id} · {f.title or check_title}",
+             f"Check: {f.check_id} {check_title} ({dim})" + (f", also {', '.join(also_ids)}" if also_ids else "")
+             + f" · Status: {STATUS_TEXT.get(f.status, f.status)} · Confidence: {f.confidence}",
+             f"Where: {loc.where(f)}", ""]
+    if f.quote:
+        lines += [f"> \"{normalize(f.quote)}\"", ""]
+    lines += [f"Problem: {f.problem}", ""]
+    lines += _fix_lines(f, compact=True)
+    lines += [f"Proof and steps: {f.id} in {OUTPUT_EVIDENCE}.", ""]
     return "\n".join(lines)
 
 
@@ -852,20 +903,63 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
               f"{cov_counts.get('skipped', 0)} were skipped and {cov_counts.get('not run', 0)} were not run.")
     md.append("")
 
-    # ---- findings -------------------------------------------------------
+    # ---- what to fix first: every Critical and Major finding on one page ------------------
+    top_ids = {f.id for f in top}
+    serious = [f for f in kept if f.severity in ("critical", "major")]
+    serious = [f for f in top if f in serious] + [f for f in serious if f not in top]
+    if serious:
+        md += ["## What to fix first", "",
+               f"Every Critical and Major finding, the top issues first. Each links to its entry below; the proof and "
+               f"the steps behind it are in {OUTPUT_EVIDENCE}.", ""]
+        md += _md_table(["", "Finding", "Where", "Problem", "Fix"],
+                        [[i, f"**{f.id}** ({SEVERITY_TITLE[f.severity]})", _cell(loc.where(f), 70),
+                          _first_sentence(f.problem, 170), _cell(_fix_text(f.fix), 130)]
+                         for i, f in enumerate(serious, 1)])
+        md.append("")
+
+    # ---- findings: the main report keeps quote, place, problem and fix; the evidence file has the rest
+    ev = [f"# Paper check evidence: {paper_name}", "",
+          f"The proof and the steps behind every finding in {OUTPUT_REPORT}, under the same IDs, followed by the "
+          "appendices: references, citation support, the claim-evidence map, recomputed numbers, refuted and dropped "
+          "findings, and ingestion warnings.", ""]
+    small = [f for f in kept if _is_small(f, top_ids)]
+
+    def _row(f, problem_len, fix_len):
+        return [f"{f.id} ({SEVERITY_TITLE[f.severity]}, {f.check_id})", _cell(loc.where(f), 60),
+                f'"{_cell(normalize(f.quote), 70)}"' if f.quote else "",
+                _first_sentence(f.problem, problem_len), _cell(_fix_text(f.fix), fix_len)]
+
     for sev in SEVERITY_RANK:
-        group = [f for f in kept if f.severity == sev]
-        if group:
+        group = [f for f in kept if f.severity == sev and f not in small]
+        if group and sev in ("critical", "major"):
             md += [f"## {SEVERITY_TITLE[sev]} findings ({len(group)})", ""]
-            md += [_render_finding(f, loc, checklist, dimensions, brief=settings.mode == "quick") for f in group]
+            md += [_render_main(f, loc, checklist, dimensions) for f in group]
+        elif group:
+            md += [f"## {SEVERITY_TITLE[sev]} findings ({len(group)})", "",
+                   f"In paper order. Each entry in {OUTPUT_EVIDENCE} has the full problem, the fix, the proof and the "
+                   "steps.", ""]
+            md += _md_table(["Finding", "Where", "Quote", "Problem", "Fix"],
+                            [_row(f, 200, 160) for f in sorted(group, key=lambda f: loc.position(f))])
+            md.append("")
+        everything = [f for f in kept if f.severity == sev]
+        if everything:
+            ev += [f"## {SEVERITY_TITLE[sev]} findings ({len(everything)})", ""]
+            ev += [_render_finding(f, loc, checklist, dimensions) for f in everything]
+    if small:
+        md += [f"## Small fixes ({len(small)})", "",
+               "Minor findings about wording, style, captions, references' format and the like, and every suggestion, "
+               f"in paper order. Each has its proof in {OUTPUT_EVIDENCE}.", ""]
+        md += _md_table(["Finding", "Where", "Quote", "Problem", "Fix"],
+                        [_row(f, 140, 110) for f in sorted(small, key=lambda f: loc.position(f))])
+        md.append("")
 
     if kept:
         md += ["## Index in paper order", ""]
         index_rows = sorted(kept, key=lambda f: (loc.position(f), SEVERITY_RANK.get(f.severity, 9)))
-        md += _md_table(["Finding", "Where", "Check", "Severity", "Problem"],
-                        [[f.id, loc.where(f),
+        md += _md_table(["Finding", "Where", "Check", "Severity", "Title"],
+                        [[f.id, _cell(loc.where(f), 80),
                           " + ".join(dict.fromkeys([f.check_id] + [a["check_id"] for a in f.extra.get("also", [])])),
-                          SEVERITY_TITLE[f.severity], _cell(f.problem, 160)] for f in index_rows])
+                          SEVERITY_TITLE[f.severity], _cell(f.title, 90)] for f in index_rows])
         md.append("")
 
     # A check that ran against unconfirmed rules is listed with its caveat, not as run in full.
@@ -887,10 +981,14 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
                 rows.append([", ".join(m["check_id"] for m in members), f"{len(members)} checks", status, detail])
             else:
                 rows += [[m["check_id"], m["title"], status, detail] for m in members]
-        md += _md_table(["Check", "Title", "Outcome", "Detail"], rows)
+        md += _md_table(["Check", "Title", "Outcome", "Detail"], [r[:3] + [_cell(r[3], 180)] for r in rows])
         md.append("")
+        ev += ["## Coverage, in full", "", "Every check that did not run in full, with the producers' whole notes.", ""]
+        ev += _md_table(["Check", "Title", "Outcome", "Detail"], rows)
+        ev.append("")
 
-    # ---- appendices -----------------------------------------------------
+    # ---- appendices: written into the evidence file ---------------------
+    split = len(md)
     appendices = {}
     cards = _load_json(work / "references" / "cards.json")
     if isinstance(cards, dict):
@@ -990,8 +1088,17 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
         md += [f"- {_cell(w, 300)}" for w in pm.warnings[:100]]
         md.append("")
 
+    ev += md[split:]
+    del md[split:]
+    md += ["## Evidence", "",
+           f"{OUTPUT_EVIDENCE}, beside this report, has every finding in full with its proof and the steps that led to "
+           f"it, under the same IDs, and the appendices: references, citation support, the claim-evidence map, "
+           f"recomputed numbers, {len(refuted)} refuted and {len(dropped)} dropped findings, and ingestion warnings. "
+           f"{OUTPUT_FINDINGS} holds the same as data.", ""]
+
     paper_dir = work.parent
     (paper_dir / OUTPUT_REPORT).write_text("\n".join(md), encoding="utf-8")
+    (paper_dir / OUTPUT_EVIDENCE).write_text("\n".join(ev), encoding="utf-8")
     out_findings = []
     for f in kept:
         d = f.to_dict()
@@ -1011,12 +1118,14 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
         "refuted": [f.to_dict() for f in refuted],
         "dropped": [f.to_dict() for f in dropped],
         "answer": answer or None,
+        "evidence_file": OUTPUT_EVIDENCE,
         "coverage": cov_rows,
         "appendices": appendices,
         "warnings": warnings,
     }
     (paper_dir / OUTPUT_FINDINGS).write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"Wrote {paper_dir / OUTPUT_REPORT} and {paper_dir / OUTPUT_FINDINGS}: {len(kept)} findings "
+    print(f"Wrote {paper_dir / OUTPUT_REPORT}, {paper_dir / OUTPUT_EVIDENCE} and {paper_dir / OUTPUT_FINDINGS}: "
+          f"{len(kept)} findings "
           f"({', '.join(f'{counts.get(s, 0)} {s}' for s in SEVERITY_RANK)}), {len(refuted)} refuted, "
           f"{len(dropped)} dropped.")
     for note in consolidation_notes:

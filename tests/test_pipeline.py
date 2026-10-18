@@ -123,10 +123,16 @@ def test_report_layout_order_coverage_and_appendices(work_copy):
     assert md.index("## Critical findings (1)") < md.index("## Major findings (1)") < md.index("## Minor findings (1)")
     assert "### F-001 · Critical · LOG-04 · Session counts disagree" in md
     assert "Where: 2 Experimental design, paragraph 2, sentence 2 (sections/design.tex:4-5)" in md
-    assert "Where: Abstract, sentence 2 (main.tex:12-13)" in md
-    assert 'Related, A Additional details, paragraph 1 (sections/appendix.tex:1-3): "We ran 10 survey sessions in total."' in md
-    # The refuted finding moves to its appendix; the suggestion is below the minimum severity.
-    assert "## Appendix: refuted findings" in md and "Section 2 randomizes the default." in md
+    # A Minor finding is a row of the Minor table in the report and a full entry in the evidence file.
+    minor_table = md.split("## Minor findings (1)")[1].split("\n## ")[0]
+    assert "Abstract, sentence 2 (main.tex:12-13)" in minor_table
+    assert "Where: Abstract, sentence 2 (main.tex:12-13)" in (work_copy.parent / "paper-check-evidence.md").read_text()
+    ev = (work_copy.parent / "paper-check-evidence.md").read_text()
+    assert 'Related, A Additional details, paragraph 1 (sections/appendix.tex:1-3): "We ran 10 survey sessions in total."' in ev
+    # The refuted finding moves to its appendix in the evidence file; the suggestion is below the minimum severity.
+    assert "## Appendix: refuted findings" in ev and "Section 2 randomizes the default." in ev
+    assert "## Appendix" not in md and "Proof and steps: F-001 in paper-check-evidence.md." in md
+    assert md.index("## What to fix first") < md.index("## Critical findings (1)")
     assert "Wordy" not in md and "1 findings below the minimum severity" in md
     # Coverage: run by one producer and skipped by another reads "partly run".
     cov = {r["check_id"]: r for r in data["coverage"]}
@@ -164,8 +170,9 @@ def test_refutation_without_real_counter_evidence_is_set_aside(work_copy):
     assert refuted.verification["refuter"] == "refuted" and refuted.status != "dropped"
     main(["report", str(work_copy)])
     md = (work_copy.parent / "paper-check-report.md").read_text()
-    assert "## Appendix: refuted findings" in md and "pilot sessions separately" in md
-    assert "### F-001 · Major · LOG-03" in md
+    ev = (work_copy.parent / "paper-check-evidence.md").read_text()
+    assert "## Appendix: refuted findings" in ev and "pilot sessions separately" in ev
+    assert "### F-001 · Major · LOG-03" in md and "### F-001 · Major · LOG-03" in ev
 
 
 def test_related_findings_on_one_passage_are_merged(work_copy):
@@ -193,9 +200,11 @@ def test_related_findings_on_one_passage_are_merged(work_copy):
     assert not any(t.startswith("Status raised") for t in lang.get("trajectory", []))
     md = (work_copy.parent / "paper-check-report.md").read_text()
     assert "(Numbers inside the paper), also COH-02" in md
-    assert "Also reported by agent_coherence under COH-02" in md
-    # The merged finding keeps the absorbed finding's own fix.
+    ev = (work_copy.parent / "paper-check-evidence.md").read_text()
+    assert "Also reported by agent_coherence under COH-02" in ev
+    # The merged finding keeps the absorbed finding's own fix, in the report and in the evidence file.
     assert "Also fix (COH-02): Report the 23% in the results, or drop it." in md
+    assert "Also fix (COH-02): Report the 23% in the results, or drop it." in ev
     cov = {r["check_id"]: r for r in data["coverage"]}
     assert cov["COH-02"]["detail"].startswith("1 findings")
 
@@ -339,10 +348,10 @@ def test_index_follows_sentence_order_and_places_anchor_only_findings(work_copy)
     main(["report", str(work_copy)])
     report = (work_copy.parent / "paper-check-report.md").read_text()
     index = report.split("## Index in paper order")[1].split("## Coverage")[0]
-    problems = [r.split("|")[5].strip() for r in index.splitlines() if r.startswith("| F-")]
-    order = [problems.index(p) for p in ("About the first sentence.", "About the second sentence.",
-                                         "A comment is left in the source.", "About a later paragraph.")]
-    assert order == sorted(order), problems
+    titles = [r.split("|")[5].strip() for r in index.splitlines() if r.startswith("| F-")]
+    order = [titles.index(t) for t in ("First sentence", "Second sentence", "Comment left in the file",
+                                       "Later paragraph")]
+    assert order == sorted(order), titles
 
 
 def test_a_sequential_run_is_labelled_and_never_merges_runs(tmp_path, capsys):
@@ -365,7 +374,8 @@ def test_a_sequential_run_is_labelled_and_never_merges_runs(tmp_path, capsys):
     main(["report", str(work)])
     report = (tmp_path / "paper-check-report.md").read_text()
     assert "**Run:** sequential" in report.split("## Summary")[0]
-    appendix = report.split("## Appendix: refuted findings")[1]
+    evidence = (tmp_path / "paper-check-evidence.md").read_text()
+    appendix = evidence.split("## Appendix: refuted findings")[1]
     assert "not independent" in appendix and "An independent refuter" not in appendix
     first = json.loads((work / "findings" / "agent_logic.json").read_text())["findings"][0]
     assert "runs" not in (first.get("verification") or {})
@@ -388,8 +398,11 @@ def test_quick_report_is_brief_and_coverage_lists_only_what_did_not_run(tmp_path
     main(["report", str(work)])
     md = (tmp_path / "paper-check-report.md").read_text()
     finding = md.split("### F-001")[1].split("\n## ")[0]
-    assert "- and 2 more in paper-check-findings.json" in finding
-    assert "Trajectory: (1) Read the design section. (2) Compared the appendix." in finding
+    # The report keeps the quote, place, problem and fix; the proof and the steps are in the evidence file.
+    assert "Proof:" not in finding and "Proof and steps: F-001 in paper-check-evidence.md." in finding
+    ev = (tmp_path / "paper-check-evidence.md").read_text()
+    entry = ev.split("### F-001")[1].split("\n## ")[0]
+    assert all(e["text"] in entry for e in evidence) and "Read the design section." in entry
     coverage = md.split("## Coverage")[1].split("\n## ")[0]
     assert "| LOG-01, LOG-05, LOG-06, LOG-07 | 4 checks | skipped |" in coverage
     assert "checks ran in full:" in coverage

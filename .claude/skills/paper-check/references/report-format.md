@@ -2,7 +2,7 @@
 
 This file restates section 11 of `docs/DESIGN.md` (v0.4) for the agents and people who produce or read the report, and says which files feed each part. `pc.py report WORK` builds the report; nothing else should write it.
 
-The report is written for two readers: a writer fixing the draft, and a fixing agent working through it. Every finding therefore quotes the paper, says exactly where, shows the proof, lists the steps that led to it, and suggests a fix with a test for when it is resolved. It describes mismatches and the evidence for them, and never speculates about who wrote a passage or whether AI was used: a citation mismatch is a verifiable fact, while guesses about authorship are not, and a report written this way can be forwarded to a coauthor as it stands.
+The report is written for two readers: a writer fixing the draft, and a fixing agent working through it. Every finding therefore quotes the paper, says exactly where, shows the proof, lists the steps that led to it, and suggests a fix with a test for when it is resolved. The writer gets a short report that leads with what to fix first, keeps each finding's quote, place, problem and fix, and stays within about one and a half times the draft's length; the proof and the steps go to a companion evidence file under the same IDs. It describes mismatches and the evidence for them, and never speculates about who wrote a passage or whether AI was used: a citation mismatch is a verifiable fact, while guesses about authorship are not, and a report written this way can be forwarded to a coauthor as it stands.
 
 ## Files
 
@@ -10,7 +10,8 @@ Written beside the work folder, next to the paper unless an output folder was gi
 
 | File | For | Contents |
 |---|---|---|
-| `paper-check-report.md` | People | The report described below |
+| `paper-check-report.md` | People | The report described below: what to fix first, every finding's quote, place, problem and fix |
+| `paper-check-evidence.md` | People checking a finding | Every finding in full, with its proof, the steps that led to it and the test for when it is resolved, under the same IDs; the coverage table in full; and the appendices |
 | `paper-check-findings.json` | Agents | The same findings with the same IDs, the refuted and dropped findings, the coverage rows, the settings, and the appendices as data, including the reference evidence cards |
 | `paper-check-work/` | The proof trail | The paper map, findings files, source texts and digests, scan records, lookup cache and image crops |
 
@@ -32,9 +33,10 @@ Each findings file is one FindingSet: `{"producer", "settings", "findings": [...
 1. **Header.** Paper title and file, input format, date and skill version, mode, network, venue profile and the date its rules were checked (with a warning when the profile is more than 180 days old), the sources folder, and the producers that contributed. Warnings follow: unreadable findings files, network off, ingestion problems, findings below the minimum severity.
 2. **Short answer.** When the user asked a specific question, two to five sentences answering it, with the finding IDs behind each claim, written by the orchestrator to `WORK/answer.md`.
 3. **Summary.** Counts by severity, split into confirmed, likely and needs human judgment; counts by dimension; the top five issues; and one line of coverage counts.
-4. **Findings.** Critical first, then Major, Minor and Suggestion. Within a level, findings follow the order of the paper, and each gets an ID such as F-012. An **index in paper order** follows, for writers fixing the draft from top to bottom.
-5. **Coverage.** One line lists the checks that ran in full. A table gives every other check its outcome: partly run, not applicable, skipped with the reason, or not run when no producer covered it; checks left out for one shared reason, such as the mode, share a row. A skipped check was not passed. `paper-check-findings.json` has every check's outcome, with the number of findings and any note.
-6. **Appendices.** The reference table with an evidence card per reference; the citation support table, one row per citation, with a per-section summary such as "Section 2: 14 of 31 citations not supported or contradicted"; the claim-evidence map; every recomputed number; refuted findings with the refuter's counter-evidence; dropped findings with the reason; and ingestion warnings.
+4. **What to fix first.** One table with every Critical and Major finding, the top issues first: where, the problem in a sentence, and the fix.
+5. **Findings.** Critical and Major findings as full entries: quote, place, problem, fix, and a pointer to the proof in the evidence file. Minor findings as one table in paper order (quote, place, the problem's first sentence, the fix), and a second table of small fixes: wording, style, captions, reference format and every suggestion. Each finding has an ID such as F-012. An **index in paper order** follows, for writers fixing the draft from top to bottom.
+6. **Coverage.** One line lists the checks that ran in full. A table gives every other check its outcome: partly run, not applicable, skipped with the reason, or not run when no producer covered it; checks left out for one shared reason, such as the mode, share a row. A skipped check was not passed. `paper-check-findings.json` has every check's outcome, with the number of findings and any note.
+7. **Evidence.** A pointer to `paper-check-evidence.md`, which holds every finding in full and these appendices: the reference table with an evidence card per reference; the citation support table, one row per citation, with a per-section summary such as "Section 2: 14 of 31 citations not supported or contradicted"; the claim-evidence map; every recomputed number; refuted findings with the refuter's counter-evidence; dropped findings with the reason; and ingestion warnings.
 
 ## One finding
 
@@ -65,7 +67,7 @@ Suggested fix: replace "23%" with "18%".
 Resolved when: the abstract and Table 3 imply the same reduction.
 ```
 
-Minor findings and suggestions put the trajectory on one line: "Trajectory: (1) ... (2) ...". A quick check's report does so for every finding and shows the first three proof lines; the findings file keeps all of them.
+That is the entry in `paper-check-evidence.md`. In the report, a Critical or Major finding keeps the heading, the check line, the place, the quote, the problem and the fix, drops the proof, the steps and the "Resolved when" test, shows at most two fixes of findings merged into it, and ends with "Proof and steps: F-012 in paper-check-evidence.md". Minor findings and suggestions are table rows in the report and full entries in the evidence file, where their trajectory sits on one line: "Trajectory: (1) ... (2) ...".
 
 ## Fields of a finding
 

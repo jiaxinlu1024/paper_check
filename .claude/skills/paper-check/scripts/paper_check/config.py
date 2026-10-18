@@ -26,6 +26,7 @@ HOME = Path(os.path.expanduser("~")) / ".paper-check"
 USER_CONFIG = HOME / "config.yaml"
 OUTPUT_REPORT = "paper-check-report.md"
 OUTPUT_FINDINGS = "paper-check-findings.json"
+OUTPUT_EVIDENCE = "paper-check-evidence.md"
 OUTPUT_WORK = "paper-check-work"
 SETTINGS_FILE = "settings.json"
 MODES = ("quick", "standard", "deep")
