@@ -6,9 +6,30 @@ It covers 125 checks in twelve dimensions: format and journal rules, references,
 
 Status: first usable version (0.1). It has been tested on four synthetic test papers with answer keys and on a real draft. In round 2 it found 117 of the 121 known problems and flagged none of 50 correct passages; see [evals/results/](evals/results/). A deep check takes about an hour.
 
-## Use it
+## Set up
 
-Open this repository in Claude Code and ask, for example, "check my paper in ~/Papers/defaults/ before we submit to the AER". The skill is `.claude/skills/paper-check/`. [docs/USING.md](docs/USING.md) explains setup, settings and how to read the report. Each person needs a contact email and, ideally, two free API keys: see [docs/api-access.md](docs/api-access.md).
+Ask Claude Code, in any folder:
+
+> Set up the paper-check skill from https://github.com/jiaxinlu1024/paper_check by following the steps for Claude Code in its README.
+
+You give your work or university email once, click the activation email that OpenAlex sends, and approve the commands Claude asks to run. Claude does the rest.
+
+### Steps for Claude Code
+
+The user's request to set up the skill covers every step below, including installing the Python packages, so don't ask again. Ask the user only for their email (step 2). Never print, copy or commit `~/.paper-check/config.yaml` or any key.
+
+1. **Get the repository.** Clone it to `~/paper_check`, unless the user names another folder: `git clone https://github.com/jiaxinlu1024/paper_check ~/paper_check`. If the folder already holds it, run `git -C ~/paper_check pull` instead.
+2. **Ask for the email.** Ask for the user's work or university email address, and say why: the lookup services ask for a contact address, and OpenAlex sends the activation link for a free API key to it. Use only an address the user gives you in reply. A free address such as Gmail works for the lookups, but Semantic Scholar does not issue keys to free addresses.
+3. **Install.** Run `python3 ~/paper_check/.claude/skills/paper-check/scripts/pc.py install --email "ADDRESS" --request-openalex-key`. On Windows, use `python` and `%USERPROFILE%\paper_check\.claude\skills\paper-check\scripts\pc.py`. In about a minute it:
+   - builds the Python environment in `~/.paper-check/venv`;
+   - links the skill into `~/.claude/skills/paper-check`, so it works from any folder;
+   - writes `~/.paper-check/config.yaml`, readable only by the user;
+   - requests the OpenAlex key;
+   - checks a sample paper and runs `pc.py doctor`.
+
+   It is safe to run again and never replaces a value already set. If the user gives no email, leave out both options. If Python 3.9 or newer is missing, ask the user to install it from https://www.python.org/downloads/ and then continue.
+4. **Report back.** Tell the user the "Next steps" that `install` printed: click the OpenAlex activation email within 7 days; optionally, apply for a Semantic Scholar key ([docs/api-access.md](docs/api-access.md) has the form and what to enter); start a new Claude Code session so it loads the skill. If a step failed, say which one and what `install` suggested.
+5. **Show how to use it.** In a new session, the user asks, for example, "Check my paper at ~/Papers/draft.docx before I submit it to JEBO." A deep check takes about an hour; "quick check" takes about half an hour. [docs/USING.md](docs/USING.md) explains the settings and the report.
 
 ## What is here
 

@@ -29,6 +29,11 @@ def cmd_setup(args):
     return setup()
 
 
+def cmd_install(args):
+    from .install import install
+    return install(args)
+
+
 def _settings(work: Path, **overrides):
     from .config import PaperSettings
     return PaperSettings.for_work(work, overrides)
@@ -262,6 +267,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("setup", help="create ~/.paper-check/venv and install requirements")
     s.set_defaults(func=cmd_setup)
+
+    s = sub.add_parser("install", help="first-time setup in one step: environment, skill link, config file, "
+                                       "optional OpenAlex key, sample check (safe to run again)")
+    s.add_argument("--email", help="the user's work or university email, saved as the contact email")
+    s.add_argument("--request-openalex-key", action="store_true",
+                   help="request a free OpenAlex key for that email; OpenAlex emails an activation link")
+    s.add_argument("--no-link", action="store_true", help="don't link the skill into ~/.claude/skills")
+    s.add_argument("--offline", action="store_true", help="no key request and no network probes")
+    s.add_argument("--skip-env", action="store_true", help=argparse.SUPPRESS)
+    s.set_defaults(func=cmd_install)
 
     s = sub.add_parser("ingest", help="build the paper map from LaTeX, PDF or Word, and save the settings")
     s.add_argument("paper", help="a .tex file or LaTeX project folder, a .pdf, or a .docx")

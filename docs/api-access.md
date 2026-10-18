@@ -20,7 +20,7 @@ Crossref and Unpaywall need no key, only the contact email. With it, Crossref an
 
 There are two ways to get one. Both are free and give $1 of usage a day.
 
-- **Let Claude request it.** OpenAlex lets an agent request a key for its user in one call. Claude sends your email address to `https://api.openalex.org/api-keys`, and OpenAlex emails you a message titled "Activate your OpenAlex API key". The key works once you click the button in that email. The link lasts 7 days.
+- **Let Claude request it.** OpenAlex lets an agent request a key for its user in one call, and `pc.py install --email ADDRESS --request-openalex-key` makes it: it sends your email address to `https://api.openalex.org/api-keys` and saves the key in your config file. OpenAlex emails you a message titled "Activate your OpenAlex API key". The key works once you click the button in that email. The link lasts 7 days.
 - **Sign up on the website.** Make an account at https://openalex.org/signup, then copy your key from https://openalex.org/settings/api-key.
 
 Single-paper lookups work without a key, but searches are throttled.

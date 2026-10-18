@@ -28,7 +28,7 @@ These keep the report trustworthy. They matter more than any single check.
 ## 0. Prepare
 
 1. Run `PC doctor`. It reports Python, packages, credentials (as set or not set, never the values), optional tools and network access.
-2. If packages are missing, ask the user before running `PC setup`, which creates `~/.paper-check/venv` and installs `requirements.txt` there. Never install anything without asking. If they decline, continue with what works and record what cannot run.
+2. If packages are missing, ask the user before running `PC setup`, which creates `~/.paper-check/venv` and installs `requirements.txt` there. Never install anything without asking. If they decline, continue with what works and record what cannot run. On a machine that has never run the skill, `PC install` does the whole first-time setup; the README's "Steps for Claude Code" say how.
 3. Credentials live in `~/.paper-check/config.yaml` (contact email, OpenAlex key, Semantic Scholar key). Never print, copy or commit them. If the contact email is missing, lookups still run but more slowly; mention it at the end rather than blocking.
 4. Work out the settings from the request, then from a `paper-check.yaml` beside the paper. Don't interrupt the user to ask for settings they didn't mention; use the defaults and say in the final summary what a setting would add.
    - **Paper:** a `.tex` file or LaTeX folder, a `.pdf` or a `.docx`. If both LaTeX source and a compiled PDF exist, ingest the source, which gives exact file and line anchors, and use the PDF for page images.

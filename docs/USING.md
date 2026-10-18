@@ -4,10 +4,15 @@ paper-check is a Claude Code skill. It checks a paper draft and writes a report 
 
 ## Set up once
 
-1. **Get the repository.** Clone https://github.com/jiaxinlu1024/paper_check and open the folder in Claude Code desktop. The skill is in `.claude/skills/paper-check/`, so it is available in that project at once. To use it in every project, copy that folder to `~/.claude/skills/paper-check/`.
-2. **Python.** The scripts need Python 3.9 or later. On the first run, Claude runs `pc.py doctor`. If packages are missing, it asks before running `pc.py setup`, which creates a private environment in `~/.paper-check/venv` and installs the packages in `requirements.txt` there. Nothing is installed system-wide.
-3. **Contact email and keys.** Create `~/.paper-check/config.yaml` as described in [api-access.md](api-access.md). The contact email matters most. Without the keys the lookups still run, only more slowly.
-4. **Network.** The lookups need internet access. On a Claude Code cloud environment, see [network-setup.md](network-setup.md). Run `python3 tools/check_network.py` to test it.
+Ask Claude Code to do it: "Set up the paper-check skill from https://github.com/jiaxinlu1024/paper_check by following the steps for Claude Code in its README." It clones the repository, asks for your work or university email, and runs one command, `pc.py install`, which:
+
+- creates a private Python environment in `~/.paper-check/venv` (nothing is installed system-wide);
+- links the skill into `~/.claude/skills/paper-check`, so it works from any folder;
+- writes `~/.paper-check/config.yaml` with your contact email, readable only by you;
+- requests a free OpenAlex key for that email (click the activation email OpenAlex sends);
+- checks a sample paper and reports what works.
+
+To do it yourself instead, clone the repository and run `python3 .claude/skills/paper-check/scripts/pc.py install --email you@your-university.edu --request-openalex-key` from it. A Semantic Scholar key is optional: [api-access.md](api-access.md) has the form. The lookups need internet access; on a Claude Code cloud environment, see [network-setup.md](network-setup.md).
 
 ## Run a check
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Entry point for the paper-check skill's scripts.
 
+    python3 pc.py install           first-time setup in one step (see the README)
     python3 pc.py doctor            check Python, packages, keys and network
     python3 pc.py setup             create ~/.paper-check/venv and install requirements
     python3 pc.py ingest PAPER      build the paper map
@@ -31,8 +32,8 @@ def _in_venv():
 def _maybe_reexec():
     if os.environ.get("PAPER_CHECK_NO_VENV") == "1" or _in_venv():
         return
-    if len(sys.argv) > 1 and sys.argv[1] == "setup":
-        return  # setup builds the venv with the current interpreter
+    if len(sys.argv) > 1 and sys.argv[1] in ("setup", "install") and "--skip-env" not in sys.argv:
+        return  # setup and install build the venv with the current interpreter
     python = _venv_python()
     if not os.path.exists(python):
         return
