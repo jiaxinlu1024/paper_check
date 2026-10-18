@@ -39,26 +39,38 @@ sources: sources        # folder of PDFs of the cited works
 
 **Which input to give.** LaTeX source gives exact file-and-line locations and the most reliable text. Word works well, including tracked changes and comments. A PDF works too, but tables, math and two-column layouts extract less reliably. If you have the LaTeX source and the compiled PDF, give the source folder; the PDF helps with page images.
 
-**How long it takes.** A deep check launches many subagents, one per dimension plus citation judges, so it takes a while and uses a fair amount of your plan. Quality comes first by design. Use quick mode for a fast pass while writing.
+**How long it takes.** A deep check launches many subagents, one per dimension plus citation judges, so it takes a while and uses a fair amount of your plan. In our tests a deep check of a full paper took about an hour and used roughly 450,000 tokens, about twice what asking Claude directly uses; a quick check took about half an hour. Quality comes first by design. Use quick mode for a fast pass while writing.
 
 **Permissions.** The skill writes only inside a `paper-check-work/` folder beside the paper, plus the two report files. If Claude Code asks for permission to write there, allowing it for the session avoids repeated prompts.
 
 ## Read the report
 
-Two files appear beside the paper:
+Three files appear beside the paper:
 
-- `paper-check-report.md` for people: a summary, the findings grouped by severity, an index in paper order for fixing the draft from top to bottom, a coverage table of all 125 checks, and appendices for references, citation support and recomputed numbers.
-- `paper-check-findings.json` for agents: the same findings with the same IDs, ready for a fixing agent.
+- `paper-check-report.md` for people, about one and a half times the length of the paper. Page one is a fix list: the top issues, each with its fix, then the other Major findings. Then come the counts, every Critical and Major finding in full, two tables of Minor findings and suggestions (one about substance, one of small fixes to wording and format), an index in paper order for fixing the draft from top to bottom, and the checks that did not run in full, with the reason.
+- `paper-check-evidence.md` for checking the report: every finding in full, with its proof and the steps that led to it, under the same IDs, and the appendices: references, citation support, the claim-evidence map, recomputed numbers, and refuted and dropped findings.
+- `paper-check-findings.json` for agents: the same findings with the same IDs, ready for a fixing agent. IDs stay the same if the report is rebuilt.
 
 Each finding shows:
 
 - **Severity.** Critical means a likely desk rejection or a false main claim. Major is what a referee would raise. Minor is a correctness or polish problem. Suggestion is optional.
 - **Status.** Confirmed means the evidence settles it, likely means it deserves a look, and needs human judgment means the skill could not decide.
 - **Where and the quote.** Every quote was checked against the paper by a script.
-- **Proof and trajectory.** What was compared, computed or searched, step by step.
+- **Proof and trajectory**, in the evidence file. What was compared, computed or searched, step by step.
 - **Suggested fix** and how to tell the fix worked.
 
-The coverage table matters as much as the findings. A skipped check was not passed; it was not run, and the table says why.
+The coverage section matters as much as the findings. A skipped check was not passed; it was not run, and the table says why. *Not verified* marks a statement about another work that the run did not check.
+
+## Trying it out
+
+The skill is an early version. If you are testing it, send back:
+
+- findings that are wrong or unclear, by ID (F-012), and why;
+- problems a careful reader would raise that the report missed;
+- how long the check took, the mode, and the input type (LaTeX, Word or PDF);
+- any error message, and whether page one told you what to fix first.
+
+You don't need to send the paper. The report files quote it, so share them only if the draft can be shared.
 
 `paper-check-work/` holds the proof trail: the paper map, the reference evidence cards, the cited texts read, the term searches, and each agent's findings. Keep it if you want to rerun only the report, and delete it when you are done.
 
