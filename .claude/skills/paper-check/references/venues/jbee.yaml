@@ -1,0 +1,270 @@
+id: jbee
+name: Journal of Behavioral and Experimental Economics
+abbreviation: JBEE
+publisher: Elsevier
+group: field
+checked_on: "2026-10-17"
+notes: >-
+  Formerly the Journal of Socio-Economics. The link to SABE could not be confirmed: SABE's website
+  (read 2026-10-17) does not mention JBEE and presents SABE's own Journal of Behavioral Economics for
+  Policy (JBEP) as its journal, and Elsevier's journal page does not mention SABE. The guide for authors
+  exists only on ScienceDirect, which returned HTTP 403, so journal-specific rules are unconfirmed,
+  most with values from web search summaries of the guide. Confirmed rules come from Elsevier-wide
+  policy pages and the Elsevier journal page, as each note says.
+sources:
+  - id: guide
+    url: https://www.sciencedirect.com/journal/journal-of-behavioral-and-experimental-economics/publish/guide-for-authors
+    title: Guide for authors, Journal of Behavioral and Experimental Economics (ScienceDirect)
+    access: blocked
+    note: HTTP 403 ("There was a problem providing the content you requested"). Page blocked automated access; verify in a browser.
+  - id: guide_search
+    url: https://www.sciencedirect.com/journal/journal-of-behavioral-and-experimental-economics/publish/guide-for-authors
+    title: Guide for authors, Journal of Behavioral and Experimental Economics (web search summary)
+    access: search_summary
+    note: Summary text returned by the web search tool for this URL on 2026-10-17 (four searches); not the page's own wording.
+  - id: shop
+    url: https://shop.elsevier.com/journals/journal-of-behavioral-and-experimental-economics/2214-8043
+    title: Journal of Behavioral and Experimental Economics, Elsevier journal page
+    access: read
+    note: Aims and scope; points to ScienceDirect for the guide for authors.
+  - id: em
+    url: https://www.editorialmanager.com/jbee/default.aspx
+    title: Editorial Manager, Journal of Behavioral and Experimental Economics
+    access: read
+    note: Login page; its "Instructions For Authors" link leads to the blocked ScienceDirect guide. No instructions of its own.
+  - id: sabe_home
+    url: https://sabeconomics.org/
+    title: Society for the Advancement of Behavioral Economics (SABE), home page
+    access: read
+    note: No mention of JBEE; the "Journal" menu covers SABE's Journal of Behavioral Economics for Policy.
+  - id: sabe_jbep
+    url: https://sabeconomics.org/jbep/
+    title: Journal of Behavioral Economics for Policy (JBEP), SABE
+    access: read
+    note: SABE's own journal; no mention of JBEE.
+  - id: el_registered_reports
+    url: https://www.elsevier.com/researcher/author/policies-and-guidelines/registered-reports
+    title: Registered Reports (Elsevier-wide)
+    access: read
+    note: Its list of participating journals does not include JBEE.
+  - id: el_genai
+    url: https://www.elsevier.com/about/policies-and-standards/generative-ai-policies-for-journals
+    title: Generative AI policies for journals (Elsevier-wide)
+    access: read
+  - id: el_ethics
+    url: https://www.elsevier.com/about/policies-and-standards/publishing-ethics
+    title: Publishing ethics (Elsevier-wide)
+    access: read
+  - id: el_research_ethics
+    url: https://www.elsevier.com/about/policies-and-standards/research-ethics
+    title: Research ethics (Elsevier-wide)
+    access: read
+  - id: el_highlights
+    url: https://www.elsevier.com/researcher/author/tools-and-resources/highlights
+    title: Highlights (Elsevier-wide)
+    access: read
+  - id: el_graphical_abstract
+    url: https://www.elsevier.com/researcher/author/tools-and-resources/graphical-abstract
+    title: Graphical abstract (Elsevier-wide)
+    access: read
+  - id: el_research_data_faq
+    url: https://www.elsevier.com/about/policies-and-standards/research-data/faq
+    title: Research data FAQs (Elsevier-wide)
+    access: read
+  - id: el_submission_fees
+    url: https://www.elsevier.com/researcher/author/policies-and-guidelines/submission-fees
+    title: Submission fees (Elsevier economics, finance and accounting journals)
+    access: read
+  - id: el_credit
+    url: https://www.elsevier.com/researcher/author/policies-and-guidelines/credit-author-statement
+    title: CRediT author statement (Elsevier-wide)
+    access: read
+rules:
+  abstract_max_words:
+    status: unconfirmed
+    value: 250
+    source: guide_search
+    note: >-
+      Search summary of the guide (https://www.sciencedirect.com/journal/journal-of-behavioral-and-experimental-economics/publish/guide-for-authors):
+      "Abstract: The abstract is capped at 250 words and should stand alone, avoiding references and
+      uncommon abbreviations." Page blocked automated access; verify in a browser.
+  manuscript_limit:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary said "Word limit: Not found."
+      Elsevier's journal page (read) asks for papers that are not "unnecessarily long" (see other:
+      length_guidance) but sets no number.
+  keywords:
+    status: unconfirmed
+    value: {required: true, min: 1, max: 7}
+    source: guide_search
+    note: >-
+      Search summary of the guide (https://www.sciencedirect.com/journal/journal-of-behavioral-and-experimental-economics/publish/guide-for-authors): "Keywords: The guide asks for 1 to 7
+      keywords for indexing purposes, written in English." Page blocked automated access; verify in a browser.
+  jel_codes:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary said "The search results don't
+      include the guide's JEL requirements."
+  highlights:
+    status: unconfirmed
+    value: {required: false, count_min: 3, count_max: 5, max_chars_each: 85}
+    source: guide_search
+    note: >-
+      Search summary of the guide (https://www.sciencedirect.com/journal/journal-of-behavioral-and-experimental-economics/publish/guide-for-authors): "Highlights: Highlights are optional but
+      encouraged at submission. They should be 3 to 5 bullet points, each a maximum of 85 characters,
+      including spaces." Page blocked automated access; verify in a browser.
+  review_type:
+    status: unconfirmed
+    value: single_anonymous
+    source: guide_search
+    note: >-
+      Search summary of the guide (https://www.sciencedirect.com/journal/journal-of-behavioral-and-experimental-economics/publish/guide-for-authors): "Peer review: The journal uses a single
+      anonymized review process." Page blocked automated access; verify in a browser.
+  disclosure_statement:
+    status: confirmed
+    value: {required: true, detail: "Disclose in the manuscript any financial and personal relationships with people or organisations that could be seen to bias the work."}
+    source: el_ethics
+    quote: "All authors should disclose in their manuscript any financial and personal relationships with other people or organisations that could be viewed as inappropriately influencing (bias) their work."
+    note: Elsevier-wide publishing ethics policy, not the journal's own guide.
+  data_availability_statement:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser. No search summary gave the guide's data statement wording.
+  data_code_policy:
+    status: unconfirmed
+    value:
+      summary: Unknown for this journal. Elsevier-wide baseline encourages data sharing without mandating it; journals may set stricter rules in their guide.
+      url: https://www.sciencedirect.com/journal/journal-of-behavioral-and-experimental-economics/publish/guide-for-authors
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary says the guide has a section
+      that begins "If your paper reports an analysis using experimental or observational data, before
+      your pa…" and was cut off there. Elsevier's research data FAQ (read) answers "Is it compulsory to
+      share my research data?" with "No." and adds that some journals have "their own mandatory data
+      sharing policies".
+  ethics_approval:
+    status: confirmed
+    value: {required: true, detail: "Studies with human participants need a statement in the manuscript that the appropriate institutional committee approved them, with the date and reference number of the approval; exempt studies must explain why."}
+    source: el_research_ethics
+    quote: "The authors should include a statement in the manuscript that confirms these requirements have been met. The statement should contain the date and reference number of the ethical approval(s) obtained"
+    note: >-
+      Elsevier-wide research ethics policy, not the journal's own guide. A search summary says the guide
+      also covers "human-subject ethics and consent".
+  trial_registration:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. Pre-registration appears only through
+      Registered Reports (see other: registered_reports). Elsevier's publishing ethics page covers
+      clinical trial registration only "for relevant journals" and names no economics registry.
+  deception:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser. No search summary gave a deception policy.
+  experiment_materials:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser.
+  ai_use:
+    status: confirmed
+    value: {detail: "Declare any use of AI tools in manuscript preparation in a separate AI declaration statement in the manuscript at submission (tool, purpose, extent of oversight). AI tools cannot be authors. Basic grammar and spelling checks need no declaration."}
+    source: el_genai
+    quote: "Authors should disclose the use of AI tools for manuscript preparation in a separate AI declaration statement included in their manuscript upon submission."
+    note: >-
+      Elsevier-wide policy. A search summary of the blocked guide says the statement is "placed before
+      the references".
+  citation_style:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser.
+  submission_fee:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary said the insights page "lists
+      an article publishing charge of USD 3,060. It doesn't say whether a separate submission fee
+      applies." Elsevier's submission-fees page (read) says a fee "is clearly flagged in the journal's
+      guide for authors and during the submission process".
+  file_format:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser. No search summary gave the accepted file formats.
+  other:
+    - name: length_guidance
+      status: confirmed
+      value: {detail: "No numeric limit found; papers should not be unnecessarily long and short articles are welcome"}
+      source: shop
+      quote: "A high contribution-to-length ratio is expected from published articles and therefore papers should not be unnecessarily long, and short articles are welcome."
+    - name: economic_significance
+      status: confirmed
+      value: {detail: "Empirical results should be economically, not only statistically, significant"}
+      source: shop
+      quote: "In empirical work, it is important that the results are not only statistically significant but also economically significant."
+    - name: generalist_readership
+      status: confirmed
+      value: {detail: "Write for a generalist readership"}
+      source: shop
+      quote: "Articles should be written in a manner that is intelligible to our generalist readership."
+    - name: article_type_label
+      status: unconfirmed
+      value: {detail: "Label regular articles as Experimental, Empirical or Theory"}
+      source: guide_search
+      note: >-
+        Search summary of the guide (https://www.sciencedirect.com/journal/journal-of-behavioral-and-experimental-economics/publish/guide-for-authors): "Article types: Regular articles should be
+        labeled as Experimental, Empirical, or Theory papers." Page blocked automated access; verify in a browser.
+    - name: registered_reports
+      status: unconfirmed
+      value: {detail: "Stage 1 proposals with introduction, hypotheses, method and pre-analysis plan, before data collection"}
+      source: guide_search
+      note: >-
+        Search summary of the guide (https://www.sciencedirect.com/journal/journal-of-behavioral-and-experimental-economics/publish/guide-for-authors): "Registered Reports are also accepted, where a
+        proposal is reviewed before data collection. Submit these by selecting "Registered Report Stage 1:
+        Proposal" in the portal." But Elsevier's Registered Reports page (read; "Last updated: October 15th,
+        2024") does not list JBEE among participating journals. Verify in a browser.
+    - name: society_affiliation
+      status: unconfirmed
+      source: sabe_home
+      note: >-
+        Association with SABE not confirmed: SABE's site does not mention JBEE, and Elsevier's journal page
+        does not mention SABE.
+    - name: highlights_format
+      status: confirmed
+      value: {count_min: 3, count_max: 5, max_chars_each: 85}
+      source: el_highlights
+      quote: "Highlights are three to five (three to four for Cell Press articles) bullet points ... Each Highlight can be no more than 85 characters, including spaces"
+      note: Elsevier-wide format for highlights when they are supplied. Whether JBEE requires them is in the highlights rule.
+    - name: funding_statement
+      status: confirmed
+      value: {required: true, detail: "Disclose all sources of funding and the sponsor's role in design, analysis, writing and the decision to submit"}
+      source: el_ethics
+      quote: "All sources of financial support for the conduct of the research and/or preparation of the article should be disclosed, as should the role of the sponsor(s), if any"
+      note: Elsevier-wide publishing ethics policy, not the journal's own guide.
+    - name: informed_consent
+      status: confirmed
+      value: {required: true, detail: "Statement that informed consent was obtained from all human participants"}
+      source: el_research_ethics
+      quote: "Authors should include a statement in the manuscript confirming that they obtained informed consent from all participants"
+      note: Elsevier-wide research ethics policy, not the journal's own guide.
+    - name: graphical_abstract
+      status: unconfirmed
+      source: guide
+      note: >-
+        Page blocked automated access; verify in a browser. Elsevier's graphical abstract page (read)
+        says "Please review the journal's guide for authors for specific policies and instructions."
+    - name: title_page
+      status: unconfirmed
+      source: guide
+      note: Page blocked automated access; verify in a browser. A search summary says the guide "covers title page details" without giving them.
+    - name: cover_letter
+      status: unconfirmed
+      source: guide
+      note: Page blocked automated access; verify in a browser.
+    - name: credit_statement
+      status: unconfirmed
+      source: el_credit
+      note: >-
+        Elsevier's CRediT page says "CRediT statements should be provided during the submission process"
+        but does not say which journals use them; the journal guide blocked automated access. Verify in a browser.

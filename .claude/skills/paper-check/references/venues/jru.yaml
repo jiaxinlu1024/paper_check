@@ -1,0 +1,246 @@
+id: jru
+name: Journal of Risk and Uncertainty
+abbreviation: JRU
+publisher: Springer
+group: field
+checked_on: "2026-10-17"
+notes: >-
+  All four Springer pages were read in full with curl on 2026-10-17. link.springer.com sends Python's
+  HTTP client a bot-challenge page, so validate_venues.py falls back to curl, with the same user agent,
+  to re-verify the quotes.
+sources:
+  - id: guide
+    url: https://link.springer.com/journal/11166/submission-guidelines
+    title: Submission guidelines
+    access: read
+    note: Read in full with curl; Python urllib gets a bot-challenge page instead (see notes).
+  - id: aims
+    url: https://link.springer.com/journal/11166/aims-and-scope
+    title: Aims and scope
+    access: read
+    note: Read in full with curl; Python urllib gets a bot-challenge page instead (see notes).
+  - id: ethics
+    url: https://link.springer.com/journal/11166/ethics-and-disclosures
+    title: Ethics & disclosures
+    access: read
+    note: Read in full with curl; Python urllib gets a bot-challenge page instead (see notes).
+  - id: howto
+    url: https://link.springer.com/journal/11166/how-to-publish-with-us
+    title: How to publish with us (publishing options, fees and funding)
+    access: read
+    note: Read in full with curl; Python urllib gets a bot-challenge page instead (see notes).
+rules:
+  abstract_max_words:
+    status: confirmed
+    value: 250
+    source: guide
+    quote: "Please provide an abstract of 150 to 250 words."
+    note: "Minimum 150 words. Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+  manuscript_limit:
+    status: confirmed
+    value:
+      amount: 40
+      unit: pages
+      scope: including notes, references, tables and legends; manuscripts over 50 pages are rejected without review
+    source: guide
+    quote: "Manuscripts should not exceed 40 pages in length (including notes, references, tables, and legends)."
+    note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+  keywords:
+    status: confirmed
+    value: {required: true, min: 4, max: 6}
+    source: guide
+    quote: "Please provide 4 to 6 keywords which can be used for indexing purposes."
+    note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+  jel_codes:
+    status: confirmed
+    value: {required: true, min: null, max: null}
+    source: guide
+    quote: "An appropriate number of JEL codes should be provided."
+    note: "No minimum or maximum is given. Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+  highlights:
+    status: not_stated
+    note: The submission guidelines were read in full and do not mention highlights.
+  review_type:
+    status: confirmed
+    value: single_anonymous
+    source: ethics
+    quote: "Research content published in this journal is peer reviewed (single-anonymous)."
+    note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+  disclosure_statement:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        Competing interests (financial and non-financial, normally from the last 3 years) and funding,
+        summarized in a "Declarations" section before the reference list under "Funding" and/or
+        "Competing interests". The same information is also entered in the submission interface,
+        and only the interface version is used for publication.
+    source: guide
+    quote: "Competing Interests: Authors are required to disclose financial or non-financial interests that are directly or indirectly related to the work submitted for publication."
+    note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+  data_availability_statement:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        Say how to access the data supporting the results, with links or citations to archived
+        datasets. If data cannot be shared publicly, describe how they can be accessed and on what
+        conditions.
+    source: guide
+    quote: "All original research must include a data availability statement."
+    note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+  data_code_policy:
+    status: confirmed
+    value:
+      summary: >-
+        Springer Nature research data policy: sharing all relevant data is strongly encouraged,
+        preferably in a public repository; cite datasets with persistent identifiers; the data
+        availability statement is mandatory. No replication package or code check is required.
+      url: https://www.springernature.com/gp/authors/research-data-policy
+    source: guide
+    quote: "Sharing of all relevant research data is strongly encouraged and authors must add a Data Availability Statement to original research articles."
+    note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+  ethics_approval:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        For research with human participants: study-specific approval by the appropriate ethics
+        committee and informed consent, reported as "Ethics approval" and "Consent" declarations in
+        the Declarations section before the reference list.
+    source: guide
+    quote: "study-specific approval by the appropriate ethics committee for research involving humans and/or animals, informed consent if the research involved human participants"
+    note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+  trial_registration:
+    status: not_stated
+    note: >-
+      The guidelines mention trial registration numbers only under "For life science journals only
+      (when applicable)". No registration requirement is stated for this journal's studies.
+  deception:
+    status: not_stated
+    value: not_addressed
+    note: The submission guidelines, aims and scope, and ethics and disclosures pages were read in full and do not mention deception.
+  experiment_materials:
+    status: not_stated
+    note: >-
+      The guidelines do not ask for experimental instructions or materials. They only ask authors to
+      make sure they have permission to use software, questionnaires or (web) surveys and scales.
+  ai_use:
+    status: confirmed
+    value:
+      detail: >-
+        Document any use of a large language model in the Methods section (or a suitable alternative
+        part of the manuscript). AI-assisted copy editing for readability, grammar, spelling and style
+        need not be declared. LLMs cannot be authors. Generative AI images fall under Springer's
+        separate image policy.
+    source: guide
+    quote: "Use of an LLM should be properly documented in the Methods section (and if a Methods section is not available, in a suitable alternative part) of the manuscript."
+    note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+  citation_style:
+    status: confirmed
+    value: >-
+      Author-year citations (name and year in parentheses); APA-style reference list ordered
+      alphabetically by first author, journal and book titles in italics, DOIs as full links;
+      APA 7 rules on the number of authors are encouraged.
+    source: guide
+    quote: "Cite references in the text by name and year in parentheses."
+    note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+  submission_fee:
+    status: confirmed
+    value:
+      amount: 0
+      currency: null
+      detail: No submission fee. Open access after acceptance is optional and carries an APC (see other:article_processing_charge).
+    source: guide
+    quote: "There is no submission fee."
+    note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+  file_format:
+    status: confirmed
+    value: >-
+      Word (.docx or .doc); manuscripts with mathematical content can also be submitted in LaTeX
+      (Springer Nature LaTeX template recommended). A complete set of editable source files is
+      needed at every submission and revision.
+    source: guide
+    quote: "Manuscripts should be submitted in Word. ... Manuscripts with mathematical content can also be submitted in LaTeX."
+    note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+  other:
+    - name: scope_exclusions
+      status: confirmed
+      value: No finance or behavioral finance research, game theory, note-length work, or papers that treat Likert-type scales as cardinal.
+      source: aims
+      quote: "The JRU does not publish finance or behavioral finance research, game theory, note length work, or papers that treat Likert-type scales as having cardinal significance."
+      note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+    - name: accessible_introduction
+      status: confirmed
+      value: The introduction must explain the research and its implications so that knowledgeable researchers in other disciplines can follow.
+      source: aims
+      quote: "Authors are expected to provide introductory discussions which set forth the nature of their research and the interpretation and implications of their findings in a manner accessible to knowledgeable researchers in other disciplines."
+      note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+    - name: desk_reject_length
+      status: confirmed
+      value: {max_pages: 50}
+      source: guide
+      quote: "Any manuscript longer than 50 pages will be rejected without review."
+      note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+    - name: declarations_section
+      status: confirmed
+      value:
+        detail: >-
+          A Declarations section before the reference list: Funding, Competing interests, and where
+          relevant Ethics approval, Consent, Data, Material and/or Code availability, and Authors'
+          contributions. Submissions without the relevant declarations are returned as incomplete.
+      source: guide
+      quote: "The above should be summarized in a statement and placed in a ‘Declarations’ section before the reference list under a heading of ‘Funding’ and/or ‘Competing interests’. Other declarations include Ethics approval, Consent, Data, Material and/or Code availability and Authors’ contribution statements."
+      note: >-
+        The title-page section calls the heading "Statements and Declarations" and says
+        "submissions that do not include relevant declarations will be returned as incomplete".
+        Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py.
+    - name: submission_interface_declarations
+      status: confirmed
+      value: Author contribution and competing interest information must also be entered in the submission system; only that version is published.
+      source: guide
+      quote: "must be provided at submission via the submission interface. Only the information submitted via the interface will be used in the final published version."
+      note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+    - name: editable_source_files
+      status: confirmed
+      value: Submit a complete set of editable source files (.docx or LaTeX) at every submission and revision, or the paper is not considered for review.
+      source: guide
+      quote: "Failing to submit a complete set of editable source files will result in your article not being considered for review."
+      note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+    - name: title_page
+      status: confirmed
+      value:
+        detail: >-
+          Title; author names; affiliations (institution, department, city, state, country);
+          corresponding author clearly marked with an active e-mail address; ORCID if available.
+          Acknowledgments of people, grants and funds go in a separate section on the title page;
+          author contribution statements, if given, also go on the title page.
+      source: guide
+      quote: "Please make sure your title page contains the following information. ... Acknowledgments of people, grants, funds, etc. should be placed in a separate section on the title page."
+      note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+    - name: cover_letter
+      status: confirmed
+      value: The corresponding author must use the cover letter to disclose re-used material and any unpublished material (for example manuscripts in press) included in the manuscript.
+      source: guide
+      quote: "providing transparency on re-use of material and mention any unpublished material (for example manuscripts in press) included in the manuscript in a cover letter to the Editor"
+      note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+    - name: headings
+      status: confirmed
+      value: Decimal-numbered headings, at most three levels.
+      source: guide
+      quote: "Please use the decimal system of headings with no more than three levels."
+      note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+    - name: footnotes
+      status: confirmed
+      value: Footnotes, never endnotes; footnotes must not consist solely of a reference citation.
+      source: guide
+      quote: "Always use footnotes instead of endnotes."
+      note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."
+    - name: article_processing_charge
+      status: confirmed
+      value: >-
+        Hybrid journal. Open access is optional after acceptance, with an APC of GBP 2290, USD 3190 or
+        EUR 2590 (plus VAT where applicable); the subscription route has no charge.
+      source: howto
+      quote: "The current APC for Journal of Risk and Uncertainty is £2290.00 GBP / $3190.00 USD / €2590.00 EUR."
+      note: "Seen verbatim with curl on 2026-10-17, and re-verified by validate_venues.py."

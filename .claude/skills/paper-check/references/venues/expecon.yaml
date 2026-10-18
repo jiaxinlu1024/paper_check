@@ -1,0 +1,279 @@
+id: expecon
+name: Experimental Economics
+abbreviation: ExpEcon
+publisher: Cambridge University Press
+group: field
+checked_on: "2026-10-17"
+notes: >-
+  Flagship journal of the Economic Science Association (ESA). Published by Cambridge
+  University Press since 2025 and fully open access from 2025. Older Springer pages
+  for this journal were not used. ESA policies (replication policy, ethical
+  guidelines) apply on top of the Cambridge author instructions.
+sources:
+  - id: prep
+    url: https://www.cambridge.org/core/journals/experimental-economics/information/author-instructions/preparing-your-materials
+    title: Preparing your materials (author instructions)
+    access: read
+  - id: submit
+    url: https://www.cambridge.org/core/journals/experimental-economics/information/author-instructions/submitting-your-materials
+    title: Submitting your materials (author instructions)
+    access: read
+  - id: about
+    url: https://www.cambridge.org/core/journals/experimental-economics/information/about-this-journal
+    title: About this journal
+    access: read
+  - id: review
+    url: https://www.cambridge.org/core/journals/experimental-economics/information/peer-review-information/review-process
+    title: Review process
+    access: read
+  - id: ethics
+    url: https://www.cambridge.org/core/journals/experimental-economics/information/journal-policies/publishing-ethics
+    title: Publishing ethics (journal policies)
+    access: read
+  - id: transparency
+    url: https://www.cambridge.org/core/journals/experimental-economics/information/journal-policies/research-transparency
+    title: Research transparency (journal policies)
+    access: read
+  - id: fees
+    url: https://www.cambridge.org/core/journals/experimental-economics/information/author-instructions/fees-and-pricing
+    title: Fees and pricing
+    access: read
+  - id: cup_research_ethics
+    url: https://www.cambridge.org/core/services/publishing-ethics/research-ethics-journals
+    title: Research ethics for journals (Cambridge University Press publishing ethics guidelines)
+    access: read
+    note: Publisher-wide policy; the journal's publishing ethics page says it follows these guidelines.
+  - id: esa_journal
+    url: https://www.economicscience.org/experimental_economics.php
+    title: Experimental Economics (Economic Science Association page)
+    access: read
+  - id: esa_replication
+    url: https://economicscience.org/docs/ReplicationPolicy-2022-04.pdf
+    title: ESA Policy for public availability of data and replication materials (version April 2022)
+    access: read
+    note: Linked from https://www.economicscience.org/replicability.php as the current policy for Experimental Economics and JESA.
+  - id: esa_ethics
+    url: https://www.economicscience.org/docs/ESA_Ethical_Guidelines_November_2024.pdf
+    title: ESA Ethical Guidelines (update November 12, 2024)
+    access: read
+    note: Linked from https://www.economicscience.org/ethics.php; applies to publishing in ESA journals.
+rules:
+  abstract_max_words:
+    status: confirmed
+    value: 250
+    source: prep
+    quote: "Please provide an abstract of 150 to 250 words."
+    note: "Minimum 150 words. No undefined abbreviations or unspecified references in the abstract."
+  manuscript_limit:
+    status: not_stated
+    note: >-
+      The author instructions (preparing and submitting your materials), the About page and the
+      journal policies were read in full; none sets a word or page limit for the manuscript.
+  keywords:
+    status: confirmed
+    value: {required: true, min: 4, max: 6}
+    source: prep
+    quote: "Please provide 4 to 6 keywords which can be used for indexing purposes."
+  jel_codes:
+    status: not_stated
+    note: The author instructions do not mention JEL codes.
+  highlights:
+    status: not_stated
+    note: The author instructions do not mention highlights.
+  review_type:
+    status: confirmed
+    value: single_anonymous
+    source: review
+    quote: "This journal uses a single-anonymized model of peer review."
+    note: "Reviewers know the authors' identities, so the manuscript need not be anonymized."
+  disclosure_statement:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        Competing-interest declaration covering all authors, placed under a "Statements and
+        Declarations" heading. Submissions without the relevant declarations are returned as
+        incomplete.
+    source: ethics
+    quote: "All authors must include a competing interest declaration in accordance with this journal's author instructions."
+    note: >-
+      The "Statements and Declarations" paragraph in Preparing your materials does not list which
+      statements are needed (checked 2026-10-17); see other:statements_and_declarations.
+  data_availability_statement:
+    status: confirmed
+    value:
+      required: false
+      detail: >-
+        Not asked for at submission. On conditional acceptance, the note on the first page must
+        give the DOI link to the replication materials, worded "The replication material for the
+        study is available at [LINK]."
+    source: esa_replication
+    quote: "In the note, please use the statement “The replication material for the study is available at [LINK].”"
+    note: The Cambridge author instructions and research transparency page do not ask for a data availability statement at submission.
+  data_code_policy:
+    status: confirmed
+    value:
+      summary: >-
+        ESA Data and Replication Policy. Before acceptance the ESA data editor checks a replication
+        package posted to a trusted public repository with a DOI: original instructions (plus an
+        English translation if the experiment was not run in English), subject eligibility and
+        selection information, programs or scripts used to run the experiment and analyze the data,
+        raw data, and a readme. Formal acceptance waits for the data editor's approval.
+      url: https://www.cambridge.org/core/journals/experimental-economics/information/journal-policies/research-transparency
+    source: transparency
+    quote: "If your paper reports an experiment, before your paper is accepted for publication you will be asked to include a replication package for evaluation by our data editor."
+    note: Full policy at https://economicscience.org/docs/ReplicationPolicy-2022-04.pdf.
+  ethics_approval:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        For research with human participants or their data: give the name of the approving ethics
+        committee, the approval number and the types of consent obtained at submission (or name the
+        committee that granted a waiver). The journal's own instructions do not say where in the
+        manuscript this goes.
+    source: cup_research_ethics
+    quote: "The name of the ethics committee that approved the research, the ethics committee approval number and the types of consent obtained should be included at submission."
+    note: >-
+      Cambridge-wide policy that the journal says it follows. The ESA Ethical Guidelines also make
+      researchers responsible for "obtaining IRB approval for their procedures when legally mandated".
+  trial_registration:
+    status: confirmed
+    value:
+      required_for: clinical trials (people prospectively assigned to health-related interventions to evaluate health outcomes)
+      registry: a public trials registry, registered before enrolment starts
+      detail: >-
+        Cambridge-wide policy; give the registry name, registration number and URL in the manuscript.
+        The journal itself does not ask for pre-registration of economics experiments.
+    source: cup_research_ethics
+    quote: "As a condition of consideration for publication, registration of clinical trials in a public trials registry is required."
+  deception:
+    status: confirmed
+    value: banned
+    source: about
+    quote: "we only consider studies that do not employ deception of participants and in which participants are incentivized."
+    note: >-
+      The journal's About page is stricter than the ESA Ethical Guidelines (November 2024), which ask
+      researchers to "avoid deception if at all possible" and to contact the editors about conditions.
+      The journal page governs.
+  experiment_materials:
+    status: confirmed
+    value:
+      detail: >-
+        Submit the instructions participants received together with the manuscript at first
+        submission. Appendices go in a separate file and are published as supplementary material.
+        The replication package before acceptance must contain the original instructions, even if
+        they are already in an appendix, plus an English translation for experiments not run in English.
+    source: about
+    quote: "Authors must submit the instructions that participants in their study received at the time of submission of their manuscript."
+  ai_use:
+    status: confirmed
+    value:
+      detail: >-
+        Declare and describe AI tools used to generate text or images (including translation) or to
+        analyze or extract insights from data. Basic spelling, grammar or formatting help needs no
+        declaration. Declare text generation in the acknowledgments or a footnote, data collection or
+        analysis in the methods section, and generated images in the figure captions. Give the tool's
+        name and version, dates of use, how others can access it, and a full description of the use.
+        AI tools cannot be listed as authors.
+    source: prep
+    quote: "You should always declare and describe your use of an AI tool if you have used it to generate text or images ... or to analyse or extract insights from data or other materials."
+  citation_style:
+    status: confirmed
+    value: >-
+      Author-year citations (name and year in parentheses); APA-style reference list ordered
+      alphabetically by first author, journal and book titles in italics, DOIs as full links;
+      APA 7 rules on the number of authors are encouraged.
+    source: prep
+    quote: "Cite references in the text by name and year in parentheses."
+  submission_fee:
+    status: not_stated
+    note: >-
+      The Fees and pricing page lists only article processing charges (the journal is fully open
+      access); it does not mention a submission fee. See other:article_processing_charge.
+  file_format:
+    status: confirmed
+    value: >-
+      LaTeX, with the original source (all style files and figures) plus a compiled PDF; Word files
+      are also accepted. Editable source files are needed at every submission and revision.
+    source: prep
+    quote: "Manuscripts should be submitted in LaTeX. ... Word files are also accepted."
+  other:
+    - name: incentivized_participants
+      status: confirmed
+      value: {required: true}
+      source: about
+      quote: "we only consider studies that do not employ deception of participants and in which participants are incentivized."
+      note: Only studies with incentivized participants are considered.
+    - name: statements_and_declarations
+      status: confirmed
+      value:
+        heading: Statements and Declarations
+        detail: >-
+          Declarations go under this heading for the published paper. Submissions without the
+          relevant declarations are returned as incomplete. The page lists no specific statements;
+          the competing-interest declaration is required by the publishing ethics policy.
+      source: prep
+      quote: "Please note that submissions that do not include relevant declarations will be returned as incomplete."
+    - name: title_page
+      status: confirmed
+      value:
+        detail: >-
+          Title; author names; affiliations (institution, department, city, state, country);
+          corresponding author clearly marked with an active e-mail address; ORCID if available.
+          Acknowledgments of people, grants and funds go in a separate section on the title page,
+          with funders' names written in full.
+      source: prep
+      quote: "Please make sure your title page contains the following information. ... Acknowledgments of people, grants, funds, etc. should be placed in a separate section on the title page."
+    - name: appendices
+      status: confirmed
+      value: Submit appendices as a separate file; on acceptance they are published as supplementary material.
+      source: prep
+      quote: "Appendices should be submitted as a separate file."
+    - name: orcid
+      status: confirmed
+      value: {required_for: corresponding author}
+      source: submit
+      quote: "We require all corresponding authors to identify themselves using ORCID when submitting a manuscript to this journal."
+    - name: replication_policy_agreement
+      status: confirmed
+      value:
+        detail: >-
+          Authors must agree to the ESA Data and Replication Policy before submitting. Any request
+          for an exemption must be made in writing at first submission.
+      source: esa_replication
+      quote: "Authors must agree to this policy before submitting their manuscripts. Any requests for exemption from this policy must be made in writing at the time of the first submission of a manuscript."
+    - name: cover_letter
+      status: confirmed
+      value: If the manuscript draws on a thesis, say so in the cover letter.
+      source: ethics
+      quote: "The relevant editor should be informed that the manuscript draws on a thesis in the cover letter."
+    - name: article_processing_charge
+      status: confirmed
+      value: >-
+        Fully open access with an APC unless covered by an institutional agreement or waiver. The
+        rate table gives USD 3655 or GBP 2610 (member rate USD 2925 or GBP 2090), but the sentence
+        below it gives USD 3450 for ESA non-members and USD 2760 for ESA members.
+      source: fees
+      quote: "The APC for authors is USD 3450 for ESA non-members and 2760 for ESA members."
+      note: The two figures on the same page disagree; confirm the amount with the editorial office.
+    - name: open_access
+      status: confirmed
+      value: Fully open access from 2025; no subscription needed.
+      source: esa_journal
+      quote: "The journal is fully open access beginning in 2025 and does not require a subscription."
+    - name: preprints
+      status: confirmed
+      value: Posting a preprint on a personal website, institutional repository or preprint archive is not prior publication.
+      source: prep
+      quote: "deposition of a preprint on the author’s personal website, in an institutional repository, or in a preprint archive shall not be viewed as prior or duplicate publication."
+    - name: headings
+      status: confirmed
+      value: Decimal-numbered headings, at most three levels.
+      source: prep
+      quote: "Please use the decimal system of headings with no more than three levels."
+    - name: footnotes
+      status: confirmed
+      value: Footnotes, never endnotes; footnotes must not consist solely of a reference citation.
+      source: prep
+      quote: "Always use footnotes instead of endnotes."

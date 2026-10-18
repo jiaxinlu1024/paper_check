@@ -1,0 +1,155 @@
+# Answer key for the synthetic test paper. Each planted problem lists the checks
+# that should catch it and a quote that locates it. `negatives` are correct
+# passages that must NOT be flagged.
+paper: latex_basic
+planted:
+  - id: P01
+    checks: [NUM-01, COH-02]
+    quote: "reduces the share of employees who save nothing by 23%"
+    truth: "Table 1 and the results text give 9.9% and 8.1%, a relative reduction of 18.2%, not 23%."
+  - id: P02
+    checks: [COH-02, NUM-05, NUM-01, NUM-10]
+    quote: "field experiment with 1,200 employees"
+    truth: "The design section and the table report 1,150 employees."
+  - id: P03
+    checks: [CIT-06]
+    quote: "Earlier studies have also examined present bias in gym attendance"
+    truth: "Madrian and Shea (2001) study 401(k) automatic enrollment, not gym attendance. Not supported, topic absent (S1)."
+  - id: P04
+    checks: [CIT-06, BEH-15]
+    quote: "Loss aversion, with a coefficient of about 2.25, was first estimated by"
+    truth: "The 2.25 estimate comes from Tversky and Kahneman (1992), not Kahneman and Tversky (1979). Misattributed (S4)."
+  - id: P05
+    checks: [COH-07]
+    quote: "We run an RCT with a large employer"
+    truth: "RCT is used one sentence before it is defined."
+  - id: P06
+    checks: [FMT-02]
+    quote: "In our previous work"
+    truth: "Self-identifying reference, a problem under anonymized review."
+  - id: P07
+    checks: [CIT-01]
+    key: lu2024
+    truth: "Cited key lu2024 is missing from the bibliography."
+  - id: P08
+    checks: [CIT-02]
+    key: smithson2019
+    severity: critical
+    truth: "No such article exists."
+  - id: P09
+    checks: [CIT-02]
+    key: brown2015
+    severity: major
+    truth: "Chimeric: the DOI 10.2307/1914185 belongs to Kahneman and Tversky (1979)."
+  - id: P10
+    checks: [CIT-03]
+    key: laibson1997
+    severity: minor
+    truth: "Year given as 1998; the record says 1997."
+  - id: P11
+    checks: [FMT-11]
+    note_contains: "reviewer 2 asked for more robustness"
+    truth: "Sensitive LaTeX comment that would ship in an arXiv source upload."
+  - id: P12
+    checks: [FMT-11]
+    quote: "TODO: add the heterogeneity analysis"
+    truth: "Draft leftover in the text."
+  - id: P13
+    checks: [FMT-18]
+    note_contains: "Ignore all previous instructions"
+    truth: "White text addressed to AI reviewers."
+  - id: P14
+    checks: [FMT-05]
+    quote: "Table ?? reports robustness checks"
+    truth: "Label tab:robust is not defined."
+  - id: P15
+    checks: [BEH-06, MTH-07]
+    quote: "The experiment was preregistered."
+    truth: "No registry or registration ID is given."
+  - id: P16
+    checks: [BEH-11]
+    quote: "programmed in oTree"
+    truth: "oTree's terms require citing Chen, Schonger and Wickens (2016)."
+  - id: P17
+    checks: [BEH-01]
+    quote: "although all partners were simulated by the computer"
+    truth: "Participants were given false information: deception."
+  - id: P18
+    checks: [LOG-04]
+    quote: "We ran 12 survey sessions"
+    related: "We ran 10 survey sessions in total"
+    truth: "Twelve sessions in the design section, ten in the appendix."
+  - id: P19
+    checks: [NUM-04]
+    quote: "3.47 on a five-point scale"
+    truth: "GRIM: with N = 25 integer ratings, a mean must be a multiple of 0.04; 3.47 is impossible."
+  - id: P20
+    checks: [NUM-09]
+    quote: "an increase of 25 percentage points"
+    truth: "From 20% to 25% is 5 percentage points, or 25% in relative terms."
+  - id: P21
+    checks: [NUM-03, NUM-08]
+    quote: "which is statistically significant at the 1% level"
+    truth: "0.120 / 0.080 = 1.5, p about 0.13: not significant at conventional levels."
+  - id: P22
+    checks: [NUM-03, BEH-09]
+    table: tab:main
+    cell: "0.120***"
+    truth: "Column (2) treatment: 0.120 with SE 0.080 is marked ***, but t = 1.5."
+  - id: P23
+    checks: [LOG-03, LOG-02]
+    quote: "This correlation shows that defaults cause higher saving among present-biased employees"
+    truth: "Causal language for a non-randomized subgroup pattern."
+  - id: P24
+    checks: [FMT-08]
+    key: smithson2019
+    truth: "Title acronym OECD is not brace-protected; BibTeX styles may lowercase it."
+  - id: P25
+    origin: round-1
+    checks: [NUM-03, NUM-07]
+    table: tab:main
+    cell: "(0.008)"
+    about: ["too small", "implausib", "plausib", "0.017", "small for", "small given"]
+    about_required: true
+    severity: major
+    truth: "Not planted; both arms found it in round 1. Column (1)'s standard error is too small: with 1,150 employees and zero-contribution shares of 9.9% and 8.1%, the standard error of the difference is about 0.017, not 0.008, so t is about 1.1, not 2.25."
+  - id: P26
+    origin: round-1
+    checks: [FMT-13, FIG-01]
+    mentions: ["dist.pdf"]
+    severity: major
+    truth: "Not planted; both arms found it in round 1. sections/results.tex includes figures/dist.pdf, which is not in the source, so the paper does not compile as sent."
+  - id: P27
+    origin: round-1
+    checks: [FMT-13]
+    mentions: ["tablenotes", "threeparttable"]
+    severity: major
+    truth: "Not planted; found in round 1. Table 1 uses the tablenotes environment, but the threeparttable package is not loaded, so LaTeX stops with an undefined environment."
+  - id: P28
+    origin: round-2
+    checks: [COH-02, BEH-14, NUM-01, LOG-01]
+    quote: "explains the pattern"
+    truth: "Not planted; both arms found it in round 2. The abstract says a present-bias parameter of beta = 0.82 explains the pattern, but the body never estimates beta: no method, standard error or identification is given."
+  - id: P29
+    origin: round-2
+    checks: [NUM-06, LOG-04, NUM-02, NUM-01]
+    quote: "The participation rate rose from 20% to 25%"
+    about: ["zero contribution", "zero-contribution", "contradict", "90%", "92%", "inconsistent with the share"]
+    about_required: true
+    truth: "Not planted; both arms found it in round 2. A participation rate of 20% to 25% contradicts the zero-contribution shares of 9.9% and 8.1%, which imply that about 90% to 92% of employees contribute."
+negatives:
+  - quote: "automatic enrollment sharply raised 401(k) participation in the firm studied by"
+    truth: "Supported by Madrian and Shea (2001)."
+    wrong_if: [CIT-06, CIT-02, BEH-15]
+  - quote: "show that gym members who choose flat-rate contracts overestimate their future attendance"
+    truth: "Supported by DellaVigna and Malmendier (2006)."
+    wrong_if: [CIT-06, CIT-02, BEH-15]
+  - table: tab:main
+    cell: "-0.018**"
+    truth: "t = 2.25, p about 0.024: two stars match the printed standard error (which is itself too small, P25)."
+  - table: tab:main
+    cell: "0.250***"
+    truth: "t = 5: three stars are correct."
+  - quote: "Figure 1 shows the distribution of contribution rates"
+    truth: "The figure reference resolves."
+    wrong_if: [FMT-05, FMT-06, FMT-16]

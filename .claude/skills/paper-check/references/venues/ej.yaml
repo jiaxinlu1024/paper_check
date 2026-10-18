@@ -1,0 +1,248 @@
+id: ej
+name: The Economic Journal
+abbreviation: EJ
+publisher: Oxford University Press for the Royal Economic Society
+group: general
+checked_on: "2026-10-17"
+notes: >-
+  Oxford Academic's Instructions to Authors, the main source for manuscript format and
+  most policies, refused automated access, so those rules are unconfirmed. Confirmed
+  rules come from the RES fee policy, the EJ's Editorial Express start page, the RES
+  Checklist for Final Files, the EJ's 2025 annual report and the EJ Data Editor's site.
+  The annual report warns that manuscripts not meeting the Instructions to Authors "will
+  not be considered for publication". RES's "Disclosure policy"
+  (https://res.org.uk/disclosure-policy/) and "Replication policy"
+  (https://res.org.uk/replication-policy/) pages belong to The Econometrics Journal,
+  not the EJ, and were not used.
+sources:
+  - id: oup_instructions
+    url: https://academic.oup.com/ej/pages/General_Instructions
+    title: Instructions to Authors (General Instructions), Oxford Academic
+    access: blocked
+    note: >-
+      HTTP 403 with a Cloudflare challenge on 2026-10-17. RES's journal page, the RES fee
+      policy and Editorial Express all send authors here for the full guidelines.
+  - id: oup_instructions_search
+    url: https://academic.oup.com/ej/pages/General_Instructions
+    title: Instructions to Authors, as shown in web-search summaries
+    access: search_summary
+    note: Text seen only in web-search result summaries on 2026-10-17. Summaries can paraphrase or leave text out.
+  - id: res_ej
+    url: https://res.org.uk/journals/the-economic-journal/
+    title: The Economic Journal (Royal Economic Society)
+    access: read
+    note: The society's page for the journal. Its "How to Submit" link goes to the OUP instructions; it states no submission rules itself.
+  - id: res_fee
+    url: https://res.org.uk/submission-fee-policy/
+    title: Submission fee policy (Royal Economic Society)
+    access: read
+  - id: res_fee_news
+    url: https://res.org.uk/the-economic-journal-updated-submission-fee-policy/
+    title: "The Economic Journal: updated submission fee policy (RES news, 8 May 2026)"
+    access: read
+  - id: res_checklist
+    url: https://res.org.uk/wp-content/uploads/res_assets/assets/4a873d6e-04b2-4d3b-a335e767d105648a/0ac82c96-ed76-4b27-95dd5f8982a81144/Checklist-for-Authors.pdf
+    title: Checklist for Final Files (RES PDF linked from https://res.org.uk/checklist-for-authors/)
+    access: read
+    note: Signed and returned with the final files after acceptance. The PDF's metadata dates it to 2021-2022.
+  - id: res_ar2025
+    url: https://res.org.uk/wp-content/uploads/2026/05/The-Economic-Journal-Annual-Report-2025.pdf
+    title: The Economic Journal 2025 Annual Report (RES, PDF)
+    access: read
+    note: Linked from https://res.org.uk/annualreport/economic-journal-annual-report-2025/ (May 2026).
+  - id: ee_submit
+    url: https://editorialexpress.com/cgi-bin/e-editor/e-submit.cgi?dbase=ej
+    title: "E-submit: Economic Journal (Editorial Express)"
+    access: read
+    note: Start page of the submission form. Later steps were not opened, so the submission fields were not seen.
+  - id: de_before
+    url: https://ejdataeditor.github.io/before.html
+    title: Before you submit your paper for the first time (EJ Data Editor)
+    access: read
+    note: >-
+      Site of the EJ Data Editor, linked from the journal's Zenodo community. It
+      reproduces the official Data and Code Availability Policy from the OUP instructions
+      and says the official text prevails if the two differ.
+  - id: de_package
+    url: https://ejdataeditor.github.io/package.html
+    title: Prepare and Submit your Replication Package (EJ Data Editor)
+    access: read
+  - id: de_faqs
+    url: https://ejdataeditor.github.io/faqs.html
+    title: Frequently Asked Questions (EJ Data Editor)
+    access: read
+rules:
+  abstract_max_words:
+    status: unconfirmed
+    source: oup_instructions
+    note: Page blocked automated access; verify in a browser. Search summaries of the page did not show an abstract limit.
+  manuscript_limit:
+    status: unconfirmed
+    source: oup_instructions
+    note: Page blocked automated access; verify in a browser. Short papers have their own limit (see other, short_papers).
+  keywords:
+    status: unconfirmed
+    source: oup_instructions
+    note: Page blocked automated access; verify in a browser.
+  jel_codes:
+    status: unconfirmed
+    source: oup_instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary of
+      https://academic.oup.com/ej/pages/General_Instructions (2026-10-17) said JEL codes
+      are supplied when submitting through Editorial Express. That is the search tool's
+      wording, not a verbatim snippet, and the number of codes was not seen.
+  highlights:
+    status: unconfirmed
+    source: oup_instructions
+    note: Page blocked automated access; verify in a browser.
+  review_type:
+    status: unconfirmed
+    value: unknown
+    source: oup_instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary of
+      https://academic.oup.com/ej/pages/General_Instructions (2026-10-17) quoted "the
+      identity of the reviewer is, as far as possible, kept from authors" and called the
+      process single-blind. That sentence alone does not say whether reviewers see the
+      authors' names, so anonymity of the manuscript is unknown.
+  disclosure_statement:
+    status: unconfirmed
+    source: oup_instructions
+    note: >-
+      Page blocked automated access; verify in a browser. Do not use RES's "Disclosure
+      policy" page for this rule: it is The Econometrics Journal's.
+  data_availability_statement:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        Required in README.pdf of the replication package after conditional acceptance:
+        how the data were obtained, including registrations, memberships, application
+        procedures and monetary cost, with a download URL where there is one. Whether the
+        OUP instructions also require a statement in the submitted manuscript could not
+        be checked (page blocked).
+    source: de_package
+    quote: "Data Availability Statement ... precise indications on how the data were obtained, including required registrations, memberships, application procedures, monetary cost, or other qualifications"
+  data_code_policy:
+    status: confirmed
+    value:
+      summary: >-
+        Empirical, experimental and numerical papers must supply data, code and a README
+        detailed enough to replicate the results. Papers are accepted for publication only
+        after the Data Editor's reproducibility checks, and the package is then published
+        in the EJ's Zenodo community. Data exemptions must be requested at first
+        submission. At submission, authors confirm they are willing to comply.
+      url: https://ejdataeditor.github.io/before.html
+    source: de_before
+    quote: "The Economic Journal requires authors of empirical, experimental or numerical papers to provide documentation of how their results were obtained in sufficient detail and accuracy to allow their results to be replicated."
+    note: The official text is in the OUP instructions (oup_instructions, blocked); the Data Editor's site reproduces it.
+  ethics_approval:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        Experimental papers: a PDF copy of the IRB approval from one of the authors'
+        institutions (approval number, date, institution) in the replication package after
+        conditional acceptance, or an explicit mention that the Editorial Board granted an
+        exemption. Where the paper itself should state approval was not seen.
+    source: de_package
+    quote: "A PDF copy of the Institutional Review Board (IRB) approval of one of the authors’ institutions (IRB approval number, date, name of the institution) or an explicit mention that an exemption has been granted by the Editorial Board."
+    note: Submission also counts as agreeing to the Ethics Guidelines for authors in the blocked OUP instructions (see other, ethics_guidelines).
+  trial_registration:
+    status: unconfirmed
+    source: oup_instructions
+    note: Page blocked automated access; verify in a browser. The Data Editor's pages do not mention registration.
+  deception:
+    status: unconfirmed
+    source: oup_instructions
+    note: Page blocked automated access; verify in a browser. The Data Editor's pages do not mention deception.
+  experiment_materials:
+    status: confirmed
+    value:
+      detail: >-
+        Experimental papers add PDFs to the replication package: a document outlining the
+        experiment's design, the instructions given to participants in the original
+        language and in English translation, and information on how participants were
+        selected and their eligibility. Copy them into the package even if they are
+        already in the paper or an appendix.
+    source: de_package
+    quote: "A copy of the instructions given to participants, in both the original language and an English translation."
+  ai_use:
+    status: unconfirmed
+    source: oup_instructions
+    note: Page blocked automated access; verify in a browser.
+  citation_style:
+    status: unconfirmed
+    source: oup_instructions
+    note: >-
+      Page blocked automated access; verify in a browser. The RES Checklist for Final
+      Files only asks authors to confirm "I have checked that my reference list meets the
+      style requirements of the journal", without naming the style.
+  submission_fee:
+    status: confirmed
+    value:
+      amount: 248
+      currency: GBP
+      detail: >-
+        Per new submission: £248 for non-members of the RES, £113 for Fellows and Tier B,
+        C and D members, £50 for Tier A and student members (the RES fee policy also lists
+        unemployed members at £50). VAT at 20% is added. No fee for resubmissions. Fees
+        are not refunded for desk-rejected submissions.
+    source: ee_submit
+    quote: "Submission entails the payment of a fee for each new submission: £248 for non-members of the Royal Economic Society, £113 for Fellows and tier B, C & D members, and £50 for tier A and student members."
+    note: >-
+      The RES Submission fee policy (res_fee) gives the same schedule, VAT and the refund
+      rule; RES announced these rates from 8 May 2026 (res_fee_news). The fee is paid at
+      step 6 of Editorial Express.
+  file_format:
+    status: confirmed
+    value: PDF only
+    source: ee_submit
+    quote: "Note that manuscripts must be uploaded in PDF format only"
+  other:
+    - name: data_exemption_request
+      status: confirmed
+      value: >-
+        Request any data exemption at first submission: choose the exemption option in
+        the Data Policy box on Editorial Express and attach a cover letter giving the
+        reasons. An exemption not requested at first submission cannot be requested later.
+      source: de_before
+      quote: "you should request an exemption at the time of first submission of your paper ... attach a Cover Letter along with your paper in which you indicate the reasons why you believe you are entitled to an exemption"
+    - name: experimental_data_and_code_exemptions
+      status: confirmed
+      value: >-
+        Exemptions for experimental data are generally refused: data should be anonymized,
+        and an exemption covers only the minimum needed to protect subjects' anonymity.
+        Code exemptions are never granted.
+      source: de_faqs
+      quote: "Can I request an exemption for the experimental data I collected? ... In general, no. ... Can I request an exemption to publish my code? ... No."
+    - name: data_citations
+      status: confirmed
+      value: Cite every dataset used in the paper's reference list like any other work, and repeat the citations in a section of the README.
+      source: de_package
+      quote: "All datasets used in the paper (with no exceptions) should be listed in the references section of the paper in the same way that we cite other papers, and a copy of these citations should appear in a dedicated section of the README file."
+    - name: ethics_guidelines
+      status: confirmed
+      value: Submitting counts as confirming that the submitter has read the Submission Guidelines and agrees to the Ethics Guidelines for authors, which are in the blocked OUP instructions.
+      source: ee_submit
+      quote: "Submission of an article to the Economic Journal is taken as an acknowledgment that the submitter has read the ... Submission Guidelines and, in particular, agrees to comply with the Ethics Guidelines for authors"
+    - name: cover_letter
+      status: confirmed
+      value: Optional at upload, but needed when requesting a data exemption (see data_exemption_request).
+      source: ee_submit
+      quote: "Upload the manuscript and cover letter (if any)"
+    - name: short_papers
+      status: confirmed
+      value: >-
+        A short paper article type (since July 2020), described as similar to AER:
+        Insights: under 6,000 words and 5 exhibits, refereed to the same standards as
+        regular submissions.
+      source: res_ar2025
+      quote: "The Journal introduced a short paper article type in July 2020, similar to the AER: Insights style (<6,000 words, 5 exhibits)."
+      note: The exact rules (for example how words are counted) are in the blocked OUP instructions; verify in a browser.
+    - name: language_variant
+      status: confirmed
+      value: UK English, confirmed in the Checklist for Final Files after acceptance.
+      source: res_checklist
+      quote: "My article uses UK (not US) English"

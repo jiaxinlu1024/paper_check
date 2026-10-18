@@ -1,0 +1,123 @@
+{
+  "skill_name": "paper-check",
+  "evals": [
+    {
+      "id": 1,
+      "name": "latex-aer-full-check",
+      "prompt": "We're submitting our defaults and present-bias paper to the AER next week. The LaTeX source is in tests/fixtures/latex_basic. Can you give it a full pre-submission check and tell me what we need to fix?",
+      "expected_output": "A report beside the paper (or in the chosen output folder) that quotes the draft for every finding, with location, proof, trajectory and a suggested fix, ordered by severity with an index in paper order and a coverage table. It should catch the planted problems in tests/fixtures/latex_basic/expected.yaml, such as the fabricated and chimeric references, the hidden instruction to AI reviewers, the abstract's 23% against the 18.2% implied by Table 1, the citation of Madrian and Shea (2001) for gym attendance, the 2.25 loss-aversion estimate attributed to the 1979 paper, the impossible mean of 3.47 with N = 25, and the wrong significance claim, without flagging the correct passages listed as negatives.",
+      "files": [
+        "../../../tests/fixtures/latex_basic"
+      ],
+      "expectations": [
+        "At least 95% of the report's quotes of the paper appear verbatim in the paper (check the mechanical grader's list of unfound quotes by hand; quotes of cited works, journal rules or suggested rewrites do not count)",
+        "The detailed findings sit under severity headings, most severe first, and every finding carries a severity",
+        "The report has an index of findings in paper order",
+        "The report says which checks were not run or ran only in part, and why",
+        "Every finding quotes the passage, says where it is precisely enough to find it, and suggests a fix",
+        "Finds at least 90% of the answer key's problems (for the skill run, score_answer_key.py on paper-check-findings.json, with near misses judged by hand; for a run without the skill, by hand)",
+        "No correct passage in the answer key is presented as wrong or unsupported, at any severity (a pure wording suggestion does not count)",
+        "Where the answer key gives a severity, the report's severity for that problem is within one level of it (problems a report misses are not graded here; the recall assertion covers them)",
+        "The report states how the check was run and does not claim independent second runs or an independent refuter that did not happen",
+        "The report does not contradict itself, for example a coverage note or a finding that relies on a verdict the report elsewhere marks refuted or unverifiable",
+        "Flags the fabricated reference (Smithson 2019) and the chimeric reference (Brown 2015, whose DOI belongs to Kahneman and Tversky 1979)",
+        "Flags the hidden instruction to AI reviewers",
+        "Flags the abstract's 23% as inconsistent with the 18.2% implied by the results and Table 1",
+        "Flags Madrian and Shea (2001) as not supporting the gym-attendance claim",
+        "Flags the 2.25 loss-aversion estimate as misattributed to Kahneman and Tversky (1979)",
+        "Flags Table 1 column (1)'s standard error of 0.008 as too small for 1,150 employees and shares of 9.9% and 8.1% (about 0.017 expected)",
+        "Says the source does not compile as sent: figures/dist.pdf is missing and tablenotes is used without threeparttable",
+        "Flags the acronym OECD in the Smithson (2019) title as unprotected from BibTeX lowercasing",
+        "Checks the draft against the AER's submission rules and names the rules it applied"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "word-coauthor-citations-jebo",
+      "prompt": "My coauthor sent me the Word version of our draft, tests/fixtures/docx_basic/paper.docx. I'm worried some of the citations don't actually say what we claim. Can you check them, and anything else a referee at JEBO would pick on?",
+      "expected_output": "A report on the Word draft with verified quotes and paragraph anchors. Citation support is checked for every citation, with the gym-attendance citation of Madrian and Shea (2001) flagged as not supported and the 2.25 estimate flagged as misattributed. It also catches the Word-specific problems in tests/fixtures/docx_basic/expected.yaml: tracked changes, a reviewer comment, hidden and white text, and the author property, and applies the JEBO venue profile.",
+      "files": [
+        "../../../tests/fixtures/docx_basic/paper.docx"
+      ],
+      "expectations": [
+        "At least 95% of the report's quotes of the paper appear verbatim in the paper (check the mechanical grader's list of unfound quotes by hand; quotes of cited works, journal rules or suggested rewrites do not count)",
+        "The detailed findings sit under severity headings, most severe first, and every finding carries a severity",
+        "The report has an index of findings in paper order",
+        "The report says which checks were not run or ran only in part, and why",
+        "Every finding quotes the passage, says where it is precisely enough to find it, and suggests a fix",
+        "Finds at least 90% of the answer key's problems (for the skill run, score_answer_key.py on paper-check-findings.json, with near misses judged by hand; for a run without the skill, by hand)",
+        "No correct passage in the answer key is presented as wrong or unsupported, at any severity (a pure wording suggestion does not count)",
+        "Where the answer key gives a severity, the report's severity for that problem is within one level of it (problems a report misses are not graded here; the recall assertion covers them)",
+        "The report states how the check was run and does not claim independent second runs or an independent refuter that did not happen",
+        "The report does not contradict itself, for example a coverage note or a finding that relies on a verdict the report elsewhere marks refuted or unverifiable",
+        "Flags Madrian and Shea (2001) as not supporting the gym-attendance claim",
+        "Flags the 2.25 loss-aversion estimate as misattributed to Kahneman and Tversky (1979)",
+        "Says that \"In our previous work\" reveals the authors under anonymized review",
+        "Flags the tracked changes, that Track Changes is still on, and both comments left in the file (\"reviewer 2 asked for more robustness\" and \"Which registry?\")",
+        "Flags the hidden text and the white text addressed to AI reviewers",
+        "Flags the author and institution names in the document properties",
+        "Flags the \"2 Experimental design\" heading as bold body text rather than a heading style",
+        "Flags Figure 1 for having no axis labels or legend, or for bars whose arm totals differ (1.85 against 2.60 in bar units)",
+        "Checks the draft against JEBO's requirements and says which ones"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "pdf-quick-numbers-and-references",
+      "prompt": "Quick sanity check on tests/fixtures/pdf_basic/paper.pdf please: do the numbers and the references hold up? No need for the full treatment.",
+      "expected_output": "A quick-mode report on the PDF: the number checks (abstract against Table 1, GRIM, percentage points, the significance claim and stars) and the reference checks (fabricated, chimeric and year drift), with page-and-line anchors, and a coverage table that records the reading checks as skipped because of quick mode rather than passed.",
+      "files": [
+        "../../../tests/fixtures/pdf_basic/paper.pdf"
+      ],
+      "expectations": [
+        "At least 95% of the report's quotes of the paper appear verbatim in the paper (check the mechanical grader's list of unfound quotes by hand; quotes of cited works, journal rules or suggested rewrites do not count)",
+        "The detailed findings sit under severity headings, most severe first, and every finding carries a severity",
+        "The report has an index of findings in paper order",
+        "The report says which checks were not run or ran only in part, and why",
+        "Every finding quotes the passage, says where it is precisely enough to find it, and suggests a fix",
+        "Finds at least 90% of the answer key's number and reference problems, since the user asked only about those (P01, P02, P03, P04, P07, P08, P09, P10, P16, P18, P19, P20, P21, P22, P25, P28, P29 and D02; for the skill run, score_answer_key.py with near misses judged by hand; for a run without the skill, by hand)",
+        "No correct passage in the answer key is presented as wrong or unsupported, at any severity (a pure wording suggestion does not count)",
+        "Where the answer key gives a severity, the report's severity for that problem is within one level of it (problems a report misses are not graded here; the recall assertion covers them)",
+        "The report states how the check was run and does not claim independent second runs or an independent refuter that did not happen",
+        "The report does not contradict itself, for example a coverage note or a finding that relies on a verdict the report elsewhere marks refuted or unverifiable",
+        "Flags the abstract's 23% as inconsistent with the 18.2% implied by Table 1",
+        "Flags the impossible mean of 3.47 with N = 25 (GRIM)",
+        "Flags the fabricated reference and the chimeric reference",
+        "Flags Madrian and Shea (2001) as not supporting the gym-attendance claim, since the user asked whether the references hold up",
+        "Flags the hidden one-point instruction to AI reviewers",
+        "Gives page and line locations, and at least 90% of the answer key's anchored items found are within one line of the key's anchor (score_answer_key.py reports this for the skill run)",
+        "Answers the user's two questions, whether the numbers hold up and whether the references hold up, in a few lines at the top of the report or in the final reply"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "latex-hard-citations-aej-applied",
+      "prompt": "We're about to submit our field experiment on reminders and commitment contracts for gym attendance to AEJ: Applied. The LaTeX source is in tests/fixtures/latex_hard. Please give it a thorough check before we submit. Above all we want to know whether we describe the papers we cite accurately, and whether our numbers and inference hold up.",
+      "expected_output": "A report that quotes the draft for every finding, with location, proof, trajectory and fix, ordered by severity with an index in paper order and a coverage table. It should catch the planted problems in tests/fixtures/latex_hard/expected.yaml, above all the nine citation errors that only the cited works' full texts settle (a misquoted number, a subgroup result stated for the full sample, reversed findings, swapped estimates, methods the cited paper did not use, a finding credited to the wrong paper by the same authors), the clustering at the wrong level, the changed primary outcome, the subgroup headline without a multiple-testing correction and the numeric slips, without flagging the 29 correct passages.",
+      "files": [
+        "../../../tests/fixtures/latex_hard"
+      ],
+      "expectations": [
+        "At least 95% of the report's quotes of the paper appear verbatim in the paper (check the mechanical grader's list of unfound quotes by hand; quotes of cited works, journal rules or suggested rewrites do not count)",
+        "The detailed findings sit under severity headings, most severe first, and every finding carries a severity",
+        "The report has an index of findings in paper order",
+        "The report says which checks were not run or ran only in part, and why",
+        "Every finding quotes the passage, says where it is precisely enough to find it, and suggests a fix",
+        "Finds at least 90% of the answer key's problems (for the skill run, score_answer_key.py on paper-check-findings.json, with near misses judged by hand; for a run without the skill, by hand)",
+        "No correct passage in the answer key is presented as wrong or unsupported, at any severity (a pure wording suggestion does not count)",
+        "Where the answer key gives a severity, the report's severity for that problem is within one level of it (problems a report misses are not graded here; the recall assertion covers them)",
+        "The report states how the check was run and does not claim independent second runs or an independent refuter that did not happen",
+        "The report does not contradict itself, for example a coverage note or a finding that relies on a verdict the report elsewhere marks refuted or unverifiable",
+        "Catches at least 7 of the 9 citation problems that only the cited works' full texts settle (P01, P03, P04, P05, P06, P07, P08, P20 and P23 in the answer key)",
+        "Says, for each cited work it judged, whether it read the full text or only an abstract or metadata",
+        "Flags the standard errors clustered by participant although departments were randomized",
+        "Flags that the primary outcome in the results differs from the pre-registered one named in the design section",
+        "Flags the headline subgroup result that rests on one of five splits with no correction for multiple testing",
+        "Flags the comparison of signers with decliners as a causal claim that selection confounds",
+        "Catches at least 6 of the 8 numeric problems (P11, P12, P14, P15, P16, P17, P18 and P24 in the answer key)",
+        "Flags the Gneezy, Meier and Rey-Biel year (2011, not 2012) and does not flag the 2022 year of the Review of Economic Studies paper",
+        "Checks the draft against AEJ: Applied's submission rules and names the rules it applied"
+      ]
+    }
+  ]
+}

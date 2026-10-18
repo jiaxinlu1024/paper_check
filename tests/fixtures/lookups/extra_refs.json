@@ -1,0 +1,200 @@
+{
+  "note": "Real references that exercise the lookup paths latex_basic does not: a retracted paper, a paper under an expression of concern, both with failed replications in FReD; an NBER working paper with a published journal version; an NBER working paper whose title changed on publication (no link should be made); a DOI with a typo; a working URL and one that answers 404.",
+  "expected": {
+    "shu2012": {
+      "verdict": "verified",
+      "CIT-05": "critical",
+      "CIT-14": "minor"
+    },
+    "mazar2008": {
+      "verdict": "verified",
+      "CIT-05": "major",
+      "CIT-14": "minor",
+      "CIT-12": "minor"
+    },
+    "madrian2000wp": {
+      "verdict": "verified",
+      "CIT-04": "suggestion",
+      "published_doi": "10.1162/003355301753265543"
+    },
+    "dellavigna2004wp": {
+      "verdict": "verified",
+      "working_paper": true,
+      "version_links": 0
+    },
+    "thaler2004typo": {
+      "verdict": "verified",
+      "CIT-12": "minor",
+      "replacement_doi": "10.1086/380085"
+    },
+    "kahneman1979url": {
+      "verdict": "verified",
+      "url_status": "ok"
+    }
+  },
+  "references": [
+    {
+      "key": "shu2012",
+      "source": "bibtex",
+      "raw": "Shu, Lisa L.; Mazar, Nina; Gino, Francesca; Ariely, Dan; Bazerman, Max H. (2012). Signing at the beginning makes ethics salient and decreases dishonest self-reports in comparison to signing at the end. Proceedings of the National Academy of Sciences. 109. 15197–15200. doi:10.1073/pnas.1209746109",
+      "fields": {
+        "type": "article",
+        "title": "Signing at the beginning makes ethics salient and decreases dishonest self-reports in comparison to signing at the end",
+        "authors": [
+          {
+            "family": "Shu",
+            "given": "Lisa L."
+          },
+          {
+            "family": "Mazar",
+            "given": "Nina"
+          },
+          {
+            "family": "Gino",
+            "given": "Francesca"
+          },
+          {
+            "family": "Ariely",
+            "given": "Dan"
+          },
+          {
+            "family": "Bazerman",
+            "given": "Max H."
+          }
+        ],
+        "year": "2012",
+        "container": "Proceedings of the National Academy of Sciences",
+        "volume": "109",
+        "issue": "38",
+        "pages": "15197–15200",
+        "doi": "10.1073/pnas.1209746109"
+      }
+    },
+    {
+      "key": "mazar2008",
+      "source": "bibtex",
+      "raw": "Mazar, Nina; Amir, On; Ariely, Dan. (2008). The Dishonesty of Honest People: A Theory of Self-Concept Maintenance. Journal of Marketing Research. 45. 633–644. doi:10.1509/jmkr.45.6.633. https://raw.githubusercontent.com/forrtproject/FReD/main/no-such-file.pdf",
+      "fields": {
+        "type": "article",
+        "title": "The Dishonesty of Honest People: A Theory of Self-Concept Maintenance",
+        "authors": [
+          {
+            "family": "Mazar",
+            "given": "Nina"
+          },
+          {
+            "family": "Amir",
+            "given": "On"
+          },
+          {
+            "family": "Ariely",
+            "given": "Dan"
+          }
+        ],
+        "year": "2008",
+        "container": "Journal of Marketing Research",
+        "volume": "45",
+        "issue": "6",
+        "pages": "633–644",
+        "doi": "10.1509/jmkr.45.6.633",
+        "url": "https://raw.githubusercontent.com/forrtproject/FReD/main/no-such-file.pdf"
+      }
+    },
+    {
+      "key": "madrian2000wp",
+      "source": "bibtex",
+      "raw": "Madrian, Brigitte C.; Shea, Dennis F. (2000). The Power of Suggestion: Inertia in 401(k) Participation and Savings Behavior. National Bureau of Economic Research. Working Paper 7682. https://www.nber.org/papers/w7682",
+      "fields": {
+        "type": "techreport",
+        "title": "The Power of Suggestion: Inertia in 401(k) Participation and Savings Behavior",
+        "authors": [
+          {
+            "family": "Madrian",
+            "given": "Brigitte C."
+          },
+          {
+            "family": "Shea",
+            "given": "Dennis F."
+          }
+        ],
+        "year": "2000",
+        "container": "National Bureau of Economic Research",
+        "number": "7682",
+        "url": "https://www.nber.org/papers/w7682"
+      }
+    },
+    {
+      "key": "dellavigna2004wp",
+      "source": "bibtex",
+      "raw": "DellaVigna, Stefano; Malmendier, Ulrike. (2004). Overestimating Self-Control: Evidence from the Health Club Industry. National Bureau of Economic Research. Working Paper 10819. doi:10.3386/w10819",
+      "fields": {
+        "type": "techreport",
+        "title": "Overestimating Self-Control: Evidence from the Health Club Industry",
+        "authors": [
+          {
+            "family": "DellaVigna",
+            "given": "Stefano"
+          },
+          {
+            "family": "Malmendier",
+            "given": "Ulrike"
+          }
+        ],
+        "year": "2004",
+        "container": "National Bureau of Economic Research",
+        "number": "10819",
+        "doi": "10.3386/w10819"
+      }
+    },
+    {
+      "key": "thaler2004typo",
+      "source": "bibtex",
+      "raw": "Thaler, Richard H.; Benartzi, Shlomo. (2004). Save More Tomorrow: Using Behavioral Economics to Increase Employee Saving. Journal of Political Economy. 112. S164–S187. doi:10.1086/380085x",
+      "fields": {
+        "type": "article",
+        "title": "Save More Tomorrow: Using Behavioral Economics to Increase Employee Saving",
+        "authors": [
+          {
+            "family": "Thaler",
+            "given": "Richard H."
+          },
+          {
+            "family": "Benartzi",
+            "given": "Shlomo"
+          }
+        ],
+        "year": "2004",
+        "container": "Journal of Political Economy",
+        "volume": "112",
+        "issue": "S1",
+        "pages": "S164–S187",
+        "doi": "10.1086/380085x"
+      }
+    },
+    {
+      "key": "kahneman1979url",
+      "source": "bibtex",
+      "raw": "Kahneman, Daniel; Tversky, Amos. (1979). Prospect Theory: An Analysis of Decision under Risk. Econometrica. 47. 263–291. https://www.jstor.org/stable/1914185",
+      "fields": {
+        "type": "article",
+        "title": "Prospect Theory: An Analysis of Decision under Risk",
+        "authors": [
+          {
+            "family": "Kahneman",
+            "given": "Daniel"
+          },
+          {
+            "family": "Tversky",
+            "given": "Amos"
+          }
+        ],
+        "year": "1979",
+        "container": "Econometrica",
+        "volume": "47",
+        "issue": "2",
+        "pages": "263–291",
+        "url": "https://www.jstor.org/stable/1914185"
+      }
+    }
+  ]
+}

@@ -1,0 +1,217 @@
+# Answer key for the hard synthetic test paper (commitment contracts, reminders and gym
+# attendance). Each planted problem lists the checks that should catch it and a quote, key or
+# table cell that locates it; `related` is a second passage involved in the same problem.
+# `negatives` are correct passages that must NOT be flagged: flagging one under a check in its
+# `wrong_if` list is a false positive.
+#
+# Citation items are settled by the cited works' full texts; SOURCES.md gives the URL read,
+# the version and the verbatim passages with page numbers for every citation item below.
+# The authors, the university, the data and the registry ID AEARCTR-0098317 are invented
+# (that ID did not resolve at socialscienceregistry.org on 2026-10-18).
+# Two Carrera et al. papers of 2018 are cited: carrera2018incentives (aer.bst prints 2018a) and
+# carrera2018plans (2018b); the reader renders both as "Carrera et al. (2018)".
+paper: latex_hard
+planted:
+  - id: P01
+    checks: [CIT-06, FACT-02]
+    quote: "and that the effects on average visits were largest among members who already exercised regularly"
+    truth: "Carrera et al. (2018a, carrera2018incentives) report the opposite for average visits: 'The effects on average visit rates during and after the intervention, though, are higher for low exercisers and those with less prior success with exercise.' (NBER Working Paper 23567, July 2017, p. 15; the same sentence is in the PMC author manuscript of the published article, PMC5899425, section 4.3 Heterogeneity). Only the effect on crossing the 9-visit threshold was larger for experienced exercisers. Secondary effect with its direction reversed; the abstract does not discuss heterogeneity."
+  - id: P02
+    checks: [CIT-01]
+    key: kaur2015
+    truth: "kaur2015 is cited (renders as [?kaur2015]) but has no entry in refs.bib. The intended work is Kaur, Kremer and Mullainathan (2015), 'Self-Control at Work', Journal of Political Economy 123(6): 1227-1277, doi:10.1086/683822."
+  - id: P03
+    checks: [CIT-06, FACT-03]
+    quote: "22 percent of the employees offered a self-funded commitment contract signed one"
+    truth: "Royer, Stehr and Sydnor report 22 percent only for the subgroup that had attended the gym during the incentive period; overall take-up was 12 percent: 'Overall 12% of the employees offered the commitment option decided to take it, and among those who had attended the gym at least once during the incentive period, the take up rate was 22%.' (NBER Working Paper 18580, November 2012, revised August 2013, p. 3) and 'Overall among the 346 subjects in the incentive+commit group, 12.4% chose to make a commitment' (p. 21). A subgroup result stated for the full sample."
+  - id: P04
+    checks: [CIT-06, FACT-02]
+    quote: "but also made them less likely to sign a contract at all"
+    truth: "Bhattacharya, Garber and Goldhaber-Fiebert find that defaults did not change signing: 'Longer duration nudges increased the duration of contracts without reducing the likelihood of signing a contract or altering choices of other contract characteristics. The fraction of users who ultimately signed contracts did not differ significantly across different nudges.' (NBER Working Paper 21406, July 2015, p. 4). The abstract says nothing about signing rates. An effect the cited paper rules out."
+  - id: P05
+    checks: [CIT-06, FACT-03]
+    quote: "were willing to pay $9.61 on average"
+    truth: "Milkman, Minson and Volpp report a mean willingness to pay of $6.91, not $9.61: 'Average willingness to pay for the program was $6.91 (t(210) = 9.34; p < 0.0001), with only 39.3% (t(210) = 18.00; p < 0.0001) of participants stating a $0 willingness to pay' (PMC author manuscript PMC4381662 of the Management Science article, section 4.3). The abstract gives only the 61 percent who opted to pay. A number misquoted from the body."
+  - id: P06
+    checks: [CIT-06, FACT-03]
+    quote: "estimate an average present-bias parameter of 0.84 and a perceived parameter of 0.55"
+    truth: "The two estimates are swapped, and with them the conclusion: actual present focus is 0.55 and perceived 0.84, so members are overoptimistic (partially naive), not pessimistic: 'We estimate an actual average present focus parameter of β̂ = 0.55 and an average (across both information treatment and control groups) perceived present focus parameter of β̃ = 0.84.' (Carrera et al., NBER Working Paper 26161, August 2019, revised August 2021, p. 4). The estimates are not in the abstract."
+  - id: P07
+    checks: [CIT-06, FACT-02]
+    quote: "recorded both entry and exit swipes and could therefore measure how long each visit lasted"
+    truth: "Acland and Levy had entry swipes only: 'This attendance data was based on recorded ID-card swipes required for gym entry. Because swipes were necessary to enter the gym but not exit, we cannot determine the length of a visit.' (working-paper version of 10 March 2013, LSE Research Online, p. 7). A data source the cited paper did not have; the contrast drawn with this study is false."
+  - id: P08
+    checks: [CIT-06, FACT-02]
+    quote: "who preregistered their megastudy as a single study before data collection"
+    truth: "Milkman et al. (2021) say the opposite: 'Although all 20 of the substudies in this megastudy were preregistered, the megastudy itself was not. This was an oversight on our part.' (PMC author manuscript PMC8822539, Methods, 'Megastudy statistical analysis'). A method the cited work did not use."
+  - id: P09
+    checks: [COH-07]
+    quote: "for an MDE of 0.17 visits per week"
+    severity: minor
+    truth: "MDE (minimum detectable effect) is never spelled out in the paper."
+  - id: P10
+    checks: [BEH-09, LOG-08]
+    quote: "Standard errors are clustered by participant because each participant contributes several weekly observations"
+    severity: major
+    truth: "The 118 departments, not individuals, were randomized (Section 3.2; the power calculation assumes an intraclass correlation within departments, and the note to Table 1 clusters by department), but every regression clusters by participant (this sentence and the notes to Tables 2, 3 and 4). Standard errors should be clustered by department, the unit of assignment, or come from randomization inference; clustering by participant overstates precision."
+  - id: P11
+    checks: [NUM-02]
+    table: tab:balance
+    cell: "0.124"
+    truth: "Reminders column: faculty 0.291 + staff 0.603 + other 0.124 = 1.018. The three position categories are exhaustive, so the shares must sum to 1 within rounding; the other three columns sum to exactly 1.000."
+  - id: P12
+    checks: [NUM-05, NUM-10, NUM-01]
+    quote: "The estimates use all 2,416 randomized employees"
+    truth: "Every other count is 2,412: the participant flow (2,537 consented minus 125 excluded), the abstract, Table 1 (598 + 611 + 603 + 600) and Table 2 (2,412 participants; 19,296 = 2,412 x 8 participant-weeks)."
+  - id: P13
+    checks: [BEH-07, MTH-05, LOG-04]
+    quote: "which reports the primary outcome, the number of visits per week"
+    related: "The pre-registered primary outcome is the share of the eight contract weeks in which a participant visited the gym at least once"
+    severity: major
+    truth: "Section 3.4 names the share of contract weeks with at least one visit as the pre-registered primary outcome and visits per week as secondary. The results call visits per week the primary outcome and build the headline (37 percent, also in the abstract) on it, without saying that this departs from the registration."
+  - id: P14
+    checks: [NUM-06, NUM-01]
+    quote: "The point estimate for reminders alone is 0.064 visits per week"
+    truth: "Table 2, column (2) gives 0.046 (0.052) for Reminders; the text has 0.064 with the same standard error."
+  - id: P15
+    checks: [NUM-02, NUM-09]
+    quote: "made 0.51 more visits per week than the control group, an increase of 57 percent"
+    truth: "0.310 + 0.046 + 0.152 = 0.508 more visits on a control mean of 0.84 is an increase of 60.5 percent (0.51 / 0.84 = 60.7 percent), not 57 percent."
+  - id: P16
+    checks: [NUM-03]
+    table: tab:main
+    cell: "0.112**"
+    truth: "Column (4), commitment offer: 0.112 with SE 0.059 gives t = 1.90 and a two-sided p of about 0.058 (0.054 to 0.061 over the rounding range of both numbers). That is one star under the table's thresholds, not two."
+  - id: P17
+    checks: [NUM-08, NUM-03]
+    quote: "and remains significant at the 5 percent level"
+    truth: "0.112 / 0.059 = 1.90, p about 0.058: significant at the 10 percent level only (the same cell as P16)."
+  - id: P18
+    checks: [NUM-03]
+    quote: "1.9 percentage points higher in the commitment arm, with a 95 percent interval of 0.4 to 3.4 points"
+    truth: "Table 2, column (3): 0.019 with SE 0.013 gives a 95 percent interval of 0.019 +/- 1.96 x 0.013, about -0.6 to 4.4 points, which includes zero. The stated 0.4 to 3.4 implies an SE of about 0.008."
+  - id: P19
+    checks: [LOG-03, LOG-08]
+    quote: "Signing a contract therefore more than doubled gym attendance"
+    truth: "Signing was chosen, not assigned: comparing signers with decliners confounds the contract with selection, and the next sentence shows that signers were far more frequent users at baseline (1.18 against 0.70 visits per week). The causal 'more than doubled' does not follow; the randomized offer implies about 0.95 visits per week for signers."
+  - id: P20
+    checks: [CIT-06, FACT-02]
+    quote: "who find that the demand for commitment comes mainly from employees who fall short of their own exercise targets"
+    truth: "Royer, Stehr and Sydnor find the opposite: 'On a similar note, in column 4, we observe that being below one's personal exercise target, another possible measure of time inconsistency, is again not statistically significant and is actually slightly negatively correlated with takeup.' (NBER Working Paper 18580, p. 23) and 'We find that employees who were exercising consistently prior to the study make commitments at rates similar to those who appear more likely to have a time inconsistency problem.' (p. 31; see also p. 4). 'Consistent with' where the cited paper's own discussion says the opposite; the abstract does not discuss take-up."
+  - id: P21
+    checks: [BEH-08, LOG-06, COH-02]
+    quote: "The commitment offer works mainly for employees who rarely used the gym before the study"
+    related: "The effect is concentrated among employees who used the gym less than once a week before the study"
+    truth: "The headline, repeated in the abstract, rests on one of five subgroup splits in Table 3 (ten subgroup estimates): the only difference with p < 0.05 (p = 0.040). The table note says p-values are not adjusted for multiple comparisons; with a Bonferroni or Holm correction across the five tests the smallest p-value is 0.20. The split is not described as pre-specified."
+  - id: P22
+    checks: [LOG-09]
+    quote: "Reminders on their own do not change behavior"
+    truth: "Reminders alone: 0.046 (SE 0.052) in Table 2, a 95 percent interval of about -0.06 to 0.15 visits per week, up to 18 percent of the control mean. A non-significant estimate is read as proof of no effect."
+  - id: P23
+    checks: [CIT-06, FACT-02, CIT-15]
+    quote: "find that between 27 and 34 percent of gym members accept a contract that pays them only if they visit the gym less often"
+    truth: "The finding is in Carrera et al. (2022), not in Carrera et al. (2018b, carrera2018plans), by the same five authors: 'Most strikingly, we find that 27-34 percent of participants chose commitment contracts to attend the gym less' (NBER Working Paper 26161, August 2019, revised August 2021, p. 3). Carrera et al. (2018b) test a planning prompt and offer no contracts: 'Subjects were randomized into i) a treatment group who selected the days and times they intended to attend the gym over the next two weeks or ii) a control group who instead recorded their days of exercise in the prior two weeks.' (abstract, NBER Working Paper 24959 and PMC7872013); 'commit' occurs in neither version except in the title of a cited reference. Credited to the wrong one of two papers by the same authors."
+  - id: P24
+    checks: [NUM-02]
+    quote: "each additional visit cost about 2.95 dollars"
+    truth: "9.80 dollars / 2.48 additional visits = 3.95 dollars per additional visit, not 2.95."
+  - id: P25
+    checks: [LOG-02, LOG-05]
+    quote: "Our results suggest that health insurers and employers everywhere should offer commitment contracts with text-message reminders to all adults who want to exercise more"
+    truth: "The sample is employees of one university who already held a gym membership; the paper's own scope paragraph says the estimates speak only to such people, and the conclusion lists people without a membership as future work. A policy conclusion for all adults, insurers and employers goes far beyond the sample."
+  - id: P26
+    checks: [CIT-03]
+    key: gneezy2012
+    severity: minor
+    truth: "Year given as 2012; the article is in Journal of Economic Perspectives 25(4), Fall 2011 (Crossref issued and print date 2011-11)."
+negatives:
+  - quote: "AEARCTR-0098317"
+    truth: "A registry identifier in the AEA RCT Registry's own format, with the registry named in full in the same sentence; it is not an abbreviation that needs spelling out. (The ID itself is synthetic; whether it resolves is a different question, not covered by this negative.)"
+    wrong_if: [COH-07]
+  - quote: "Offering a commitment contract caused a large increase in attendance while the contracts were in force"
+    truth: "Causal language backed by random assignment of the offer (Table 2: 0.310, SE 0.071, a 37 percent increase)."
+    wrong_if: [LOG-03, LOG-02, LANG-03]
+  - quote: "the habit formed during the incentive month largely decayed over the winter break"
+    truth: "Supported by Acland and Levy: the effect 'largely decayed over a similar period of quasi-exogenous non-attendance', and after the winter break there is no significant difference (working paper, 10 March 2013, p. 12). See SOURCES.md."
+    wrong_if: [CIT-06, FACT-02, FACT-03]
+  - quote: "59 percent of their subjects chose a commitment device when it was offered at a price of zero"
+    truth: "Supported by Augenblick, Niederle and Sprenger: at price zero '59% of subjects would prefer a higher likelihood of implementing one of their initial allocations' (NBER Working Paper 18734, p. 5). See SOURCES.md."
+    wrong_if: [CIT-06, FACT-02, FACT-03]
+  - quote: "Those who committed placed 58 dollars at stake on average, and 63 percent of them met their target"
+    truth: "Supported by Royer, Stehr and Sydnor: committers 'placed $58 at stake' on average, and 'Sixty-three percent of those who created commitments in our study successfully maintained the commitment' (NBER Working Paper 18580, p. 21). See SOURCES.md."
+    wrong_if: [CIT-06, FACT-02, FACT-03]
+  - quote: "Only 22.7 percent of the signed contracts put money at stake"
+    truth: "Supported by Bhattacharya, Garber and Goldhaber-Fiebert: 'Users committed to financial stakes in 22.7% of the signed contracts' (NBER Working Paper 21406, p. 4). See SOURCES.md."
+    wrong_if: [CIT-06, FACT-02, FACT-03]
+  - quote: "and the program helped the busiest participants most"
+    truth: "Supported by Milkman, Minson and Volpp: 'We find that temptation bundling particularly benefits our busiest participants' (PMC4381662, section 4.2). See SOURCES.md."
+    wrong_if: [CIT-06, FACT-02, FACT-03]
+  - quote: "64, 49 and 32 percent for thresholds of 8, 12 and 16 visits in four weeks"
+    truth: "Supported by Carrera et al. (2022): '(64% for 8+ visits, 49% for 12+ visits, and 32% for 16+ visits)', for contracts over the next four weeks (NBER Working Paper 26161, p. 3). See SOURCES.md."
+    wrong_if: [CIT-06, FACT-02, FACT-03]
+  - quote: "but an information treatment that made members more aware of their overoptimism reduced demand for contracts"
+    truth: "Supported by Carrera et al. (2022): 'the information treatment significantly decreased the take-up of commitment contracts for higher gym attendance' (NBER Working Paper 26161, p. 4; also the abstract). See SOURCES.md."
+    wrong_if: [CIT-06, FACT-02, FACT-03]
+  - quote: "total planned visits were three times actual visits (7.04 against 2.33)"
+    truth: "Supported by Carrera et al. (2018b): 'total planned visits being three times as large as their actual visits (7.04 vs. 2.33)' (NBER Working Paper 24959, p. 16; PMC7872013, Discussion). See SOURCES.md."
+    wrong_if: [CIT-06, FACT-02, FACT-03]
+  - quote: "raised weekly visits by 0.14, or 9 percent"
+    truth: "Supported by Milkman et al. (2021): the planning, reminders and microincentives condition 'produced an estimated 0.14 more weekly gym visits per participant (a 9% increase in exercise) compared with the placebo control condition' (PMC8822539, 'The effects of study conditions on exercise'). See SOURCES.md."
+    wrong_if: [CIT-06, FACT-02, FACT-03]
+  - quote: "report unadjusted p-values for their 53 comparisons together with an estimate of the false discovery rate"
+    truth: "Supported by Milkman et al. (2021): 'Rather than adjusting our P values for 53 paired comparisons, we report unadjusted standard errors, two-sided P values and confidence intervals' and a Storey-Tibshirani false-discovery rate (PMC8822539). See SOURCES.md."
+    wrong_if: [CIT-06, FACT-02, FACT-03]
+  - quote: "credited a visit toward the incentive only after at least ten minutes in the gym"
+    truth: "Supported by Carrera et al. (2018a): from February 2016 'Participants after that time were required to swipe out after attending the gym for at least 10 minutes in order to get credit for a visit toward their incentive.' (NBER Working Paper 23567, p. 4; PMC5899425, section 3.1). See SOURCES.md."
+    wrong_if: [CIT-06, FACT-02, FACT-03]
+  - quote: "30, 29, 30 and 29 departments were assigned to the control, reminder, commitment and combined arms"
+    truth: "Consistent everywhere: 30 + 29 + 30 + 29 = 118, the number of departments in the abstract, the participant flow, the power calculation and Table 1."
+    wrong_if: [NUM-01, NUM-02, NUM-05, NUM-10]
+  - quote: "409 signed one (34.0 percent)"
+    truth: "409 / 1,203 = 34.0 percent, and 198 + 211 = 409 (198/603 = 32.8 percent, 211/600 = 35.2 percent); consistent with 'a third' in the abstract and with 241 + 168 signers."
+    wrong_if: [NUM-02, NUM-05]
+  - quote: "0.31 visits per week (95 percent confidence interval 0.17 to 0.45)"
+    truth: "0.310 +/- 1.96 x 0.071 = 0.171 to 0.449: the interval matches the standard error in Table 2."
+    wrong_if: [NUM-03]
+  - quote: "from 0.84 to 1.15 visits per week, an increase of 37 percent"
+    truth: "0.84 + 0.31 = 1.15 and 0.31 / 0.84 = 36.9 percent; the abstract's 37 percent matches. (That the paper calls visits per week its primary outcome is P13, not an arithmetic error.)"
+    wrong_if: [NUM-01, NUM-02, NUM-09, COH-02]
+  - quote: "This estimate is small and not statistically significant at conventional levels"
+    truth: "A correct description of a null: t is below 1.3 whichever reminder coefficient is used (0.046 in the table or 0.064 in the text, SE 0.052), and the sentence does not claim that the effect is zero."
+    wrong_if: [LOG-09, NUM-08, LANG-03]
+  - quote: "The effect of the offer when reminders are also sent is the sum of the first and third coefficients, 0.462 visits per week"
+    truth: "0.310 + 0.152 = 0.462, and the average of 0.310 and 0.462 is the 0.386 reported in Table 3."
+    wrong_if: [NUM-02, NUM-06]
+  - quote: "6.5 percentage points, or 17 percent of the control mean of 38.0 percent"
+    truth: "A percentage-point change and a correct relative change side by side: 0.065 / 0.380 = 17.1 percent."
+    wrong_if: [NUM-02, NUM-09]
+  - table: tab:main
+    cell: "0.152**"
+    truth: "t = 0.152 / 0.076 = 2.00, p = 0.046 (0.043 to 0.048 over the rounding range): two stars are correct at this borderline."
+    wrong_if: [NUM-03, NUM-08]
+  - table: tab:main
+    cell: "0.310***"
+    truth: "t = 4.37: three stars are correct."
+    wrong_if: [NUM-03, NUM-08]
+  - quote: "gives about 0.95 visits per week for those who signed"
+    truth: "0.310 / 0.328 = 0.945: the ratio of the offer's effect to take-up in the same arm, a standard Wald (treatment-on-the-treated) estimate that rests on random assignment."
+    wrong_if: [NUM-02, LOG-03, LOG-08]
+  - quote: "These take-up correlates were not pre-specified and are descriptive"
+    truth: "An accurate label for an exploratory, non-causal analysis."
+    wrong_if: [MTH-05, BEH-07, BEH-08, LANG-03]
+  - table: tab:het
+    cell: "0.288**"
+    truth: "t = 0.288 / 0.121 = 2.38, p = 0.017: two stars are correct."
+    wrong_if: [NUM-03, NUM-08]
+  - quote: "the Poisson coefficient of 0.312 implies an increase of 37 percent"
+    truth: "exp(0.312) - 1 = 0.366: a correct conversion of a log-point coefficient."
+    wrong_if: [NUM-02, NUM-09]
+  - quote: "estimate that offering their contracts lowered consumer surplus, and that linear subsidies producing the same average change in attendance would have been more efficient"
+    truth: "Supported by Carrera et al. (2022): offering the contracts 'lowers consumer surplus, and is less socially efficient than utilizing linear exercise subsidies that achieve the same average change in behavior' (NBER Working Paper 26161, abstract; welfare results on p. 4 and pp. 28-29). See SOURCES.md."
+    wrong_if: [CIT-06, FACT-02, FACT-03]
+  - quote: "Our participants had already bought a membership, so the estimates speak to people who have taken a first step toward exercising more"
+    truth: "An accurate scope statement for the sample (it is the conclusion's policy sentence, P25, that overreaches)."
+    wrong_if: [LOG-02, LOG-05, LANG-03]
+  - quote: "Who Chooses Commitment? Evidence and Welfare Implications"
+    truth: "The year 2022 is correct: Review of Economic Studies 89(3), 2022; Crossref's 'issued' date (2021-09-09) is the online-first date and its print date is 2022."
+    wrong_if: [CIT-03]

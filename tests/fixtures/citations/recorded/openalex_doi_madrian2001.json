@@ -1,0 +1,101 @@
+{
+ "id": "https://openalex.org/W3124550172",
+ "doi": "https://doi.org/10.1162/003355301753265543",
+ "title": "The Power of Suggestion: Inertia in 401(k) Participation and Savings Behavior",
+ "display_name": "The Power of Suggestion: Inertia in 401(k) Participation and Savings Behavior",
+ "publication_year": 2001,
+ "type": "article",
+ "authorships": [
+  {
+   "author": {
+    "display_name": "Brigitte C. Madrian"
+   }
+  },
+  {
+   "author": {
+    "display_name": "Dennis F. Shea"
+   }
+  }
+ ],
+ "best_oa_location": null,
+ "locations": [
+  {
+   "is_oa": false,
+   "landing_page_url": "https://doi.org/10.1162/003355301753265543",
+   "pdf_url": null,
+   "source": {
+    "display_name": "The Quarterly Journal of Economics"
+   },
+   "license": null,
+   "version": "publishedVersion"
+  },
+  {
+   "is_oa": false,
+   "landing_page_url": "http://hdl.handle.net/10.1162/003355301753265543",
+   "pdf_url": null,
+   "source": {
+    "display_name": "RePEc: Research Papers in Economics"
+   },
+   "license": null,
+   "version": "submittedVersion"
+  }
+ ],
+ "open_access": {
+  "is_oa": false,
+  "oa_status": "closed",
+  "oa_url": null,
+  "any_repository_has_fulltext": false
+ },
+ "has_content": {
+  "pdf": false,
+  "grobid_xml": false
+ },
+ "abstract_inverted_index": {
+  "Synthetic": [
+   0
+  ],
+  "abstract": [
+   1
+  ],
+  "for": [
+   2
+  ],
+  "tests:": [
+   3
+  ],
+  "employees": [
+   4
+  ],
+  "enrolled": [
+   5
+  ],
+  "automatically": [
+   6
+  ],
+  "kept": [
+   7
+  ],
+  "the": [
+   8
+  ],
+  "default": [
+   9
+  ],
+  "contribution": [
+   10
+  ],
+  "rate.": [
+   11
+  ]
+ },
+ "primary_location": {
+  "is_oa": false,
+  "landing_page_url": "https://doi.org/10.1162/003355301753265543",
+  "pdf_url": null,
+  "source": {
+   "display_name": "The Quarterly Journal of Economics"
+  },
+  "license": null,
+  "version": "publishedVersion"
+ }
+}

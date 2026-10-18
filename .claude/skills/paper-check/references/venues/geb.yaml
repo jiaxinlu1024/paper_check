@@ -1,0 +1,257 @@
+id: geb
+name: Games and Economic Behavior
+abbreviation: GEB
+publisher: Elsevier
+group: field
+checked_on: "2026-10-17"
+notes: >-
+  Editorial transition. Per the Game Theory Society (GTS), Elsevier did not renew editor Hervé Moulin's
+  contract and all seven editors resigned; they process new submissions until 14 November 2026 and may
+  return them if the depleted board cannot handle them. The GTS ends its association with GEB effective
+  15 November 2026 and is exploring a new society-owned journal. Policies may change under new editors:
+  recheck this profile after November 2026. The guide for authors exists only on ScienceDirect, which
+  returned HTTP 403, so journal-specific rules are unconfirmed, most with values from web search
+  summaries of the guide. Confirmed rules come from Elsevier-wide policy pages, the Elsevier journal
+  page and the GTS site, as each note says.
+sources:
+  - id: guide
+    url: https://www.sciencedirect.com/journal/games-and-economic-behavior/publish/guide-for-authors
+    title: Guide for authors, Games and Economic Behavior (ScienceDirect)
+    access: blocked
+    note: HTTP 403 ("There was a problem providing the content you requested"). Page blocked automated access; verify in a browser.
+  - id: guide_search
+    url: https://www.sciencedirect.com/journal/games-and-economic-behavior/publish/guide-for-authors
+    title: Guide for authors, Games and Economic Behavior (web search summary)
+    access: search_summary
+    note: Summary text returned by the web search tool for this URL on 2026-10-17 (three searches); not the page's own wording.
+  - id: shop
+    url: https://shop.elsevier.com/journals/games-and-economic-behavior/0899-8256
+    title: Games and Economic Behavior, Elsevier journal page
+    access: read
+    note: Gives publication criteria and the evaluation procedure; points to ScienceDirect for the guide.
+  - id: em
+    url: https://www.editorialmanager.com/ygame/default.aspx
+    title: Editorial Manager, Games and Economic Behavior
+    access: read
+    note: Login page; its "Instructions For Authors" link leads to the blocked ScienceDirect guide. No instructions of its own.
+  - id: gts_statement
+    url: https://gametheorysociety.org/statement-on-the-game-theory-societys-relationship-with-games-and-economic-behavior/
+    title: Statement on the Game Theory Society's relationship with Games and Economic Behavior (9 October 2026)
+    access: read
+  - id: gts_moulin
+    url: https://gametheorysociety.org/message-from-herve-moulin-geb-editor/
+    title: Message from Hervé Moulin, GEB Editor (18 August 2026)
+    access: read
+  - id: gts_geb
+    url: https://gametheorysociety.org/games-and-economic-behavior/
+    title: Games and Economic Behavior, Game Theory Society
+    access: read
+    note: Journal description and history; no submission rules.
+  - id: el_genai
+    url: https://www.elsevier.com/about/policies-and-standards/generative-ai-policies-for-journals
+    title: Generative AI policies for journals (Elsevier-wide)
+    access: read
+  - id: el_ethics
+    url: https://www.elsevier.com/about/policies-and-standards/publishing-ethics
+    title: Publishing ethics (Elsevier-wide)
+    access: read
+  - id: el_research_ethics
+    url: https://www.elsevier.com/about/policies-and-standards/research-ethics
+    title: Research ethics (Elsevier-wide)
+    access: read
+  - id: el_highlights
+    url: https://www.elsevier.com/researcher/author/tools-and-resources/highlights
+    title: Highlights (Elsevier-wide)
+    access: read
+  - id: el_graphical_abstract
+    url: https://www.elsevier.com/researcher/author/tools-and-resources/graphical-abstract
+    title: Graphical abstract (Elsevier-wide)
+    access: read
+  - id: el_research_data_faq
+    url: https://www.elsevier.com/about/policies-and-standards/research-data/faq
+    title: Research data FAQs (Elsevier-wide)
+    access: read
+  - id: el_submission_fees
+    url: https://www.elsevier.com/researcher/author/policies-and-guidelines/submission-fees
+    title: Submission fees (Elsevier economics, finance and accounting journals)
+    access: read
+  - id: el_latex
+    url: https://www.elsevier.com/researcher/author/policies-and-guidelines/latex-instructions
+    title: LaTeX instructions (Elsevier-wide)
+    access: read
+  - id: el_credit
+    url: https://www.elsevier.com/researcher/author/policies-and-guidelines/credit-author-statement
+    title: CRediT author statement (Elsevier-wide)
+    access: read
+rules:
+  abstract_max_words:
+    status: unconfirmed
+    value: 250
+    source: guide_search
+    note: >-
+      Search summary of the guide (https://www.sciencedirect.com/journal/games-and-economic-behavior/publish/guide-for-authors):
+      "Abstract: It must be 250 words or fewer and stand alone, and it should avoid references and uncommon
+      abbreviations." Page blocked automated access; verify in a browser.
+  manuscript_limit:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser. No search summary mentioned a word or page limit.
+  keywords:
+    status: unconfirmed
+    value: {required: true, min: 1, max: 7}
+    source: guide_search
+    note: >-
+      Search summary of the guide (https://www.sciencedirect.com/journal/games-and-economic-behavior/publish/guide-for-authors): "Keywords: Authors must supply between 1 and
+      7 keywords. You are required to provide 1 to 7 keywords for indexing purposes." Page blocked
+      automated access; verify in a browser.
+  jel_codes:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary said "the results do not
+      mention JEL classification codes".
+  highlights:
+    status: unconfirmed
+    value: {required: null, count_min: 3, count_max: 5, max_chars_each: 85}
+    source: guide_search
+    note: >-
+      Search summary of the guide (https://www.sciencedirect.com/journal/games-and-economic-behavior/publish/guide-for-authors): "Highlights: The guide asks for a separate
+      editable file with "highlights" in its name. It should contain 3 to 5 bullet points, each up to 85
+      characters including spaces." The summary does not say whether they are mandatory at first
+      submission. Page blocked automated access; verify in a browser.
+  review_type:
+    status: unconfirmed
+    value: single_anonymous
+    source: guide_search
+    note: >-
+      Search summary of the guide (https://www.sciencedirect.com/journal/games-and-economic-behavior/publish/guide-for-authors): "This journal follows a single anonymized
+      review process." Elsevier's journal page (read) says editors consult "advisory editors and
+      reviewers who are anonymous to the authors", which does not settle whether authors are anonymous
+      to reviewers. Page blocked automated access; verify in a browser.
+  disclosure_statement:
+    status: confirmed
+    value: {required: true, detail: "Disclose in the manuscript any financial and personal relationships with people or organisations that could be seen to bias the work."}
+    source: el_ethics
+    quote: "All authors should disclose in their manuscript any financial and personal relationships with other people or organisations that could be viewed as inappropriately influencing (bias) their work."
+    note: Elsevier-wide publishing ethics policy, not the journal's own guide.
+  data_availability_statement:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. A search summary says the guide has "dedicated
+      pages on a data statement, data linking, and co-submission of related data" but gave no wording.
+  data_code_policy:
+    status: unconfirmed
+    value:
+      summary: Unknown for this journal. Elsevier-wide baseline encourages data sharing without mandating it; journals may set stricter rules in their guide.
+      url: https://www.sciencedirect.com/journal/games-and-economic-behavior/publish/guide-for-authors
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. Elsevier's research data FAQ (read) answers
+      "Is it compulsory to share my research data?" with "No." and adds that some journals have "their own
+      mandatory data sharing policies".
+  ethics_approval:
+    status: confirmed
+    value: {required: true, detail: "Studies with human participants need a statement in the manuscript that the appropriate institutional committee approved them, with the date and reference number of the approval; exempt studies must explain why."}
+    source: el_research_ethics
+    quote: "The authors should include a statement in the manuscript that confirms these requirements have been met. The statement should contain the date and reference number of the ethical approval(s) obtained"
+    note: Elsevier-wide research ethics policy, not the journal's own guide. Applies to experimental papers.
+  trial_registration:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. Elsevier's publishing ethics page covers
+      clinical trial registration only "for relevant journals" and names no economics registry.
+  deception:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser. No search summary mentioned a deception policy.
+  experiment_materials:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser.
+  ai_use:
+    status: confirmed
+    value: {detail: "Declare any use of AI tools in manuscript preparation in a separate AI declaration statement in the manuscript at submission (tool, purpose, extent of oversight). AI tools cannot be authors. Basic grammar and spelling checks need no declaration."}
+    source: el_genai
+    quote: "Authors should disclose the use of AI tools for manuscript preparation in a separate AI declaration statement included in their manuscript upon submission."
+    note: >-
+      Elsevier-wide policy. A search summary of the blocked guide says the statement is "placed before
+      the references".
+  citation_style:
+    status: unconfirmed
+    source: guide
+    note: Page blocked automated access; verify in a browser.
+  submission_fee:
+    status: unconfirmed
+    source: guide
+    note: >-
+      Page blocked automated access; verify in a browser. Search summaries of the guide and of the
+      journal's insights page mention only the open access charge ("Article Publishing Charge (APC): USD
+      2,860 (excluding taxes)") and no submission fee. Elsevier's submission-fees page (read) says a fee
+      "is clearly flagged in the journal's guide for authors and during the submission process".
+  file_format:
+    status: unconfirmed
+    value: "Editable source files (.doc/.docx or .tex), not PDF"
+    source: guide_search
+    note: >-
+      Search summary of the guide (https://www.sciencedirect.com/journal/games-and-economic-behavior/publish/guide-for-authors): "Format: Submit editable files (.doc/.docx or
+      .tex), not PDFs. Word files should be single-column, and double-column layout is allowed only for
+      LaTeX." Elsevier's LaTeX page (read, Elsevier-wide) says "Most journals accept a PDF of your
+      manuscript at initial submission." Page blocked automated access; verify in a browser.
+  other:
+    - name: editorial_transition
+      status: confirmed
+      value: {detail: "Outgoing editors process new submissions until 14 November 2026 but may return them promptly if the board cannot handle them; after that they only finish papers already under evaluation"}
+      source: gts_moulin
+      quote: "New papers submitted between now and November 14 will also be processed unless the depleted Editorial Board is not able to process them, in which case they will be promptly returned to the authors."
+      note: From the Game Theory Society site, not Elsevier. Elsevier's own announcements would be on ScienceDirect, which was blocked.
+    - name: society_affiliation
+      status: confirmed
+      value: {detail: "Game Theory Society association ends 15 November 2026"}
+      source: gts_statement
+      quote: "The Game Theory Society will withdraw its support for and end its association with Games and Economic Behavior (GEB), effective November 15, 2026."
+    - name: general_interest_case
+      status: confirmed
+      value: {detail: "The paper itself should argue that it significantly advances game theory or its applications for a general audience; about a third of submissions are desk-rejected"}
+      source: shop
+      quote: "Authors are therefore encouraged to make a clear case, in the paper itself, that it meets these publication criteria."
+      note: The same page says "About one third of the submitted papers are desk-rejected."
+    - name: highlights_format
+      status: confirmed
+      value: {count_min: 3, count_max: 5, max_chars_each: 85}
+      source: el_highlights
+      quote: "Highlights are three to five (three to four for Cell Press articles) bullet points ... Each Highlight can be no more than 85 characters, including spaces"
+      note: Elsevier-wide format for highlights when they are supplied. Whether GEB requires them at first submission is in the highlights rule.
+    - name: funding_statement
+      status: confirmed
+      value: {required: true, detail: "Disclose all sources of funding and the sponsor's role in design, analysis, writing and the decision to submit"}
+      source: el_ethics
+      quote: "All sources of financial support for the conduct of the research and/or preparation of the article should be disclosed, as should the role of the sponsor(s), if any"
+      note: Elsevier-wide publishing ethics policy, not the journal's own guide.
+    - name: informed_consent
+      status: confirmed
+      value: {required: true, detail: "Statement that informed consent was obtained from all human participants"}
+      source: el_research_ethics
+      quote: "Authors should include a statement in the manuscript confirming that they obtained informed consent from all participants"
+      note: Elsevier-wide research ethics policy, not the journal's own guide. Applies to experimental papers.
+    - name: graphical_abstract
+      status: unconfirmed
+      source: guide
+      note: >-
+        Page blocked automated access; verify in a browser. Elsevier's graphical abstract page (read)
+        says "Please review the journal's guide for authors for specific policies and instructions."
+    - name: title_page
+      status: unconfirmed
+      source: guide
+      note: Page blocked automated access; verify in a browser.
+    - name: cover_letter
+      status: unconfirmed
+      source: guide
+      note: Page blocked automated access; verify in a browser.
+    - name: credit_statement
+      status: unconfirmed
+      source: el_credit
+      note: >-
+        Elsevier's CRediT page says "CRediT statements should be provided during the submission process"
+        but does not say which journals use them; the journal guide blocked automated access. Verify in a browser.

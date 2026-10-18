@@ -1,0 +1,309 @@
+id: econometrica
+name: Econometrica
+abbreviation: ECTA
+publisher: The Econometric Society (published with Wiley)
+group: general-top5
+checked_on: "2026-10-17"
+notes: >-
+  Only members of the Econometric Society may submit, and new submissions pay a fee. The 45-page limit
+  covers references and appendices; a supplemental appendix of up to 25 pages sits outside it. Since
+  January 1, 2026 experimental papers must include instructions or survey transcripts at first submission,
+  and studies that generate their own data must be pre-registered unless data collection began before that
+  date. Each author also files a disclosure form in the online submission system, covering financial support,
+  interested parties and, for research on human subjects, whether IRB approval was obtained.
+sources:
+  - id: guidelines
+    url: https://www.econometricsociety.org/publications/econometrica/information-authors
+    title: Econometrica Submission Guidelines
+    access: read
+  - id: policies
+    url: https://www.econometricsociety.org/publications/econometrica/editorial-procedures-and-policies
+    title: Econometrica Editorial Procedures and Policies
+    access: read
+    note: >-
+      Covers the AI, replication, experimental papers, disclosure and responsibility-statement policies.
+  - id: dcap
+    url: https://www.econometricsociety.org/publications/es-data-editor-website/data-and-code-availability-policy
+    title: Econometric Society Data and Code Availability Policy
+    access: read
+    note: Applies to Econometrica, Quantitative Economics and Theoretical Economics; compatible with DCAS v1.0.
+  - id: before_submit
+    url: https://www.econometricsociety.org/publications/es-data-editor-website/before-you-submit
+    title: Econometric Society Data Editor, Before You Submit
+    access: read
+  - id: editorial_express
+    url: https://editorialexpress.com/econometrica
+    title: Econometrica submission form (Editorial Express)
+    access: read
+    note: >-
+      Redirects to e-submit.cgi?dbase=econometrica. Members log in through the Society's site before the
+      submit button appears; the step menu includes "Pay Submission fee".
+  - id: latex_sample
+    url: https://raw.githubusercontent.com/vtex-soft/texsupport.econometricsociety-ecta/master/ecta_sample.pdf
+    title: Econometrica LaTeX template, sample article and instructions (econsocart package by VTeX)
+    access: read
+    note: >-
+      The Submission Guidelines link to the journal's LaTeX support page, https://www.e-publications.org/es/support/,
+      which points to this GitHub repository. Using the template is recommended, not required.
+rules:
+  abstract_max_words:
+    status: confirmed
+    value: 150
+    source: guidelines
+    quote: "the title page should include an abstract of no more than 150 words, keywords, and full author affiliations"
+  manuscript_limit:
+    status: confirmed
+    value:
+      amount: 45
+      unit: pages
+      scope: >-
+        whole manuscript including references and appendices, at 12-point font or larger, line spacing of at
+        least 1.5 and margins of at least 1.25 inches; a supplemental appendix (up to 25 pages) and the
+        replication or experimental documentation do not count
+    source: guidelines
+    quote: "Papers should be limited to 45 pages, including references and appendices."
+    note: >-
+      Longer papers need the Editor's permission by email before submission. The supporting documentation
+      required by the Replication and Experimental Papers policies "does not count toward page limits".
+  keywords:
+    status: confirmed
+    value: {required: true, min: null, max: null}
+    source: guidelines
+    quote: "the title page should include an abstract of no more than 150 words, keywords, and full author affiliations"
+    note: >-
+      The guidelines give no number. The journal's LaTeX sample article (latex_sample) recommends 3 to 8
+      keywords; treat that as advice.
+  jel_codes:
+    status: confirmed
+    value: {required: false, min: null, max: null}
+    source: guidelines
+    quote: "JEL codes are optional"
+  highlights:
+    status: not_stated
+    note: >-
+      The Submission Guidelines and the Editorial Procedures and Policies, read in full, do not mention
+      highlights.
+  review_type:
+    status: confirmed
+    value: single_anonymous
+    source: guidelines
+    quote: "A working paper version should be publicly available, such as on a personal website or other public repository."
+    note: >-
+      The guidelines do not name the review model; the value is read from them. Authors are not anonymized:
+      a public working paper is expected and the title page must carry full author affiliations. The
+      policies page adds that "Referee identities and correspondence are never shared with authors" and that
+      authors' disclosure information is available to referees. Do not anonymize the manuscript.
+  disclosure_statement:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        Every submission must disclose its sources of financial support. Each author separately discloses
+        interested parties that paid them, a close relative or partner at least US$10,000 in the past three
+        years (including in-kind support such as data access), relevant officer, director or board positions,
+        and any other party's right to review the paper before circulation. Authors fill in disclosure forms
+        in the online submission system, one link per coauthor; the forms are visible to referees and the
+        statements are posted with published articles.
+    source: policies
+    quote: "Every submitted article must disclose its sources of financial support."
+    note: "The same section says: \"Authors complete disclosure forms through the online submission system.\""
+  data_availability_statement:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        A Data Availability Statement goes in the README.pdf of the replication package, provided before
+        acceptance, not in the submitted manuscript. It must explain how to access the original data, with
+        limits, costs, dataset versions and access dates, and which datasets the package includes or excludes.
+    source: dcap
+    quote: "The DAS should be included as a section of the README file"
+  data_code_policy:
+    status: confirmed
+    value:
+      summary: >-
+        Empirical, experimental and simulation papers are published only if data and code are documented and
+        available non-exclusively. Before acceptance authors provide raw data, code and documentation; the
+        Data Editor runs reproducibility checks; materials are due within one month of conditional
+        acceptance; packages are deposited in the Econometric Society Journals' Community on Zenodo with a
+        license. Data in a non-proprietary format is required, plus a README.pdf. Exemptions must be requested
+        at first submission, in a cover letter and by ticking the box in Editorial Express; they are not
+        considered later. Submitting implies accepting the policy, which is compatible with DCAS v1.0.
+      url: https://www.econometricsociety.org/publications/es-data-editor-website/data-and-code-availability-policy
+    source: policies
+    quote: "Before acceptance, authors must provide the raw data, code, and sufficient documentation to enable reproducibility checks on all empirical, experimental, and simulation results"
+  ethics_approval:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        For research collecting data on human subjects, the corresponding author must disclose, in the
+        disclosure form filed at submission, whether IRB approval was obtained, and explain why if it was not.
+        The replication package must also include the ethics approval (e.g. from the IRB) for primary data
+        from experiments or surveys.
+    source: policies
+    quote: "must disclose whether Institutional Review Board (IRB) approval was obtained. If IRB approval was not received, the author must explain why."
+  trial_registration:
+    status: confirmed
+    value:
+      required_for: >-
+        studies that generate their own data (randomized controlled trials, lab, lab-in-the-field and online
+        experiments and surveys) whose data collection began on or after January 1, 2026
+      registry: a recognized trial registry such as the AEA RCT Registry, AsPredicted or the OSF Registries
+      detail: >-
+        The pre-registration must specify the experimental protocol and the outcome variables and is uploaded
+        as a separate file with the submission. Changes to data collection must be justified in the
+        manuscript. Exemptions require contacting the Editor before submission. The replication package must
+        identify and cite the pre-registration in its README.
+    source: policies
+    quote: "must pre-register their studies in a recognized trial registry such as the AEA RCT Registry, AsPredicted, or the OSF Registries"
+    note: >-
+      The policy also says: "The preregistration requirement does not apply to studies for which data
+      collection began before January 1, 2026".
+  deception:
+    status: confirmed
+    value: allowed_with_justification
+    source: policies
+    quote: "Any use of deception or deliberate instructional inaccuracies."
+    note: >-
+      Closest value. The policies do not ban deception; the Experimental Papers Policy lists any use of
+      deception among the procedural details to give for review, and the Data and Code Availability Policy
+      requires the replication package to document "Any use of deception and/or any instructional
+      inaccuracies." Check that a paper using deception describes it.
+  experiment_materials:
+    status: confirmed
+    value:
+      detail: >-
+        From January 1, 2026, every experimental submission (laboratory, lab-in-the-field or online experiments
+        or surveys) must include detailed experimental instructions or survey transcripts at first submission,
+        with enough procedural detail in the paper or an appendix: participant pool and recruitment, setting
+        and format, comprehension checks, matching, payments, session size and timing, and any deception.
+        Non-English material needs a translation. The material is password-protected and seen only by editors
+        and referees. After acceptance the replication package must add protocols, consent forms, screenshots
+        and the code used to run the experiment.
+    source: policies
+    quote: "all experimental paper submissions must include detailed experimental instructions or survey transcripts at the time of initial submission"
+  ai_use:
+    status: confirmed
+    value:
+      detail: >-
+        Authors may use AI tools but remain responsible and accountable for all content, including verifying
+        AI output, the analysis and ideas, and protecting data privacy and intellectual property. AI tools may
+        not be listed as authors. The policy does not ask for an AI-use statement. Conditionally accepted
+        papers are checked with the AI tool Refine, and submitting implies consent to this.
+    source: policies
+    quote: "Authors preparing a manuscript for Econometrica may use AI tools, but remain responsible and accountable for all content of their work."
+  citation_style:
+    status: confirmed
+    value: >-
+      Author-year citations and reference list in Econometrica style, as in the journal's econsocart LaTeX
+      template (econsoc.bst); the template is recommended, not required, at submission
+    source: latex_sample
+    quote: "Simple author and year cite: Aumann"
+    note: >-
+      The Submission Guidelines set no citation style for submissions; they say the LaTeX template is
+      recommended, though not required.
+  submission_fee:
+    status: confirmed
+    value:
+      amount: 125
+      currency: USD
+      detail: >-
+        US$125 for regular members and US$50 for student members, for every new submission; invited
+        resubmissions need only membership. Paid by credit card at submission and non-refundable, including
+        desk rejections. Authors residing in World Bank low-income countries are exempt; the student rate or
+        exemption applies only if all coauthors qualify. Society membership is required to submit. Accepted
+        papers also pay a publication fee of 50% of the production cost per page, waived for low-income and
+        lower-middle-income countries.
+    source: guidelines
+    quote: "A submission fee of US$125 for regular members and US$50 for student members applies to all new submissions."
+  file_format:
+    status: confirmed
+    value: PDF
+    source: guidelines
+    quote: "Papers should be submitted in PDF format."
+  other:
+    - name: membership_required
+      status: confirmed
+      value: Every submitting author must be a member of the Econometric Society
+      source: guidelines
+      quote: "you must be a member of the Econometric Society"
+      note: The Editorial Express form also says members log in through the Society's site before submitting.
+    - name: public_working_paper
+      status: confirmed
+      value: A working paper version should be publicly available
+      source: guidelines
+      quote: "A working paper version should be publicly available, such as on a personal website or other public repository."
+    - name: formatting
+      status: confirmed
+      value: {font_min_pt: 12, line_spacing_min: 1.5, margins_min_in: 1.25, pages_numbered: true, applies_to: entire manuscript including references and appendices}
+      source: guidelines
+      quote: "The font size must be at least 12 points, line spacing at least 1.5, and all margins at least 1.25 inches."
+    - name: layout
+      status: confirmed
+      value: Footnotes and figures in place, not collected at the end of the document
+      source: guidelines
+      quote: "footnotes and figures should not be placed at the end of the document"
+    - name: supplemental_appendix_limit
+      status: confirmed
+      value: {amount: 25, unit: pages, detail: "clearly labeled, same formatting rules; the main paper must be self-contained"}
+      source: guidelines
+      quote: "The supplemental appendix should be clearly labeled, should not exceed 25 pages, and must follow the same formatting requirements"
+    - name: page_limit_exception
+      status: confirmed
+      value: Permission from the Editor by email before submitting a longer paper
+      source: guidelines
+      quote: "Authors seeking to submit a paper exceeding the allowed length must obtain permission from the Editor via email before submission."
+    - name: cover_letter
+      status: confirmed
+      value:
+        required: false
+        detail: >-
+          Only when relevant: related work submitted elsewhere, how the paper differs from a previously
+          rejected Econometrica submission, and any request for exemption from the journal's policies,
+          including data and code exemptions.
+      source: guidelines
+      quote: "A cover letter should be included only if it contains information relevant to the review process."
+    - name: data_exemption_request
+      status: confirmed
+      value: Cover letter plus the exemption box in Editorial Express, at first submission only
+      source: before_submit
+      quote: "If you are unable to meet a specific requirement, submit a Cover Letter requesting an exemption and explaining the reasons preventing you from complying with the policy. Tick the relevant box in the Editorial Express platform."
+    - name: prior_or_concurrent_publication
+      status: confirmed
+      value: Disclose full details of overlapping work submitted or published elsewhere, other than working papers and personal websites
+      source: policies
+      quote: "the author must disclose full details to the journal"
+    - name: random_author_order_symbol
+      status: confirmed
+      value: Do not use the circled-r symbol for certified random author order; a footnote may explain author order
+      source: guidelines
+      quote: "to indicate a certified random order for authors"
+    - name: supplementary_files
+      status: confirmed
+      value: Compress large files into .zip; more than two supplemental files go in a single .zip
+      source: guidelines
+      quote: "If submitting more than two supplemental files, combine them into a single .zip file."
+    - name: responsibility_statement
+      status: confirmed
+      value: >-
+        Accepted papers with several authors include a responsibility statement, by default "All authors assume
+        responsibility for all aspects of the paper."
+      source: policies
+      quote: "all journals of the Econometric Society require accepted papers with multiple authors to include a responsibility statement"
+    - name: comment_or_correction
+      status: confirmed
+      value: >-
+        Contact at least one original author first and include the correspondence; titles start "Correction to"
+        or "Comment on" followed by the original title and authors
+      source: guidelines
+      quote: "Submitting a correction or comment to an Econometric Society journal requires contacting at least one of the original authors"
+    - name: publication_fee
+      status: confirmed
+      value: {amount: "50% of the production cost per page", detail: "charged to accepted papers after proofs; waived for low-income and lower-middle-income countries"}
+      source: guidelines
+      quote: "Accepted papers will incur a publication fee of 50% of the production cost per page."
+    - name: similarity_check
+      status: confirmed
+      value: Submissions are screened for plagiarism with Crossref Similarity Check
+      source: policies
+      quote: "uses Similarity Check to screen submissions"

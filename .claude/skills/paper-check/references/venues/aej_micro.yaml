@@ -1,0 +1,374 @@
+id: aej_micro
+name: "American Economic Journal: Microeconomics"
+abbreviation: "AEJ: Micro"
+publisher: American Economic Association
+group: general
+checked_on: "2026-10-17"
+notes: >-
+  Rules are shared across the AEA journals unless a rule says otherwise. Since fall 2026 every submission
+  must be anonymized because the AEA is running a three-year randomized trial of author-anonymized review;
+  the journal's Editorial Policy page still describes single-blind review. Papers reviewed at the AER or
+  AER Insights can be transferred with their referee reports. The Style Guide binds accepted articles only.
+sources:
+  - id: submissions
+    url: https://www.aeaweb.org/journals/mic/submissions
+    title: "AEJ: Microeconomics Submission Guidelines"
+    access: read
+  - id: editorial_policy
+    url: https://www.aeaweb.org/journals/mic/editorial-policy
+    title: "AEJ: Microeconomics Editorial Policy"
+    access: read
+  - id: style_guide
+    url: https://www.aeaweb.org/journals/mic/style-guide
+    title: "AEJ: Microeconomics Style Guide"
+    access: read
+  - id: transfer_faq
+    url: https://www.aeaweb.org/journals/aej/faq-transfer-option
+    title: Frequently Asked Questions about the Transfer Option from AER or AER Insights to an AEJ
+    access: read
+  - id: rct_announcement
+    url: https://www.aeaweb.org/news/rct-announcement
+    title: Announcement of an RCT on the Effects of Author-Anonymized Reviewing
+    access: read
+    note: Dated September 10, 2026. Covers the AER, AER Insights and the four AEJs; launch expected fall 2026.
+  - id: disclosure_policy
+    url: https://www.aeaweb.org/journals/policies/disclosure-policy
+    title: AEA Disclosure Policy
+    access: read
+  - id: data_code_policy
+    url: https://www.aeaweb.org/journals/data/data-code-policy
+    title: AEA Data and Code Availability Policy
+    access: read
+    note: February 2026 version, compatible with DCAS v1.0.
+  - id: experimental_policy
+    url: https://www.aeaweb.org/journals/data/policy-experimental-surveys
+    title: AEA Policy for Papers Conducting Experiments and Collecting Primary Data
+    access: read
+    note: https://www.aeaweb.org/journals/data/policy-experimental redirects here.
+  - id: rct_registry
+    url: https://www.aeaweb.org/journals/policies/rct-registry
+    title: About the AEA RCT Registry (AEA journal policy)
+    access: read
+  - id: data_legality
+    url: https://www.aeaweb.org/journals/data/data-legality-policy
+    title: AEA Data Legality Policy and Explanations
+    access: read
+  - id: latex_template
+    url: https://www.aeaweb.org/journals/templates/latex_templates
+    title: AEA LaTeX templates (ZIP with AEJ-Article.tex and AEA.cls)
+    access: read
+    note: ZIP archive; template and class file read as text, not compiled.
+  - id: scholarone
+    url: https://mc.manuscriptcentral.com/aej-micro
+    title: "AEJ: Microeconomics ScholarOne Manuscripts submission site"
+    access: blocked
+    note: Answered HTTP 403 with a Cloudflare "Just a moment..." challenge. Not bypassed.
+rules:
+  abstract_max_words:
+    status: confirmed
+    value: 100
+    source: submissions
+    quote: "An abstract of 100 or fewer words is required."
+  manuscript_limit:
+    status: confirmed
+    value:
+      amount: 45
+      unit: pages
+      scope: >-
+        manuscript including figures, tables, references and in-paper appendices, at a minimum of 12-point
+        font, 1.5 spacing and 1-inch margins; a strong recommendation, not a hard cap
+    source: submissions
+    quote: "We strongly recommend that manuscripts not exceed 45 pages ... The suggested length includes figures, tables, references, and in-paper appendices."
+    note: >-
+      The same page says the average AEJ Micro article is 36-37 typeset pages and that shorter papers get
+      full consideration. Unlike the AER, AEJ Applied and AEJ Policy pages, it gives a single 45-page
+      figure tied to 12-point formatting. Flag an overlong paper as a warning, not a desk-reject risk.
+  keywords:
+    status: not_stated
+    note: >-
+      The Submission Guidelines, Editorial Policy and Style Guide, read in full, do not ask for keywords.
+      The ScholarOne submission form may ask for them, but it blocked automated access; verify in a browser.
+  jel_codes:
+    status: not_stated
+    note: >-
+      The Submission Guidelines, Editorial Policy and Style Guide, read in full, do not ask for JEL codes.
+      The AEA LaTeX class defines optional \JEL and \Keywords commands, and the ScholarOne submission form
+      may ask for codes, but ScholarOne blocked automated access; verify in a browser.
+  highlights:
+    status: not_stated
+    note: The guidelines, read in full, do not mention author-supplied highlights.
+  review_type:
+    status: confirmed
+    value: double_anonymous
+    source: submissions
+    quote: "The AEA has launched a three-year randomized controlled trial of the effects of author-anonymized peer reviewing ... Manuscripts must be anonymized to avoid revealing author identities"
+    note: >-
+      Every manuscript must be prepared for double-anonymous review, so check anonymization. Actual review is
+      randomized: the AEA announcement (September 10, 2026) says only the treatment group's reviewers get
+      materials with author identities removed. The Editorial Policy page still says all manuscripts
+      submitted to AEJ Microeconomics undergo single-blind review. Recheck when the three-year trial ends.
+  disclosure_statement:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        Each author uploads a separate PDF titled "Disclosure Statement" with their name and the paper
+        title, covering funding, interested parties, relevant positions, review rights and IRB approval.
+        An author with nothing to disclose must say so explicitly. Statements are shown to referees.
+    source: submissions
+    quote: "Each (co)author should prepare a separate PDF document entitled ... which must be provided with the manuscript ... Submissions that do not include these statements will be considered incomplete and will not be reviewed."
+  data_availability_statement:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        Due before acceptance, in the replication package README or an online appendix (DCAS #1), covering
+        source and derived data, provenance, access conditions and the cost and time of access. The submitted
+        manuscript need not contain one, but data access limitations must be flagged at submission.
+    source: data_code_policy
+    quote: "A Data Availability Statement covering both the source data and any derivative data must be provided either in the README file (see below) or as part of an online appendix."
+  data_code_policy:
+    status: confirmed
+    value:
+      summary: >-
+        Before acceptance, papers with empirical work, simulations or experiments must provide data, code and
+        computation details sufficient for replication, kept in a trusted repository such as the AEA Data and
+        Code Repository; the AEA Data Editor runs reproducibility checks. Constraints on publishing data must
+        be noted at submission.
+      url: https://www.aeaweb.org/journals/data/data-code-policy
+    source: data_code_policy
+    quote: "Prior to acceptance, authors of papers that contain empirical work, simulations, or experimental work must provide the data, code, and other details of the computations sufficient to permit replication. ... Authors' constraints in making the data publicly available must be noted at the time of submission"
+  ethics_approval:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        Applies to papers that collect data on human subjects. Each Disclosure Statement must say whether
+        IRB approval was obtained and, if not, why. The ethics board name and approval or exemption number
+        belong in the title (acknowledgement) footnote (DCAS #11). Under anonymized review, omit IRB approvals
+        from the manuscript; the acknowledgement footnote goes on the separate title page.
+    source: disclosure_policy
+    quote: "For any paper involving the collection of data on human subjects the author(s) must disclose whether they have obtained Institutional Review Board (IRB) approval; if no IRB approval was obtained, the reason should be stated."
+  trial_registration:
+    status: confirmed
+    value:
+      required_for: field experiments (RCTs); laboratory experiments are exempt for now
+      registry: AEA RCT Registry (socialscienceregistry.org)
+      detail: >-
+        Register before submission. Give the AEA RCT ID (AEARCTR-...) in the submission form and cite the
+        registration in the acknowledgement footnote, e.g. "This RCT was registered as AEARCTR-0000005
+        (Zhang 2017)"; the registration also goes in the reference list.
+    source: submissions
+    quote: "Research involving field experiments must be recorded in the AEA registry for randomized controlled trials (RCTs). (Laboratory experiments do not need to be registered at this time.)"
+    note: >-
+      The Data and Code Availability Policy (DCAS #12) says randomized controlled trials must be registered
+      and cited in the title footnote; the journal pages exempt laboratory experiments.
+  deception:
+    status: not_stated
+    value: not_addressed
+    note: >-
+      Neither the Submission Guidelines, the Editorial Policy, nor the AEA Policy for Papers Conducting
+      Experiments and Collecting Primary Data mentions deception.
+  experiment_materials:
+    status: confirmed
+    value:
+      detail: >-
+        Summarize the original experiment or survey instructions in the design discussion and provide them in
+        full as an appendix at submission. Summarize subject eligibility and selection in the manuscript.
+        Before acceptance, deposit experiment software or scripts (e.g. z-Tree, Qualtrics), a human-readable
+        instrument and the raw data. Request any exception at submission.
+    source: experimental_policy
+    quote: "The original instructions for the experiment or survey should be summarized in the submitted manuscript as part of the discussion of the experimental or survey design and should be provided in full as an appendix at the time of submission."
+  ai_use:
+    status: confirmed
+    value:
+      detail: >-
+        AI software may not be listed as an author. Any AI use in preparing the manuscript, including drafting
+        or editing text, must be briefly described during the submission process. Authors are accountable
+        for, and must fact-check, AI-assisted output.
+    source: submissions
+    quote: "If AI software was used in the preparation of the manuscript, including drafting or editing text, this must be briefly described during the submission process"
+  citation_style:
+    status: confirmed
+    value: Chicago Manual of Style author-date (AEA style); preferred at submission, required after acceptance
+    source: submissions
+    quote: 'If you are using bibliographic software to prepare your reference list, we prefer that you use the "Chicago Manual Author-Date" style.'
+  submission_fee:
+    status: confirmed
+    value:
+      amount: 300
+      currency: USD
+      detail: >-
+        Nonmember rate for high-income countries. AEA members pay $200 (high-income) or $100 (middle-income);
+        nonmembers in middle-income countries pay $200; authors in low-income countries pay $0. Paid by credit
+        card at submission; half is refunded if the paper is rejected without review.
+    source: submissions
+    quote: "AEA members ... High-income countries: $200 Middle-income countries: $100 Low-income countries: $0 Nonmembers ... High-income countries: $300 Middle-income countries: $200 Low-income countries: $0"
+  file_format:
+    status: confirmed
+    value: PDF, under 10 MB when reasonably possible; title page and each Disclosure Statement as separate PDFs
+    source: submissions
+    quote: "Manuscripts should be in PDF format and should be kept under 10 MB when reasonably possible."
+  other:
+    - name: page_formatting
+      status: confirmed
+      value: >-
+        At least 12-point font, 1.5 spacing and 1-inch margins on all sides throughout, including in-paper
+        appendices (references may be single spaced); number all pages. A strong recommendation.
+      source: submissions
+      quote: "We strongly recommend using a minimum of 12-point font, 1.5 spacing, and 1-inch margins on all sides. ... All pages should be numbered."
+    - name: transfer_from_aer
+      status: confirmed
+      value: >-
+        Papers reviewed at the AER or AER Insights may be submitted with a request to forward the referee
+        reports. Unrevised paper: a brief response letter to the editor, typically at most 5 pages of text
+        plus 5 tables or figures. Revised paper: a letter describing changes since the AER version, plus
+        responses to the AER referees if relevant. Upload the original AER manuscript as "Misc. (for review)".
+      source: submissions
+      quote: "Please submit a brief response letter to the editor (i.e., typically no more than 5 pages of text plus no more than 5 tables or figures)"
+      note: >-
+        The transfer FAQ says about 80 percent of transfer submissions at AEJ Micro are rejected or
+        summarily rejected, with decisions typically in 1-3 months.
+    - name: title_page
+      status: confirmed
+      value: >-
+        Title and abstract at the top of page 1. Author names, affiliations, contact details and the
+        acknowledgement footnote go in a separate PDF labeled "title page", not in the manuscript.
+      source: submissions
+      quote: 'The title of the article and the abstract should appear at the top of the first page, but author names, author affiliations, author contact information, and the acknowledgement footnote should be omitted from the manuscript and should instead be provided in a separate PDF document, labeled "title page."'
+      note: The Style Guide's "no title page" rule is for accepted articles.
+    - name: self_citation
+      status: confirmed
+      value: Cite the authors' own work by name, without "my", "our" or "the authors' previous work".
+      source: submissions
+      quote: "All references to the authors' prior work should be cited using the authors' names and should avoid the use of pronouns"
+    - name: identifying_details
+      status: confirmed
+      value: Omit identifying locations and institutional affiliations, such as study-site descriptions and IRB approvals.
+      source: submissions
+      quote: "Identifying locations and institutional affiliations, such as descriptions of study sites or IRB approvals, should be omitted."
+    - name: identifying_links
+      status: confirmed
+      value: Omit links to personal websites or to the authors' institutions.
+      source: submissions
+      quote: "Links to online information stored on personal websites or at institutions with which any of the coauthors are affiliated should be omitted."
+    - name: anonymized_appendices_and_letters
+      status: confirmed
+      value: Supplementary appendices and response letters to reviewers must also be anonymized.
+      source: submissions
+      quote: "Supplementary appendices must be anonymized. Correspondence to the reviewers, such as response letters, must be anonymized."
+    - name: style_guide_at_submission
+      status: confirmed
+      value: The Style Guide is optional at submission and required for accepted articles.
+      source: submissions
+      quote: "to the journal's Style Guide is required for accepted articles but is optional at the time of submission."
+      note: >-
+        The quote starts mid-sentence because the page's HTML splits the word "Adherence" across a tag,
+        which breaks exact matching.
+    - name: cover_letter
+      status: confirmed
+      value: >-
+        Optional. Use it only for substantive information: coeditors with a personal conflict of interest and
+        any data access limitations. Preferably entered in the submission form field.
+      source: submissions
+      quote: "A cover letter is not required and should only be used to provide substantive information ... Any data access limitations should also be noted in the cover letter."
+    - name: in_paper_appendices
+      status: confirmed
+      value: >-
+        In-paper appendices start on a new page after the text and before the references, and are typeset
+        and counted in the page total.
+      source: submissions
+      quote: "These appendices should begin on a new page following the text, preceding the references."
+      note: >-
+        The AEA LaTeX template's pointers say the appendix goes last, after the bibliography; the Submission
+        Guidelines say before the references.
+    - name: supplemental_appendix
+      status: confirmed
+      value: >-
+        An optional Supplemental Appendix (not edited or typeset) may hold nonessential material; the paper,
+        with any in-paper appendices, must be understandable without it.
+      source: submissions
+      quote: "The paper (including any in-paper appendices) must be self-contained"
+    - name: aea_templates
+      status: confirmed
+      value: AEA templates are optional; if used, use review mode.
+      source: submissions
+      quote: 'If these templates are used, they should be used in "review mode."'
+      note: >-
+        AEA.cls comments say authors are no longer concealed in the review copy (since July 2011), so review
+        mode alone does not anonymize the manuscript.
+    - name: exclusive_submission
+      status: confirmed
+      value: Papers under consideration at another journal may not be submitted.
+      source: submissions
+      quote: "Papers under consideration for publication at another journal are ineligible for submission"
+    - name: no_resubmission_after_rejection
+      status: confirmed
+      value: "Papers previously rejected by AEJ: Micro will not be reviewed again."
+      source: submissions
+      quote: "Papers previously rejected by the AEJ: Microeconomics should not be resubmitted and will not reviewed."
+    - name: publication_fee
+      status: confirmed
+      value: {amount: 15, currency: USD, per: typeset page, applies_to: papers first submitted on or after 2024-02-01}
+      source: submissions
+      quote: "If a paper is accepted for publication, a fee of $15 per typeset page will be assessed when page proofs are sent for author review."
+    - name: funding_statement
+      status: confirmed
+      value: >-
+        The article must state its sources of financial support, or that there were none. Under anonymized
+        review this belongs in the acknowledgement footnote on the separate title page.
+      source: disclosure_policy
+      quote: "Every submitted article should state the sources of financial support for the particular research it describes. If none, that fact should be stated."
+    - name: disclosure_contents
+      status: confirmed
+      value: >-
+        Disclose each interested party that gave at least $10,000 in the past three years (including in-kind
+        support such as data access), relevant paid or unpaid positions, the same for close relatives or
+        partners, and any party's right to review the paper before circulation.
+      source: disclosure_policy
+      quote: "Each author of a submitted article should identify each interested party from whom he or she has received significant financial support, summing to at least $10,000 in the past three years"
+    - name: acknowledgement_footnote
+      status: confirmed
+      value: >-
+        First-page footnote with each author's email, how the author order was determined, funding sources
+        and grant numbers, acknowledgments, IRB details (protocol number and institution) and the AEA RCT
+        registration with a citation. Under anonymized review it goes on the separate title page.
+      source: style_guide
+      quote: "A sentence describing how the order of authors was determined. ... Details regarding IRB approval, if applicable, including IRB protocol number and home institution."
+    - name: data_and_registry_citations
+      status: confirmed
+      value: Data sources and registered studies used in the research go in the reference list.
+      source: style_guide
+      quote: "Data sources and registered studies used in the research must be included in the reference list."
+    - name: rct_citation_format
+      status: confirmed
+      value: >-
+        Cite the AEA RCT Registry entry in the references as: Author Names. Year. "Title." AEA RCT Registry.
+        Month Day. DOI. Under anonymized review, cite it in the third person like other own work.
+      source: rct_registry
+      quote: 'Authors of papers using randomized controlled trials should include a self-reference using the following format: Author Names. Year. "Title." AEA RCT Registry. Month Day. DOI.'
+    - name: no_significance_asterisks
+      status: confirmed
+      value: Tables report standard errors in parentheses and no significance asterisks (Style Guide; binding after acceptance).
+      source: style_guide
+      quote: "Do not use asterisks to denote significance of estimation results. Report the standard errors in parentheses."
+    - name: section_headings
+      status: confirmed
+      value: Roman numerals for sections, capital letters for subsections, and no heading on the introduction (Style Guide).
+      source: style_guide
+      quote: "Roman numerals (I., II., etc.) for major section headings, followed by capital letters (A., B., etc.) for the first subsection, etc. The introductory section should not receive a heading."
+    - name: table_width
+      status: confirmed
+      value: Tables at most 9 columns wide including row headings (Style Guide).
+      source: style_guide
+      quote: "Tables must be no more than 9 columns wide including row headings."
+    - name: subject_selection
+      status: confirmed
+      value: Experimental and survey papers summarize subject eligibility and selection in the design discussion.
+      source: experimental_policy
+      quote: "Information about subject eligibility or selection, such as exclusions based on past participation in experiments, college major, demographic characteristics, etc., should be summarized as part of the discussion of design in the submitted manuscript."
+    - name: data_legality
+      status: confirmed
+      value: Data must be legally acquired; flag possibly illegally acquired data in the submission portal.
+      source: data_legality
+      quote: "If you use data that you believe might not be considered legally acquired, please flag this in the online submission portal when submitting your paper."

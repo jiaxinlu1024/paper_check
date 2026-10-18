@@ -1,0 +1,277 @@
+id: bpp
+name: Behavioural Public Policy
+abbreviation: BPP
+publisher: Cambridge University Press
+group: field
+checked_on: "2026-10-17"
+notes: >-
+  Interdisciplinary, gold open access journal. Review is double-anonymized, so manuscripts must
+  be anonymized. Two Cambridge pages disagree on where the competing-interest declaration goes
+  (title page or back of the manuscript); see disclosure_statement.
+sources:
+  - id: prep
+    url: https://www.cambridge.org/core/journals/behavioural-public-policy/information/author-instructions/preparing-your-materials
+    title: Preparing your materials (author instructions)
+    access: read
+  - id: submit
+    url: https://www.cambridge.org/core/journals/behavioural-public-policy/information/author-instructions/submitting-your-materials
+    title: Submitting your materials (author instructions)
+    access: read
+  - id: review
+    url: https://www.cambridge.org/core/journals/behavioural-public-policy/information/peer-review-information/review-process
+    title: Review process
+    access: read
+  - id: ethics
+    url: https://www.cambridge.org/core/journals/behavioural-public-policy/information/journal-policies/publishing-ethics
+    title: Publishing ethics (journal policies)
+    access: read
+  - id: transparency
+    url: https://www.cambridge.org/core/journals/behavioural-public-policy/information/journal-policies/research-transparency
+    title: Research transparency (journal policies)
+    access: read
+  - id: fees
+    url: https://www.cambridge.org/core/journals/behavioural-public-policy/information/author-instructions/fees-and-pricing
+    title: Fees and pricing
+    access: read
+  - id: cup_research_ethics
+    url: https://www.cambridge.org/core/services/publishing-ethics/research-ethics-journals
+    title: Research ethics for journals (Cambridge University Press publishing ethics guidelines)
+    access: read
+    note: Publisher-wide policy; the journal's publishing ethics page says it follows these guidelines.
+  - id: scholarone
+    url: https://mc.manuscriptcentral.com/bpp
+    title: BPP submission site (ScholarOne)
+    access: blocked
+    note: >-
+      HTTP 403 with a Cloudflare bot challenge on 2026-10-17. Any instructions on the submission
+      site were not read; verify in a browser. No rule depends on this source.
+rules:
+  abstract_max_words:
+    status: confirmed
+    value: 200
+    source: prep
+    quote: "Original research articles should be between 6,000 and 8,000 words, including tables and figures, with an accompanying abstract not exceeding 200 words plus 4- 6 keywords."
+    note: The same 200-word limit applies to New Voices, Findings from the Field and Political Economy of Behavioural Public Policy pieces.
+  manuscript_limit:
+    status: confirmed
+    value:
+      amount: 8000
+      unit: words
+      scope: >-
+        Research articles, including tables and figures; minimum 6,000 words. New Voices and Findings
+        from the Field 2,000 to 3,000 words; Political Economy of Behavioural Public Policy 6,000 to
+        8,000 words. Special issues may set different limits.
+    source: prep
+    quote: "Original research articles should be between 6,000 and 8,000 words, including tables and figures, with an accompanying abstract not exceeding 200 words plus 4- 6 keywords."
+  keywords:
+    status: confirmed
+    value: {required: true, min: 4, max: 6}
+    source: prep
+    quote: "Original research articles should be between 6,000 and 8,000 words, including tables and figures, with an accompanying abstract not exceeding 200 words plus 4- 6 keywords."
+  jel_codes:
+    status: not_stated
+    note: The author instructions do not mention JEL codes.
+  highlights:
+    status: not_stated
+    note: The author instructions do not mention highlights.
+  review_type:
+    status: confirmed
+    value: double_anonymous
+    source: review
+    quote: "This journal uses a double-anonymized model of peer review."
+    note: See other:anonymization for what the manuscript must avoid.
+  disclosure_statement:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        Competing-interest declaration covering all authors, for example "Competing interests: The
+        author(s) declare none", plus a funding statement. Preparing your materials puts the
+        competing-interest declaration in the title page; Submitting your materials asks for funding
+        and competing-interest declarations at the back of the manuscript, each under its own heading.
+    source: prep
+    quote: "All authors must include a competing interest declaration in their title page."
+    note: >-
+      The two Cambridge pages disagree on placement. Under double-anonymized review, a declaration
+      that names authors or employers could reveal identities if left in the main file, so the
+      title page is the safer place; check with the editorial office.
+  data_availability_statement:
+    status: confirmed
+    value:
+      required: false
+      detail: >-
+        Optional but encouraged, at the end of the article before the reference list. Say where the
+        data can be found and avoid statements such as "Data available on request".
+    source: prep
+    quote: "We encourage the use of a Data Availability Statement at the end of your article before the reference list."
+    note: Submitting your materials lists it as "Data availability statement (optional)".
+  data_code_policy:
+    status: confirmed
+    value:
+      summary: >-
+        Sharing is encouraged, not required: make data and qualitative materials available where
+        possible, use a dedicated repository with permanent identifiers, and cite datasets.
+      url: https://www.cambridge.org/core/journals/behavioural-public-policy/information/journal-policies/research-transparency
+    source: submit
+    quote: "We encourage all authors to consider making the evidence that supports their research findings, including quantitative data and qualitative materials, available to others in the interests of research transparency and reproducibility."
+  ethics_approval:
+    status: confirmed
+    value:
+      required: false
+      detail: >-
+        An ethical statement at the back of the manuscript is optional. Cambridge's publisher-wide
+        policy still expects, for research with human participants or their data, the ethics
+        committee's name, the approval number and the types of consent obtained at submission.
+    source: submit
+    quote: "Ethical statement (optional)"
+    note: >-
+      Publisher-wide policy (source cup_research_ethics): "The name of the ethics committee that
+      approved the research, the ethics committee approval number and the types of consent obtained
+      should be included at submission." For experiments, including the statement is the safer choice.
+  trial_registration:
+    status: confirmed
+    value:
+      required_for: clinical trials (people prospectively assigned to health-related interventions to evaluate health outcomes)
+      registry: a public trials registry, registered before enrolment starts
+      detail: >-
+        Cambridge-wide policy; give the registry name, registration number and URL in the manuscript.
+        Relevant to behavioural interventions with health outcomes. The journal itself does not ask
+        for pre-registration of other studies.
+    source: cup_research_ethics
+    quote: "As a condition of consideration for publication, registration of clinical trials in a public trials registry is required."
+  deception:
+    status: not_stated
+    value: not_addressed
+    note: The author instructions, publishing ethics and research transparency pages were read in full and do not mention deception.
+  experiment_materials:
+    status: not_stated
+    note: >-
+      No general requirement to submit experimental materials or instructions. Findings from the
+      Field papers may put "additional details and protocols required for replication" in
+      supplementary material.
+  ai_use:
+    status: confirmed
+    value:
+      detail: >-
+        Declare and describe AI tools used to generate text or images (including translation) or to
+        analyze or extract insights from data. Basic spelling, grammar or formatting help needs no
+        declaration. Declare text generation in the acknowledgments or a footnote, data collection or
+        analysis in the methods section, and generated images in the figure captions. Give the tool's
+        name and version, dates of use, how others can access it, and a full description of the use.
+        AI tools cannot be listed as authors.
+    source: prep
+    quote: "You should always declare and describe your use of an AI tool if you have used it to generate text or images ... or to analyse or extract insights from data or other materials."
+  citation_style:
+    status: confirmed
+    value: >-
+      Harvard System of Referencing (6th edition): author surname and year in parentheses, e.g.
+      (Sen and Williams, 1963); first author plus et al. for four or more authors; full reference
+      list in alphabetical order at the end.
+    source: prep
+    quote: "Authors must use the Harvard System of Referencing (6th Edition)."
+  submission_fee:
+    status: not_stated
+    note: >-
+      The Fees and pricing page lists only article processing charges (the journal is fully open
+      access); it does not mention a submission fee. See other:article_processing_charge.
+  file_format:
+    status: confirmed
+    value: MS Word for the initial submission (see other:manuscript_layout).
+    source: prep
+    quote: "Manuscripts should initially be submitted in MS Word."
+  other:
+    - name: anonymization
+      status: confirmed
+      value:
+        detail: >-
+          Authors must not refer to themselves as the authors anywhere in the text, including
+          self-citations in the references that reveal who wrote the paper.
+      source: prep
+      quote: "To ensure a fair and anonymous peer review process, authors should not allude to themselves as the authors of their article in any part of the text."
+    - name: funding_statement
+      status: confirmed
+      value:
+        required: true
+        detail: >-
+          Give funders' full official names and grant numbers, and say what role, if any, the
+          sponsors played in design, execution, analysis, interpretation or writing (state it if none).
+      source: ethics
+      quote: "This journal requires authors to include a statement of funding in their manuscript."
+      note: Preparing your materials says a declaration of funding sources "must be provided if appropriate".
+    - name: back_matter_statements
+      status: confirmed
+      value:
+        detail: >-
+          At the back of the manuscript, each under its own heading: funding declaration; competing
+          interests declaration; data availability statement (optional); ethical statement (optional).
+      source: submit
+      quote: "Before you submit, please ensure that you have included the following at the back of your manuscript, each under a separate heading"
+    - name: manuscript_layout
+      status: confirmed
+      value: >-
+        Double spacing; left margin at least 25 mm (1 inch) and right margin at least 40 mm (1.5
+        inches); type no smaller than 12 points; all pages numbered.
+      source: prep
+      quote: "They should be clearly typed in double spacing and should have a left-hand margin of at least 25 mm/1 inch and a right-hand margin of at least 40mm/1.5 inches."
+    - name: tables_and_figures
+      status: confirmed
+      value: >-
+        Each table and figure on a separate sheet, collected at the end after the References, with
+        "Table X (Figure X) about here" marking its place in the text. No vertical lines in tables.
+      source: prep
+      quote: "Each table and figure should be on a separate sheet, numbered and collected together at the end of the article, after the References."
+    - name: headings
+      status: confirmed
+      value: >-
+        Unnumbered headings. First level bold, sentence case, left justified; second level italic
+        (not bold), sentence case, left justified.
+      source: prep
+      quote: "Headings should not be numbered."
+    - name: footnotes
+      status: confirmed
+      value: Keep footnotes to a minimum, numbered consecutively in superscript and listed at the end of the article before the References.
+      source: prep
+      quote: "Any footnotes should be kept to a minimum."
+    - name: spelling
+      status: confirmed
+      value: British or American spelling, used consistently.
+      source: prep
+      quote: "Either British or American spelling is acceptable as long as consistency is maintained throughout the article"
+    - name: numbers_and_percent
+      status: confirmed
+      value: >-
+        Write "per cent", not %, except in tables; spell out numbers up to ten except percentages,
+        exact quantities or series; use a comma in numbers over 999.
+      source: prep
+      quote: "Use ‘per cent’ (not %) except in tables."
+    - name: findings_from_the_field
+      status: confirmed
+      value:
+        max_words: 3000
+        detail: >-
+          2,000 to 3,000 words. Empirical papers use the structure Policy problem, Method, Results,
+          Discussion, reflected in an abstract of at most 200 words.
+      source: prep
+      quote: "Empirical papers should follow this structure, which should also be reflected in the abstract (maximum 200 words):"
+    - name: new_voices
+      status: confirmed
+      value:
+        max_words: 3000
+        detail: 2,000 to 3,000 words including tables and figures, for PhD students and early-career researchers; preferably single-authored.
+      source: prep
+      quote: "Articles for the New Voices section should be between 2,000 and 3,000 words, including tables and figures, with an accompanying abstract not exceeding 200 words plus 4-6 keywords."
+    - name: orcid
+      status: confirmed
+      value: {required_for: corresponding author}
+      source: submit
+      quote: "We require all corresponding authors to identify themselves using ORCID when submitting a manuscript to this journal."
+    - name: article_processing_charge
+      status: confirmed
+      value: Fully open access; APC GBP 2610 or USD 3655 unless covered by an institutional agreement or waiver.
+      source: fees
+      quote: "Article Processing Charges for this journal ... GBP (£) ... 2610 ... USD ($) ... 3655"
+    - name: preprints
+      status: confirmed
+      value: Posting a preprint on a personal website, institutional repository or preprint archive is not prior publication.
+      source: prep
+      quote: "deposition of a preprint on the author’s personal website, in an institutional repository, or in a preprint archive shall not be viewed as prior or duplicate publication."

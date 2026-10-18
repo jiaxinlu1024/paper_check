@@ -1,0 +1,99 @@
+{
+ "id": "https://openalex.org/W3011865677",
+ "doi": "https://doi.org/10.2307/1914185",
+ "title": "Prospect Theory: An Analysis of Decision under Risk",
+ "display_name": "Prospect Theory: An Analysis of Decision under Risk",
+ "publication_year": 1979,
+ "type": "article",
+ "authorships": [
+  {
+   "author": {
+    "display_name": "Daniel J. Kahneman"
+   }
+  },
+  {
+   "author": {
+    "display_name": "Amos Tversky"
+   }
+  }
+ ],
+ "best_oa_location": null,
+ "locations": [
+  {
+   "is_oa": false,
+   "landing_page_url": "https://doi.org/10.2307/1914185",
+   "pdf_url": null,
+   "source": {
+    "display_name": "Econometrica"
+   },
+   "license": null,
+   "version": "publishedVersion"
+  },
+  {
+   "is_oa": false,
+   "landing_page_url": "http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.592.6674",
+   "pdf_url": null,
+   "source": null,
+   "license": null,
+   "version": "submittedVersion"
+  }
+ ],
+ "open_access": {
+  "is_oa": false,
+  "oa_status": "closed",
+  "oa_url": null,
+  "any_repository_has_fulltext": false
+ },
+ "has_content": {
+  "pdf": false,
+  "grobid_xml": false
+ },
+ "abstract_inverted_index": {
+  "Synthetic": [
+   0
+  ],
+  "abstract": [
+   1
+  ],
+  "for": [
+   2
+  ],
+  "tests:": [
+   3
+  ],
+  "employees": [
+   4
+  ],
+  "enrolled": [
+   5
+  ],
+  "automatically": [
+   6
+  ],
+  "kept": [
+   7
+  ],
+  "the": [
+   8
+  ],
+  "default": [
+   9
+  ],
+  "contribution": [
+   10
+  ],
+  "rate.": [
+   11
+  ]
+ },
+ "primary_location": {
+  "is_oa": false,
+  "landing_page_url": "https://doi.org/10.2307/1914185",
+  "pdf_url": null,
+  "source": {
+   "display_name": "Econometrica"
+  },
+  "license": null,
+  "version": "publishedVersion"
+ }
+}

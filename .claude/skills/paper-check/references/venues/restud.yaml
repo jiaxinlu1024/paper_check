@@ -1,0 +1,301 @@
+id: restud
+name: The Review of Economic Studies
+abbreviation: REStud
+publisher: Oxford University Press for The Review of Economic Studies Ltd
+group: general-top5
+checked_on: "2026-10-17"
+notes: >-
+  The journal's own site (restud.com) and its Data Editor's site (restud.dataeditor.group, built from
+  github.com/restud/data-editor) could be read in full. Oxford Academic's Instructions to Authors page for the
+  journal refused automated access, so rules that only it would settle (JEL codes, reference style, AI use)
+  are unconfirmed. restud.com introduces its title-page, abstract, acknowledgement and table guidance with
+  "The following guidance is suggested only", so treat breaches of those items as warnings. The 45-page
+  limit, the single-PDF rule and the fee are stated as requirements.
+sources:
+  - id: submissions
+    url: https://www.restud.com/submissions/
+    title: REStud Submission Guidelines and Policy
+    access: read
+  - id: editorial_express
+    url: https://editorialexpress.com/restud
+    title: REStud submission form (Editorial Express)
+    access: read
+    note: >-
+      Redirects to e-submit.cgi?dbase=restud. The step menu includes "Pay Submission fee", and all authors
+      must confirm the Submission Policy before the process continues.
+  - id: dcap
+    url: https://raw.githubusercontent.com/restud/data-editor/master/policy.md
+    title: REStud Data and Code Availability Policy (source file in github.com/restud/data-editor)
+    access: read
+    note: >-
+      Markdown source of https://restud.dataeditor.group/policy/, the page restud.com links to. The rendered
+      page adds the DCAS v1.0 rule table.
+  - id: dcap_page
+    url: https://restud.dataeditor.group/policy/
+    title: REStud Data and Code Availability Policy (Data Editor site)
+    access: read
+  - id: after_acceptance
+    url: https://raw.githubusercontent.com/restud/data-editor/master/after-acceptance.md
+    title: REStud Data Editor, After Your Paper is Accepted (source file)
+    access: read
+    note: Rendered at https://restud.dataeditor.group/after-acceptance/.
+  - id: citation_guide
+    url: https://restud.dataeditor.group/citation-guide/
+    title: REStud Data Editor, Data citation guide
+    access: read
+  - id: oup_instructions
+    url: https://academic.oup.com/restud/pages/general_instructions
+    title: REStud Instructions to Authors (Oxford Academic)
+    access: blocked
+    note: Answered HTTP 403 with a Cloudflare "Just a moment..." challenge on 2026-10-17. Not bypassed.
+  - id: oup_instructions_search
+    url: https://academic.oup.com/restud/pages/general_instructions
+    title: REStud Instructions to Authors (Oxford Academic), web-search summary
+    access: search_summary
+    note: >-
+      Summary returned by the session's web search on 2026-10-17. It paraphrases the page and is not a
+      verbatim quote.
+  - id: oup_ai_policy
+    url: https://academic.oup.com/pages/for-authors/journals/preparing-and-submitting-your-manuscript/ai-principles-for-oxford-journals/policy-on-ai-use-and-disclosure-for-oxford-journals-authors
+    title: Policy on AI Use & Disclosure for OUP Journals Authors
+    access: blocked
+    note: Answered HTTP 403 with a Cloudflare "Just a moment..." challenge on 2026-10-17. Not bypassed.
+  - id: oup_ai_policy_search
+    url: https://academic.oup.com/pages/for-authors/journals/preparing-and-submitting-your-manuscript/ai-principles-for-oxford-journals/policy-on-ai-use-and-disclosure-for-oxford-journals-authors
+    title: Policy on AI Use & Disclosure for OUP Journals Authors, web-search summary
+    access: search_summary
+    note: Summary returned by the session's web search on 2026-10-17; paraphrased, not verbatim.
+rules:
+  abstract_max_words:
+    status: confirmed
+    value: 150
+    source: submissions
+    quote: "An abstract of no more than 150 words as well as keywords should be included with all submissions."
+    note: >-
+      Listed under "Manuscript format and structure", which restud.com introduces with "The following
+      guidance is suggested only." Flag an overlong abstract as a warning.
+  manuscript_limit:
+    status: confirmed
+    value:
+      amount: 45
+      unit: pages
+      scope: >-
+        whole manuscript including title page, tables, figures, references and appendices, with margins of at
+        least 1 inch, 1.5-spaced 12-point text (references and footnotes may be single-spaced); an online
+        appendix of up to 30 pages is separate
+    source: submissions
+    quote: "no more than 45 pages including title page, tables, figures, references and appendices"
+    note: >-
+      In force since 1 July 2022. Exceptions must be requested, with compelling reasons, before submission;
+      the page names Elias Papaioannou as the contact.
+  keywords:
+    status: confirmed
+    value: {required: true, min: null, max: null}
+    source: submissions
+    quote: "An abstract of no more than 150 words as well as keywords should be included with all submissions."
+    note: No number is given. Part of the guidance restud.com calls "suggested only".
+  jel_codes:
+    status: unconfirmed
+    value: {required: true, min: null, max: null}
+    source: oup_instructions_search
+    note: >-
+      Page blocked automated access; verify in a browser. The restud.com guidelines, read in full, do not
+      mention JEL codes. A web-search summary of https://academic.oup.com/restud/pages/general_instructions
+      (2026-10-17) said: "Authors should provide the relevant JEL codes upon submission."
+  highlights:
+    status: unconfirmed
+    note: >-
+      The restud.com guidelines, read in full, do not mention highlights. The Oxford Academic Instructions to
+      Authors page blocked automated access, so it cannot be ruled out; verify in a browser.
+  review_type:
+    status: unconfirmed
+    value: single_anonymous
+    source: submissions
+    note: >-
+      Not stated on restud.com. Its guidelines ask for one PDF that includes the title page, and the
+      suggested title page lists each author's name and affiliation; nothing asks authors to anonymize. The
+      Oxford Academic Instructions to Authors page blocked automated access; verify in a browser.
+  disclosure_statement:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        Funding and conflict-of-interest declarations go in separate "Funding" and "Conflict of interest"
+        sections, apart from the acknowledgements. Acknowledgements and non-financial support go at the end of
+        the text, before the references, not in footnotes.
+    source: submissions
+    quote: "acknowledgement of funding bodies and declarations regarding conflict of interest should be given in separate Funding and Conflict of interest sections, respectively"
+    note: >-
+      Part of the guidance restud.com calls "suggested only". The Oxford Academic Instructions to Authors
+      page, which may set further disclosure rules, blocked automated access.
+  data_availability_statement:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        After the Data Editor accepts the replication package, authors add the package's Zenodo DOI to a Data
+        Availability Statement at the end of the manuscript. The README of the package must also contain a
+        Data Availability Statement (DCAS rule 1); a paper without data says so there.
+    source: after_acceptance
+    quote: "you will be asked add the Zenodo DOI to the Data Availability Statement (DAS) at the end of the manuscript"
+  data_code_policy:
+    status: confirmed
+    value:
+      summary: >-
+        Authors of accepted papers must submit all code and data needed to reproduce their work and let any
+        reader use them. The Data Editor checks that the code reproduces every table, figure and in-text
+        number, then the package is archived in the Review's Zenodo community. Submitting means accepting the
+        policy, which is compatible with DCAS v1.0. Exemption requests go in the cover letter at first
+        submission and are not considered later; confidential data need a preservation commitment of at least
+        five years.
+      url: https://restud.dataeditor.group/policy/
+    source: submissions
+    quote: "We require authors of accepted papers to submit all code and data necessary to reproduce their work, and permit any reader of the journal to use them."
+  ethics_approval:
+    status: confirmed
+    value:
+      required: true
+      detail: >-
+        Authors who collect primary data (experiment or survey) must include their institution's IRB approval
+        documentation, or similar, in the replication package. The restud.com guidelines do not ask for an IRB
+        statement in the manuscript.
+    source: dcap
+    quote: "Authors who collect primary data (e.g., via experiment or survey) are required to include the IRB approval documentation (or similar) from their institution."
+  trial_registration:
+    status: confirmed
+    value:
+      required_for: none; registration is not required, but a study that was pre-registered must document it
+      registry: any; identify the record by its DOI
+      detail: The pre-registration record is cited with its DOI in the README of the replication package.
+    source: dcap
+    quote: "If applicable, pre-registration of the research project must be documented with a Document Object Identifier for the pre-registration record in the README."
+  deception:
+    status: unconfirmed
+    value: not_addressed
+    note: >-
+      Neither the restud.com guidelines nor the Data Editor's policy mentions deception. The Oxford Academic
+      Instructions to Authors page blocked automated access; verify in a browser.
+  experiment_materials:
+    status: confirmed
+    value:
+      detail: >-
+        The replication package must include all survey or experimental instruments; a pointer to the online
+        appendix does not suffice. Non-English materials need an English translation. On acceptance authors
+        also provide the programs, configuration files or scripts used to run the experiment and the raw data.
+        restud.com does not ask for instructions at first submission.
+    source: dcap
+    quote: "Please include all survey or experimental instruments. A reference to an online appendix of the paper does not suffice: online appendices do not have a DOI."
+  ai_use:
+    status: unconfirmed
+    value:
+      detail: >-
+        Unverified, from OUP's journal-wide policy: AI tools cannot be listed as authors; help with language
+        clarity and formatting needs no disclosure; other use should be disclosed.
+    source: oup_ai_policy_search
+    note: >-
+      Page blocked automated access; verify in a browser. restud.com does not mention AI. A web-search
+      summary of OUP's "Policy on AI Use & Disclosure for OUP Journals Authors" (2026-10-17) said "Gen AI Tools
+      are not eligible to be listed as authors, following COPE guidance", that the policy lists uses needing
+      no disclosure "such as improving clarity of language (e.g. spelling or grammar correction) and
+      formatting", and that where a journal's guidance differs, authors should follow the journal.
+  citation_style:
+    status: unconfirmed
+    source: citation_guide
+    note: >-
+      restud.com sets no reference style. The Data Editor's citation guide says "Our publisher has specific
+      requirements about each element's format for the manuscript" and uses author-year in-text citations in
+      its examples, but the Oxford Academic Instructions to Authors page blocked automated access; verify in a
+      browser.
+  submission_fee:
+    status: confirmed
+    value:
+      amount: 250
+      currency: USD
+      detail: >-
+        From 1 June 2026: USD 250 for each new submission; USD 150 if every author is a current student, is
+        within six years of the PhD, or resides in a low- or middle-income economy (World Bank
+        classification), with supporting links or CVs at submission. Resubmissions are exempt except "reject
+        and resubmit"; comments on published papers pay the same fee. The fee does not guarantee a full review.
+    source: submissions
+    quote: "The submission fee is USD 250 for new submissions."
+    note: The Editorial Express form states the same fee and reduced fee, and payment is a submission step.
+  file_format:
+    status: confirmed
+    value: >-
+      One PDF containing the complete manuscript (title page, abstract, text, figures and tables), for new and
+      revised versions; separate figure files only if file size makes it necessary
+    source: submissions
+    quote: "Authors should upload a single PDF file containing the complete manuscript (i.e. title page, abstract, text, figures and tables)"
+    note: "The Editorial Express form adds: \"Note that manuscripts must be uploaded in PDF format only\"."
+  other:
+    - name: formatting
+      status: confirmed
+      value: {margins_min_in: 1, line_spacing: 1.5, font_pt: 12, single_spacing_allowed_for: references and footnotes, pages_numbered: true}
+      source: submissions
+      quote: "margins of at least 1 inch on all sides, (iii) 1-1/2 spaced text in 12-point font (references and footnotes can be single-spaced)"
+      note: "The page adds: \"The 12pt font applies to the entire manuscript, including appendices. Pages should be numbered.\""
+    - name: online_appendix_limit
+      status: confirmed
+      value: {amount: 30, unit: pages, detail: "labeled \"Online Appendix\", same font and spacing; for results not central to the paper, which must be self-contained"}
+      source: submissions
+      quote: "Such an online appendix should not exceed 30 pages (with the same font and spacing requirements as the manuscript)."
+    - name: length_exception
+      status: confirmed
+      value: Request an exception to the 45-page limit, with compelling reasons, before submission
+      source: submissions
+      quote: "In these cases, the authors should provide compelling reasons why they seek an exception prior to submission."
+    - name: title_page
+      status: confirmed
+      value: >-
+        Short, informative title; each author's name followed by department, institution, city with postcode
+        and country; telephone and email of the corresponding author; only one corresponding author
+      source: submissions
+      quote: "It is editorial policy to list only one author for correspondence."
+      note: Part of the guidance restud.com calls "suggested only".
+    - name: acknowledgements_placement
+      status: confirmed
+      value: At the end of the text before the references, not in footnotes
+      source: submissions
+      quote: "Acknowledgements and details of non-financial support must be included at the end of the text before references and not in footnotes."
+    - name: table_style
+      status: confirmed
+      value: Numbered tables with titles; no vertical lines, coloured text or shading
+      source: submissions
+      quote: "vertical lines, coloured text and shading should not be used"
+    - name: cover_letter
+      status: confirmed
+      value:
+        required: false
+        detail: >-
+          Needed to request an exemption from the Data and Code Availability Policy at first submission, and
+          to say that a manuscript is a comment on a paper published in REStud.
+      source: submissions
+      quote: "Requests for exemptions to the DCAP should be clearly stated in the cover letter when the article is first submitted"
+    - name: submission_policy_confirmation
+      status: confirmed
+      value: The submitter must confirm in Editorial Express that all authors accept the Submission Policy
+      source: editorial_express
+      quote: "Click here to confirm all authors accept our Submission Policy"
+    - name: exclusive_submission
+      status: confirmed
+      value: Not submitted elsewhere, and not published or accepted elsewhere in whole or in part
+      source: submissions
+      quote: "Manuscripts are evaluated by the Review of Economic Studies on the understanding that they have been submitted solely to it"
+    - name: rejected_papers
+      status: confirmed
+      value: A rejected paper may come back only on an editor's explicit invitation
+      source: submissions
+      quote: "Authors are not allowed to submit revisions of manuscripts that have been previously rejected unless they are explicitly invited to resubmit by an editor."
+    - name: revise_and_resubmit_window
+      status: confirmed
+      value: A revision returned more than one year after the decision may be treated as a new submission
+      source: submissions
+      quote: "reserves the right to treat 'revise and resubmit' papers as new submissions after one year"
+    - name: alt_text
+      status: unconfirmed
+      value: Alt text for every image and figure in the main article
+      source: oup_instructions_search
+      note: >-
+        Page blocked automated access; verify in a browser. A web-search summary of
+        https://academic.oup.com/restud/pages/general_instructions (2026-10-17) said submissions must include
+        "alt text (alternative text) descriptions for all images, figures, illustrations, and photographs".
