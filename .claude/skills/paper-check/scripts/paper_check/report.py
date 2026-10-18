@@ -539,6 +539,20 @@ def _refuted(f) -> bool:
     return str((f.verification or {}).get("refuter") or "").strip().lower().startswith(("refuted", "overturned"))
 
 
+def _plain(value) -> str:
+    """Inputs and outputs of a computation in words: "from: 9.9%; to: 8.1%", not JSON."""
+    if isinstance(value, dict):
+        parts = []
+        for k, v in value.items():
+            parts.append(f"{k} ({_plain(v)})" if isinstance(v, dict) else f"{k}: {_plain(v)}")
+        return "; ".join(parts)
+    if isinstance(value, (list, tuple)):
+        return ", ".join(_plain(v) for v in value)
+    if isinstance(value, float):
+        return f"{value:g}"
+    return str(value)
+
+
 def _evidence_line(ev, loc: Locator) -> str:
     d = ev.data or {}
     if str(d.get("role") or "").lower().replace("_", "-") == "counter-evidence":
@@ -554,9 +568,9 @@ def _evidence_line(ev, loc: Locator) -> str:
         inputs = d.get("inputs")
         line = f"Computed: {d.get('formula') or ev.text or ''}"
         if inputs:
-            line += f" with {json.dumps(inputs, ensure_ascii=False)}"
+            line += f", with {_plain(inputs)}"
         if "output" in d:
-            line += f" = {d['output']}"
+            line += f" = {_plain(d['output'])}"
         if d.get("tolerance") is not None:
             line += f" (tolerance {d['tolerance']})"
         if d.get("formula") and ev.text:
@@ -582,7 +596,12 @@ def _evidence_line(ev, loc: Locator) -> str:
     return ev.text or json.dumps(d, ensure_ascii=False)
 
 
-def _render_finding(f, loc: Locator, checklist: dict, dimensions: dict) -> str:
+BRIEF_PROOF = 3   # proof lines per finding in a quick check's report; the findings file keeps them all
+
+
+def _render_finding(f, loc: Locator, checklist: dict, dimensions: dict, brief: bool = False) -> str:
+    """One finding. A brief rendering, for quick checks, keeps the first proof lines and puts the
+    trajectory on one line."""
     info = checklist.get(f.check_id, {})
     check_title = info.get("title", "")
     dim = dimensions.get(f.dimension, f.dimension)
@@ -607,7 +626,10 @@ def _render_finding(f, loc: Locator, checklist: dict, dimensions: dict) -> str:
         proof.append(f'Related{", " + where if where else ""}: "{normalize(text or "")}"')
     if proof:
         lines.append("Proof:")
-        lines += [f"- {p}" for p in proof]
+        shown = proof[:BRIEF_PROOF] if brief else proof
+        lines += [f"- {p}" for p in shown]
+        if len(shown) < len(proof):
+            lines.append(f"- and {len(proof) - len(shown)} more in paper-check-findings.json")
         lines.append("")
     trajectory = list(f.trajectory)
     ver = f.verification or {}
@@ -615,7 +637,9 @@ def _render_finding(f, loc: Locator, checklist: dict, dimensions: dict) -> str:
         trajectory.append(f"Refuter: {ver['refuter']}" + (f". {ver['refuter_note']}" if ver.get("refuter_note") else ""))
     if ver.get("runs"):
         trajectory.append(f"Found in {ver['runs']}.")
-    if trajectory:
+    if trajectory and (brief or f.severity in ("minor", "suggestion")):
+        lines.append("Trajectory: " + " ".join(f"({i}) {t}" for i, t in enumerate(trajectory, 1)))
+    elif trajectory:
         lines.append("Trajectory:")
         lines += [f"{i}. {t}" for i, t in enumerate(trajectory, 1)]
     settings = f.producer.get("settings")
@@ -801,7 +825,7 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
         group = [f for f in kept if f.severity == sev]
         if group:
             md += [f"## {SEVERITY_TITLE[sev]} findings ({len(group)})", ""]
-            md += [_render_finding(f, loc, checklist, dimensions) for f in group]
+            md += [_render_finding(f, loc, checklist, dimensions, brief=settings.mode == "quick") for f in group]
 
     if kept:
         md += ["## Index in paper order", ""]
@@ -812,12 +836,25 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
                           SEVERITY_TITLE[f.severity], _cell(f.problem, 160)] for f in index_rows])
         md.append("")
 
+    full = [r for r in cov_rows if r["status"] == "run"]
+    rest = [r for r in cov_rows if r["status"] != "run"]
     md += ["## Coverage", "",
-           "Every check in the checklist and what happened to it in this run. Skipped checks were not passed: "
-           "they were not run.", ""]
-    md += _md_table(["Check", "Title", "Outcome", "Detail"],
-                    [[r["check_id"], r["title"], r["status"], r["detail"]] for r in cov_rows])
-    md.append("")
+           f"{len(full)} of {len(cov_rows)} checks ran in full: {', '.join(r['check_id'] for r in full) or 'none'}. "
+           "The table lists the others and why. Skipped checks were not passed: they were not run. "
+           "paper-check-findings.json has every check's outcome.", ""]
+    if rest:
+        # Checks left out for one shared reason, such as the mode, share a row.
+        groups: dict = defaultdict(list)
+        for r in rest:
+            groups[(r["status"], r["detail"])].append(r)
+        rows = []
+        for (status, detail), members in groups.items():
+            if len(members) >= 3:
+                rows.append([", ".join(m["check_id"] for m in members), f"{len(members)} checks", status, detail])
+            else:
+                rows += [[m["check_id"], m["title"], status, detail] for m in members]
+        md += _md_table(["Check", "Title", "Outcome", "Detail"], rows)
+        md.append("")
 
     # ---- appendices -----------------------------------------------------
     appendices = {}

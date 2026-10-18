@@ -32,7 +32,7 @@ Each findings file is one FindingSet: `{"producer", "settings", "findings": [...
 1. **Header.** Paper title and file, input format, date and skill version, mode, network, venue profile and the date its rules were checked (with a warning when the profile is more than 180 days old), the sources folder, and the producers that contributed. Warnings follow: unreadable findings files, network off, ingestion problems, findings below the minimum severity.
 2. **Summary.** Counts by severity, split into confirmed, likely and needs human judgment; counts by dimension; the top five issues; and one line of coverage counts.
 3. **Findings.** Critical first, then Major, Minor and Suggestion. Within a level, findings follow the order of the paper, and each gets an ID such as F-012. An **index in paper order** follows, for writers fixing the draft from top to bottom.
-4. **Coverage.** Every check ID with its outcome: run (with the number of findings and any note), partly run, not applicable, skipped with the reason, or not run when no producer covered it. A skipped check was not passed.
+4. **Coverage.** One line lists the checks that ran in full. A table gives every other check its outcome: partly run, not applicable, skipped with the reason, or not run when no producer covered it; checks left out for one shared reason, such as the mode, share a row. A skipped check was not passed. `paper-check-findings.json` has every check's outcome, with the number of findings and any note.
 5. **Appendices.** The reference table with an evidence card per reference; the citation support table, one row per citation, with a per-section summary such as "Section 2: 14 of 31 citations not supported or contradicted"; the claim-evidence map; every recomputed number; refuted findings with the refuter's counter-evidence; dropped findings with the reason; and ingestion warnings.
 
 ## One finding
@@ -49,7 +49,7 @@ the control group. That is an 18% reduction, not 23%.
 
 Proof:
 - Quote, 3 Results, Table 3 (results.tex:102): "Treatment | 8.1"
-- Computed: (9.9 - 8.1) / 9.9 with {"control": 9.9, "treatment": 8.1} = 0.182 (tolerance 0.005)
+- Computed: (9.9 - 8.1) / 9.9, with control: 9.9; treatment: 8.1 = 0.182 (tolerance 0.005)
 
 Trajectory:
 1. The number scripts extracted 41 numeric claims; this one is tagged "default rate, relative".
@@ -63,6 +63,8 @@ Verifier settings: model <model id>, prompt numbers.md 0.4.0, runs 2
 Suggested fix: replace "23%" with "18%".
 Resolved when: the abstract and Table 3 imply the same reduction.
 ```
+
+Minor findings and suggestions put the trajectory on one line: "Trajectory: (1) ... (2) ...". A quick check's report does so for every finding and shows the first three proof lines; the findings file keeps all of them.
 
 ## Fields of a finding
 

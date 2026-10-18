@@ -356,3 +356,29 @@ def test_a_sequential_run_is_labelled_and_never_merges_runs(tmp_path, capsys):
     assert "**Run:** sequential" in report.split("## Summary")[0]
     first = json.loads((work / "findings" / "agent_logic.json").read_text())["findings"][0]
     assert "runs" not in (first.get("verification") or {})
+
+
+def test_quick_report_is_brief_and_coverage_lists_only_what_did_not_run(tmp_path):
+    """A quick check's report keeps three proof lines and a one-line trajectory per finding, and the
+    coverage table groups the checks left out for one shared reason."""
+    assert main(["ingest", str(FIXTURES / "latex_basic"), "--out", str(tmp_path), "--mode", "quick"]) == 0
+    work = tmp_path / "paper-check-work"
+    evidence = [{"type": "quote", "text": t} for t in (
+        "We ran 10 survey sessions in total.", "We ran 12 survey sessions between March and May 2025.",
+        "Table 1 reports the main estimates.", "Figure 1 shows the distribution of contribution rates.",
+        "The experiment was preregistered.")]
+    _write(work, "agent_logic.json", {"producer": "agent_logic", "findings": [
+        _finding(evidence=evidence, trajectory=["Read the design section.", "Compared the appendix."])],
+        "coverage": [{"check_id": c, "status": "skipped", "reason": "not run in quick mode"}
+                     for c in ("LOG-01", "LOG-05", "LOG-06", "LOG-07")]})
+    main(["verify", str(work)])
+    main(["report", str(work)])
+    md = (tmp_path / "paper-check-report.md").read_text()
+    finding = md.split("### F-001")[1].split("\n## ")[0]
+    assert "- and 2 more in paper-check-findings.json" in finding
+    assert "Trajectory: (1) Read the design section. (2) Compared the appendix." in finding
+    coverage = md.split("## Coverage")[1].split("\n## ")[0]
+    assert "| LOG-01, LOG-05, LOG-06, LOG-07 | 4 checks | skipped |" in coverage
+    assert "checks ran in full:" in coverage
+    data = json.loads((tmp_path / "paper-check-findings.json").read_text())
+    assert len(data["coverage"]) == 125 and len(data["findings"][0]["evidence"]) == 5
