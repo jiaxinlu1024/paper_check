@@ -492,3 +492,22 @@ def test_finding_ids_stay_the_same_when_the_report_is_built_again(work_copy):
     second = {f["title"]: f["id"] for f in json.loads((work_copy.parent / "paper-check-findings.json").read_text())["findings"]}
     assert second["Causal claim"] == first["Causal claim"] and second["Session counts disagree"] == first["Session counts disagree"]
     assert second["Headline number"] == "F-003"
+
+
+def test_page_one_never_ranks_a_minor_finding_as_a_top_issue(work_copy):
+    """Without the consolidator's choice, page one lists only Critical and Major findings; with none, it
+    says so instead of promoting a Minor one."""
+    _write(work_copy, "agent_language.json", {"producer": "agent_language", "findings": [
+        _finding(check_id="LANG-02", title="Overlong sentence", severity="minor", status="confirmed",
+                 problem="This sentence has 61 words.")]})
+    main(["verify", str(work_copy)])
+    main(["report", str(work_copy)])
+    report = (work_copy.parent / "paper-check-report.md").read_text()
+    first = report.split("## What to fix first")[1].split("\n## ")[0]
+    assert "No Critical or Major findings" in first and "Overlong sentence" not in first
+    _write(work_copy, "agent_logic.json", {"producer": "agent_logic", "findings": [_finding()]})
+    main(["verify", str(work_copy)])
+    main(["report", str(work_copy)])
+    report = (work_copy.parent / "paper-check-report.md").read_text()
+    first = report.split("## What to fix first")[1].split("\n## ")[0]
+    assert "Causal claim" in first and "Overlong sentence" not in first

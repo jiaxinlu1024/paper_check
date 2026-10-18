@@ -1146,7 +1146,9 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
 
     # ---- what to fix first: an action list, the top issues first ------------------------
     if not top:
-        top = _top_issues(kept)
+        # Without the consolidator's choice, the top issues are the most serious findings; a Minor finding
+        # is never put on page one by the ranking alone.
+        top = _top_issues([f for f in kept if f.severity in ("critical", "major")])
     top_ids = {f.id for f in top}
     first = list(top) + [f for f in kept if f.severity in ("critical", "major") and f not in top]
     if first:
@@ -1172,6 +1174,10 @@ def build_report(work: Path, settings=None, venue_id: Optional[str] = None) -> i
             md += [f"{i}. {_link(f.id)} {f.title} · {SEVERITY_TITLE[f.severity]} · {loc.short_where(f)}"
                    for i, f in enumerate(others, len(lead) + 1)]
         md.append("")
+    elif kept:
+        md += ["## What to fix first", "",
+               f"No Critical or Major findings. The {_findings(len(kept))} below are Minor findings and suggestions, "
+               "each with its fix.", ""]
     else:
         md += ["No findings.", ""]
 
