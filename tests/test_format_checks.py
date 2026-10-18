@@ -337,6 +337,19 @@ def test_fmt08_reference_list_rules(tmp_path):
     assert_well_formed(pm, found)
 
 
+def test_fmt08_given_names_as_initials_and_in_full(tmp_path):
+    """Entries whose first names are initials once crashed the check (a set of unhashable entries)."""
+    bib = ("@article{b1, author={Smith, J. A.}, title={One}, journal={J}, year={2001}, volume={1}, pages={1}}\n"
+           "@article{b2, author={Jones, M.}, title={Two}, journal={J}, year={2002}, volume={1}, pages={1}}\n"
+           "@article{b3, author={Brown, Thomas}, title={Three}, journal={J}, year={2003}, volume={1}, pages={1}}\n"
+           "@article{b4, author={Green, Alice}, title={Four}, journal={J}, year={2004}, volume={1}, pages={1}}\n")
+    body = "\\section{Intro}\nSee \\citet{b1}, \\citet{b2}, \\citet{b3} and \\citet{b4}."
+    pm, _ = ingest_tex(tmp_path, body, bib=bib)
+    found, coverage = run(pm, "FMT-08")
+    assert "Author names in two formats" in [f.title for f in found]
+    assert coverage["FMT-08"].status != "skipped"
+
+
 # ================================================================ FMT-09 citation style
 def test_fmt09_citation_rules(tmp_path):
     bib = ("@article{a, author={Smith, John}, title={T}, journal={J}, year={2000}, volume={1}, pages={1}}\n"

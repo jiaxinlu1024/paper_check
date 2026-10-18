@@ -619,12 +619,13 @@ def reference_list(pm, ctx):
                 continue
             (initials_only if re.fullmatch(r"(?:[A-Z]\.?[\s-]*){1,3}", given) else full).append(r)
             break
-    if len(set(initials_only)) >= 2 and len(set(full)) >= 2:
+    # each entry is counted once, by its first author with a given name
+    if len(initials_only) >= 2 and len(full) >= 2:
         r = initials_only[0] if len(initials_only) <= len(full) else full[0]
         b, quote = _ref_quote(pm, r)
         f = ctx.finding(
             "FMT-08", "Author names in two formats", "minor",
-            f"{len(set(initials_only))} entries give authors' first names as initials and {len(set(full))} spell them "
+            f"{len(initials_only)} entries give authors' first names as initials and {len(full)} spell them "
             "out, so the reference list will look inconsistent unless the style abbreviates all of them.",
             block=b, quote=quote, status="likely", confidence="medium",
             evidence=[Evidence(type="script_output", text=f"initials: {[x.key or x.id for x in initials_only][:10]}; "
